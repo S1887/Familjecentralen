@@ -1,0 +1,545 @@
+:root {
+  --bg-main: #ffffff;
+  --text-main: #213547;
+  --text-muted: #666;
+  --card-bg: #ffffff;
+  --card-border-left: #ccc;
+  --border-color: #eee;
+  --input-bg: #ffffff;
+  --input-border: #ddd;
+  --modal-bg: #ffffff;
+  --button-bg: #eee;
+  --button-text: #333;
+  --button-hover: #f9f9f9;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --header-border: #eee;
+}
+
+.dark-mode {
+  --bg-main: #1a1a1a;
+  --text-main: #f0f0f0;
+  --text-muted: #aaa;
+  --card-bg: #2a2a2a;
+  --card-border-left: #444;
+  --border-color: #444;
+  --input-bg: #333;
+  --input-border: #555;
+  --modal-bg: #2a2a2a;
+  --button-bg: #333;
+  --button-text: #f0f0f0;
+  --button-hover: #444;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --header-border: #333;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', sans-serif;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 2rem;
+  border-bottom: 2px solid var(--header-border);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.user-toggle button {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: none;
+  padding: 0.5rem 1rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.user-toggle button.active {
+  background: #646cff;
+  color: white;
+}
+
+/* Hero varies by weather ! */
+.today-hero {
+  /* Default Fallback */
+  background: linear-gradient(135deg, #6ba5f2 0%, #a4e0f9 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  min-height: auto;
+  border-radius: 16px;
+  margin-bottom: 1rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.2);
+  transition: background 1s ease;
+  /* Smooth transition */
+  position: relative;
+  overflow: hidden;
+}
+
+/* DAY THEMES */
+.today-hero.day-clear {
+  background: linear-gradient(135deg, #56CCF2 0%, #2F80ED 100%);
+  /* Bright Blue */
+}
+
+.today-hero.day-cloudy {
+  background: linear-gradient(135deg, #a7bfe8 0%, #6190e8 100%);
+  /* Muted Blue/Grey */
+}
+
+.today-hero.day-rain {
+  background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+  /* Darker Blue/Purple for rain */
+}
+
+.today-hero.day-snow {
+  background: linear-gradient(135deg, #E0EAFC 0%, #CFDEF3 100%);
+  /* Very light blue/white */
+  color: #333;
+  /* Dark text for contrast on snow? Or keep white with shadow? Let's try dark text or shadow. */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.today-hero.day-snow h2,
+.today-hero.day-snow p {
+  color: #2c3e50;
+}
+
+.today-hero.day-snow .today-events-list h3 {
+  color: #2c3e50;
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+/* NIGHT THEMES */
+.today-hero.night-clear {
+  background: linear-gradient(135deg, #141E30 0%, #243B55 100%);
+  /* Dark Blue/Black */
+}
+
+.today-hero.night-cloudy {
+  background: linear-gradient(135deg, #232526 0%, #414345 100%);
+  /* Dark Grey */
+}
+
+.today-hero.night-rain {
+  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+  /* Dark Teal/Blue */
+}
+
+.today-hero.night-snow {
+  background: linear-gradient(135deg, #29323c 0%, #485563 100%);
+  /* Greyish Blue */
+}
+
+/* Animation element */
+.weather-bg-icon {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  font-size: 15rem;
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.today-info h2 {
+  margin: 0;
+  font-size: 2.5rem;
+}
+
+.today-info p {
+  margin: 0.5rem 0 0;
+  font-size: 1.2rem;
+  opacity: 0.9;
+}
+
+.weather-widget {
+  text-align: right;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 1rem;
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+}
+
+.filter-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
+  color: var(--text-main);
+  padding: 0.6rem 1.5rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  background: var(--button-hover);
+  transform: translateY(-2px);
+}
+
+.filter-btn.active {
+  background: #646cff;
+  color: white;
+  border-color: #646cff;
+}
+
+.timeline h2 {
+  text-align: left;
+  margin-bottom: 1rem;
+  padding-left: 0.5rem;
+  border-left: 4px solid #646cff;
+  padding-left: 1rem;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 6px var(--shadow-color);
+  text-align: left;
+  border-left: 5px solid var(--card-border-left);
+  transition: transform 0.2s;
+  position: relative;
+  overflow: hidden;
+  color: var(--text-main);
+  /* Ensure text is visible even if parent has light text */
+}
+
+.card.today-highlight {
+  border: 2px solid #646cff;
+  border-left: 5px solid #646cff;
+  background: rgba(100, 108, 255, 0.1);
+  /* Transparent blue works on dark too */
+}
+
+.card.source-svante {
+  border-left-color: #ff4757;
+  /* Röd för Pappa */
+}
+
+.card.source-mamma {
+  border-left-color: #5352ed;
+  /* Blå/Lila för Mamma */
+}
+
+.card.assigned {
+  border-left-color: #2ed573;
+  opacity: 0.8;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.source-badge {
+  background: var(--button-bg);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+h3 {
+  margin: 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.location {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.assignment-badge {
+  color: #2ed573;
+  font-weight: bold;
+}
+
+/* Map Styles */
+.map-view {
+  width: 100%;
+  height: 500px;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  border: 1px solid #eee;
+}
+
+.map-container {
+  width: 100%;
+  height: 100%;
+}
+
+.travel-info {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #555;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 0.5rem;
+  border-radius: 6px;
+  align-items: center;
+}
+
+.travel-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 500;
+}
+
+.leaflet-popup-content-wrapper {
+  font-family: 'Inter', sans-serif;
+  border-radius: 8px;
+}
+
+.leaflet-popup-content h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+/* Main Content Layout */
+.main-content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 900px) {
+  .main-content-grid {
+    grid-template-columns: 2fr 1fr;
+    /* Timeline wider than Todo */
+    align-items: start;
+  }
+}
+
+.todo-section {
+  background: rgba(255, 255, 255, 0.05);
+  /* Slight tint for container */
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+/* Ensure timeline width doesn't blow up */
+
+/* Horizontal Scroll for Hero Events */
+.horizontal-scroll-container {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+  /* Space for scrollbar */
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+  align-items: stretch;
+  /* Make cards same height */
+}
+
+.horizontal-scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.horizontal-scroll-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+}
+
+.horizontal-scroll-container .card {
+  flex: 0 0 220px !important;
+  /* Force smaller width */
+  min-width: 220px !important;
+  /* Ensure min-width */
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+  /* Slightly shorter */
+  font-size: 0.85rem !important;
+  /* Smaller text */
+  padding: 0.8rem !important;
+  /* Tighter padding */
+}
+
+/* Merge duplicate rule and ensure padding */
+.horizontal-scroll-container {
+  padding-right: 2rem !important;
+  /* More padding to ensure visibility */
+}
+
+.horizontal-scroll-container h3 {
+  font-size: 1rem !important;
+  /* Even smaller title */
+  margin: 0.3rem 0;
+  white-space: nav;
+  /* Allow wrapping if needed, or nowrap? let's stick to normal */
+}
+
+.horizontal-scroll-container .card-header {
+  margin-bottom: 0.3rem;
+  font-size: 0.8rem;
+}
+
+/* CALENDAR VIEWS */
+.calendar-grid-month {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  font-size: 0.8rem;
+  /* Smaller base font */
+}
+
+.calendar-day-header {
+  background: var(--modal-bg);
+  padding: 0.5rem 0.2rem;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-cell {
+  background: var(--bg-main);
+  /* Match main bg */
+  min-height: 80px;
+  /* Reduced from 100px */
+
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.calendar-cell:hover {
+  background: var(--button-hover);
+}
+
+.calendar-cell.different-month {
+  background: var(--button-bg);
+  opacity: 0.5;
+  color: var(--text-muted);
+}
+
+.calendar-cell.today {
+  background: rgba(46, 213, 115, 0.1);
+  font-weight: bold;
+}
+
+.calendar-event {
+  background: #3498db;
+  color: white;
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin-bottom: 2px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.calendar-event.source-svante {
+  background: #ff4757;
+}
+
+.calendar-event.source-mamma {
+  background: #5352ed;
+}
+
+.calendar-event.done {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+/* Week View Columns */
+.week-view-container {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+}
+
+.week-column {
+  flex: 1;
+  min-width: 0;
+  /* Allow shrinking to fit */
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.week-column-header {
+  padding: 0.5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: bold;
+  background: var(--button-bg);
+  border-radius: 8px 8px 0 0;
+}
+
+.week-column-body {
+  padding: 0.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Adjust grid layout when calendar view is active? */
+/* We might want full width for calendar */
+.full-width-calendar .timeline-section {
+  grid-column: 1 / -1;
+}
+
+.full-width-calendar .todo-section {
+  display: none;
+  /* Hide todo in calendar view? Or show below? */
+}
+
+/* Let's keep side-by-side for now, month view might be squeezed but responsive */
