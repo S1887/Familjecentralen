@@ -356,6 +356,23 @@ app.post('/api/assign', (req, res) => {
     res.json({ success: true, assignments: db[eventId] });
 });
 
+// --- Serve Frontend in Production ---
+app.use(express.static(path.join(__dirname, '../dist')));
+
+app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+        const indexPath = path.join(__dirname, '../dist/index.html');
+        if (fs.existsSync(indexPath)) {
+            res.sendFile(indexPath);
+        } else {
+            // Fallback for dev mode without build
+            res.status(404).send('Frontend not built. In dev mode? Check console.');
+        }
+    } else {
+        res.status(404).json({ error: 'Not found' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Family Ops Backend körs på http://localhost:${PORT}`);
 });
