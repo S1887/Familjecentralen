@@ -374,13 +374,19 @@ app.post('/api/assign', (req, res) => {
 // --- Serve Frontend in Production ---
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// Express 5 regex wildcard catch-all handling backend routing
-app.get(/^(?!\/api).+/, (req, res) => {
-    const indexPath = path.join(__dirname, '../dist/index.html');
-    if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
+// Express 4 wildcard catch-all handling backend routing
+app.get('*', (req, res) => {
+    // Only serve frontend for non-API routes
+    if (!req.path.startsWith('/api')) {
+        const indexPath = path.join(__dirname, '../dist/index.html');
+        if (fs.existsSync(indexPath)) {
+            res.sendFile(indexPath);
+        } else {
+            res.status(404).send('Frontend not built. In dev mode? Check console.');
+        }
     } else {
-        res.status(404).send('Frontend not built. In dev mode? Check console.');
+        // API 404
+        res.status(404).json({ error: 'Not found' });
     }
 });
 app.listen(PORT, () => {
