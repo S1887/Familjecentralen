@@ -374,8 +374,15 @@ app.post('/api/assign', (req, res) => {
 // --- Serve Frontend in Production ---
 app.use(express.static(path.join(__dirname, '../dist')));
 
-
-
+// Express 5 regex wildcard catch-all handling backend routing
+app.get(/^(?!\/api).+/, (req, res) => {
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send('Frontend not built. In dev mode? Check console.');
+    }
+});
 app.listen(PORT, () => {
     console.log(`Family Ops Backend körs på http://localhost:${PORT}`);
 });
