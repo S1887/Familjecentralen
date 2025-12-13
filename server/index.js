@@ -372,13 +372,15 @@ app.post('/api/assign', (req, res) => {
 });
 
 // --- Serve Frontend in Production ---
-app.use(express.static(path.join(__dirname, '../dist')));
+const distPath = path.join(process.cwd(), 'dist');
+console.log('Serving static files from:', distPath);
+app.use(express.static(distPath));
 
 // Fallback handler - Matches everything not already caught
 app.use((req, res) => {
     // Only serve frontend for non-API routes
     if (!req.path.startsWith('/api')) {
-        const indexPath = path.join(__dirname, '../dist/index.html');
+        const indexPath = path.join(distPath, 'index.html');
         if (fs.existsSync(indexPath)) {
             res.sendFile(indexPath);
         } else {
