@@ -116,6 +116,21 @@ app.put('/api/tasks/:id', (req, res) => {
     }
 });
 
+// Express 5 kräver regex för "matcha allt"
+app.get(/.*/, (req, res) => {
+    if (!req.path.startsWith('/api')) {
+        const indexPath = path.join(__dirname, '../dist/index.html');
+        if (fs.existsSync(indexPath)) {
+            res.sendFile(indexPath);
+        } else {
+            // Fallback for dev mode without build
+            res.status(404).send('Frontend not built. In dev mode? Check console.');
+        }
+    } else {
+        res.status(404).json({ error: 'Not found' });
+    }
+});
+
 app.delete('/api/tasks/:id', (req, res) => {
     const { id } = req.params;
     tasksData = tasksData.filter(t => t.id !== id);
@@ -359,19 +374,7 @@ app.post('/api/assign', (req, res) => {
 // --- Serve Frontend in Production ---
 app.use(express.static(path.join(__dirname, '../dist')));
 
-app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-        const indexPath = path.join(__dirname, '../dist/index.html');
-        if (fs.existsSync(indexPath)) {
-            res.sendFile(indexPath);
-        } else {
-            // Fallback for dev mode without build
-            res.status(404).send('Frontend not built. In dev mode? Check console.');
-        }
-    } else {
-        res.status(404).json({ error: 'Not found' });
-    }
-});
+
 
 app.listen(PORT, () => {
     console.log(`Family Ops Backend körs på http://localhost:${PORT}`);
