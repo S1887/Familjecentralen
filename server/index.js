@@ -374,8 +374,8 @@ app.post('/api/assign', (req, res) => {
 // --- Serve Frontend in Production ---
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// Express 4 wildcard catch-all handling backend routing
-app.get('*', (req, res) => {
+// Fallback handler - Matches everything not already caught
+app.use((req, res) => {
     // Only serve frontend for non-API routes
     if (!req.path.startsWith('/api')) {
         const indexPath = path.join(__dirname, '../dist/index.html');
