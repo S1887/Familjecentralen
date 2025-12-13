@@ -372,8 +372,20 @@ app.post('/api/assign', (req, res) => {
 });
 
 // --- Serve Frontend in Production ---
-const distPath = path.join(process.cwd(), 'dist');
-console.log('Serving static files from:', distPath);
+// --- Serve Frontend in Production ---
+const distPath = path.resolve(__dirname, '..', 'dist'); // Go up from 'server' to root, then 'dist'
+console.log('Attempting to serve static files from:', distPath);
+
+try {
+    if (fs.existsSync(distPath)) {
+        console.log('Dist directory contents:', fs.readdirSync(distPath));
+    } else {
+        console.error('CRITICAL: Dist directory does not exist at:', distPath);
+    }
+} catch (err) {
+    console.error('Error checking dist directory:', err);
+}
+
 app.use(express.static(distPath));
 
 // Fallback handler - Matches everything not already caught
