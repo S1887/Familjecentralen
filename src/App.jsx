@@ -1598,58 +1598,71 @@ function App() {
           </span>
           <button onClick={handleLogout} style={{
             background: 'transparent',
-            border: '1px solid #ccc',
+            border: '1px solid var(--border-color)',
             borderRadius: '8px',
             cursor: 'pointer',
             padding: isMobile ? '0.3rem' : '0.5rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.3rem',
-            fontSize: isMobile ? '0.8rem' : '1rem'
+            fontSize: isMobile ? '0.8rem' : '1rem',
+            color: 'var(--text-main)'
           }}>
             {isMobile ? '🚪' : '🚪 Logga ut'}
           </button>
+          {isAdmin && (
+            <>
+              <button
+                onClick={() => { fetchTrash(); setViewTrash(true); }}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  padding: isMobile ? '0.3rem' : '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: isMobile ? '0.8rem' : '1rem',
+                  color: 'var(--text-main)'
+                }}
+              >
+                🗑️
+              </button>
+              <button
+                onClick={() => setIsCreatingEvent(true)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  padding: isMobile ? '0.3rem' : '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: isMobile ? '0.8rem' : '1rem',
+                  color: 'var(--text-main)'
+                }}
+              >
+                ➕
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--border-color)',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              padding: isMobile ? '0.3rem' : '0.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              fontSize: isMobile ? '0.8rem' : '1rem',
+              color: 'var(--text-main)'
+            }}
+          >
+            {darkMode ? '☀️' : '🌙'}
+          </button>
         </div>
-
-        {isAdmin && (
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <button
-              onClick={() => { fetchTrash(); setViewTrash(true); }}
-              style={{
-                background: '#ff6b6b',
-                color: 'white',
-                border: 'none',
-                padding: '0.8rem 1.5rem',
-                borderRadius: '30px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              🗑️ Papperskorg
-            </button>
-            <button
-              onClick={() => setIsCreatingEvent(true)}
-              style={{
-                background: '#2ed573',
-                color: 'white',
-                border: 'none',
-                padding: '0.8rem 1.5rem',
-                borderRadius: '30px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                boxShadow: '0 4px 10px rgba(46, 213, 115, 0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              ➕ Ny händelse
-            </button>
-          </div>
-        )}
 
         {/* Next Match Ticker for Arsenal / ÖIS */}
         {(() => {
@@ -1700,81 +1713,76 @@ function App() {
         })()}
 
 
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          style={{
-            background: 'transparent',
-            border: '1px solid var(--border-color)',
-            borderRadius: '50%',
-            width: '40px',
-            height: '40px',
-            cursor: 'pointer',
-            fontSize: '1.2rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          title="Växla mörkt läge"
-        >
-          {darkMode ? '☀️' : '🌙'}
-        </button>
       </header>
 
       {/* Today Hero Section */}
       <div className={getHeroClass()}>
-        <div className="hero-header" style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: '0.5rem' }}>
-          <div className="today-info">
-            <h2 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-              <button onClick={() => changeDay(-1)} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer', opacity: 0.8 }}>‹</button>
-              {isToday(selectedDate)
-                ? `Idag, ${selectedDate.toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' })}`
-                : selectedDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })
-              }
-              <button onClick={() => changeDay(1)} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer', opacity: 0.8 }}>›</button>
-            </h2>
+        <div className="hero-header" style={{ width: '100%', marginBottom: '0.5rem' }}>
+          {/* Date row */}
+          <h2 style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, marginBottom: '0.3rem' }}>
+            <button onClick={() => changeDay(-1)} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer', opacity: 0.8 }}>‹</button>
+            {isToday(selectedDate)
+              ? `Idag, ${selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' })}, ${selectedDate.toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' })}`
+              : selectedDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })
+            }
+            <button onClick={() => changeDay(1)} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer', opacity: 0.8 }}>›</button>
+          </h2>
+          {/* Clock + Weather row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
             <div style={{ fontSize: '2rem', fontWeight: 'bold', lineHeight: '1.1' }}>
               {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
             </div>
-          </div>
-          <div className="weather-widget"
-            style={{ cursor: 'pointer', textAlign: 'right', background: 'rgba(255,255,255,0.2)', padding: '0.5rem 1rem', borderRadius: '8px' }}
-            onClick={() => window.open('https://www.smhi.se/vader/prognoser-och-varningar/vaderprognos/q/Lidk%C3%B6ping/2696329', '_blank')}
-            title="Se prognos hos SMHI"
-          >
-            {(() => {
-              const w = getSelectedDayWeather();
-              if (w) {
-                // Determine Day/Night for Icon
-                let isDay = true;
-                if (weather && weather.daily && weather.daily.sunrise && weather.daily.sunset) {
-                  // If showing TODAY -> Use Current Time
-                  if (isToday(selectedDate)) {
-                    try {
-                      const sunrise = new Date(weather.daily.sunrise[0]);
-                      const sunset = new Date(weather.daily.sunset[0]);
-                      if (currentTime < sunrise || currentTime > sunset) isDay = false;
-                    } catch (e) { }
+            <div className="weather-widget"
+              style={{
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.2)',
+                padding: isMobile ? '0.5rem 1rem' : '0.5rem 1rem',
+                borderRadius: '8px',
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: '0.5rem',
+                width: isMobile ? '100%' : 'auto'
+              }}
+              onClick={() => window.open('https://www.smhi.se/vader/prognoser-och-varningar/vaderprognos/q/Lidk%C3%B6ping/2696329', '_blank')}
+              title="Se prognos hos SMHI"
+            >
+              {(() => {
+                const w = getSelectedDayWeather();
+                if (w) {
+                  // Determine Day/Night for Icon
+                  let isDay = true;
+                  if (weather && weather.daily && weather.daily.sunrise && weather.daily.sunset) {
+                    // If showing TODAY -> Use Current Time
+                    if (isToday(selectedDate)) {
+                      try {
+                        const sunrise = new Date(weather.daily.sunrise[0]);
+                        const sunset = new Date(weather.daily.sunset[0]);
+                        if (currentTime < sunrise || currentTime > sunset) isDay = false;
+                      } catch (e) { }
+                    } else {
+                      // Future dates -> Always Day icon (forecast usually implies day conditions unless specific)
+                      isDay = true;
+                    }
                   } else {
-                    // Future dates -> Always Day icon (forecast usually implies day conditions unless specific)
-                    isDay = true;
+                    // Fallback using hour
+                    if (isToday(selectedDate)) {
+                      const h = currentTime.getHours();
+                      if (h < 6 || h > 21) isDay = false;
+                    }
                   }
-                } else {
-                  // Fallback using hour
-                  if (isToday(selectedDate)) {
-                    const h = currentTime.getHours();
-                    if (h < 6 || h > 21) isDay = false;
-                  }
-                }
 
-                return (
-                  <>
-                    <div style={{ fontSize: '2rem' }}>{getWeatherIcon(w.code, isDay)} {w.temp}°C</div>
-                    <div style={{ fontSize: '0.8rem' }}>Lidköping {w.isMax ? '(Max)' : ''}</div>
-                  </>
-                );
-              }
-              return <span>..</span>;
-            })()}
+                  return (
+                    <>
+                      <span style={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>{getWeatherIcon(w.code, isDay)}</span>
+                      <span style={{ fontSize: isMobile ? '1.2rem' : '2rem', fontWeight: 'bold' }}>{w.temp}°C</span>
+                      <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>Lidköping</span>
+                    </>
+                  );
+                }
+                return <span>..</span>;
+              })()}
+            </div>
           </div>
         </div>
 
@@ -1946,9 +1954,9 @@ function App() {
         )}
       </div>
 
-      {/* Kategori-filter - dropdown for children, buttons for parents */}
+      {/* Kategori-filter - dropdown on mobile for everyone */}
       <div style={{ marginBottom: '0.5rem' }}>
-        {isChildUser ? (
+        {isMobile ? (
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
@@ -2252,7 +2260,7 @@ function App() {
             </h2>
           </div>
           {
-            !isChildUser && (
+            !isChildUser && !isMobile && (
               <form onSubmit={addTask} style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', boxShadow: '0 2px 4px var(--shadow-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <input type="text" placeholder="Vad behöver göras?" value={taskInput.text} onChange={e => setTaskInput({ ...taskInput, text: e.target.value })} style={{ flex: 3, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} />
@@ -2263,35 +2271,26 @@ function App() {
 
                 {/* Day Selector */}
                 <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
-                  {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map(day => (
+                  {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map((day, i) => (
                     <button
-                      key={day}
                       type="button"
+                      key={day}
+                      className={taskInput.days.includes(i) ? 'active' : ''}
                       onClick={() => {
-                        const newDays = taskInput.days.includes(day)
-                          ? taskInput.days.filter(d => d !== day)
-                          : [...taskInput.days, day];
+                        const newDays = taskInput.days.includes(i) ? taskInput.days.filter(d => d !== i) : [...taskInput.days, i];
                         setTaskInput({ ...taskInput, days: newDays });
                       }}
-                      style={{
-                        padding: '0.3rem 0.6rem',
-                        borderRadius: '12px',
-                        border: '1px solid var(--border-color)',
-                        background: taskInput.days.includes(day) ? '#4a90e2' : 'var(--card-bg)',
-                        color: taskInput.days.includes(day) ? 'white' : 'var(--text-main)',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem'
-                      }}
+                      style={{ padding: '0.3rem 0.6rem', borderRadius: '15px', border: taskInput.days.includes(i) ? '2px solid #2ed573' : '1px solid var(--input-border)', background: taskInput.days.includes(i) ? 'rgba(46, 213, 115, 0.2)' : 'var(--input-bg)', color: 'var(--text-main)', fontSize: '0.8rem' }}
                     >
                       {day}
                     </button>
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', cursor: 'pointer', color: 'var(--text-main)', border: '1px solid var(--border-color)', padding: '0.4rem', borderRadius: '4px', background: 'var(--input-bg)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
                     <input type="checkbox" checked={taskInput.isRecurring} onChange={e => setTaskInput({ ...taskInput, isRecurring: e.target.checked })} />
-                    🔁 Återkommande
+                    🔄 Återkommande
                   </label>
                   <select value={taskInput.assignee} onChange={e => setTaskInput({ ...taskInput, assignee: e.target.value })} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', flex: 1, background: 'var(--input-bg)', color: 'var(--text-main)' }}>
                     <option value="">Vem? (Valfritt)</option>
@@ -2304,6 +2303,25 @@ function App() {
               </form>
             )
           }
+          {/* Mobile: subtle add task button */}
+          {isMobile && isAdmin && (
+            <button
+              onClick={() => {/* TODO: open modal for adding task */ }}
+              style={{
+                background: 'transparent',
+                border: '1px dashed var(--border-color)',
+                borderRadius: '8px',
+                padding: '0.5rem',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                fontSize: '0.8rem',
+                width: '100%',
+                marginBottom: '0.5rem'
+              }}
+            >
+              + Lägg till uppgift
+            </button>
+          )}
           <div className="todo-list">
             {(() => {
               // 1. Filter Standard Tasks
