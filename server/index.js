@@ -381,12 +381,30 @@ app.post('/api/assign', (req, res) => {
 const distPath = path.resolve(__dirname, '..', 'dist');
 console.log('Serving frontend from:', distPath);
 
-// 1. Explicitly serve assets folder (Hängslen och livrem)
-// Peka /assets direkt mot /app/dist/assets. 
-const assetsPath = path.join(distPath, 'assets');
-app.use('/assets', express.static(assetsPath, {
-    fallthrough: false // Don't fall through to next middleware if file missing here!
-}));
+// 1. Manual Asset Handler for debugging and explicit serving
+app.get('/assets/:filename', (req, res) => {
+    const filename = req.params.filename;
+    // Security check
+    if (filename.includes('..') || filename.includes('/')) {
+        return res.status(403).send('Forbidden');
+    }
+
+    const filepath = path.join(distPath, 'assets', filename);
+    console.log(`[Asset Request] Looking for: ${filepath}`);
+
+    if (fs.existsSync(filepath)) {
+        // Explicitly set MIME types
+        if (filename.endsWith('.js')) res.type('application/javascript');
+        else if (filename.endsWith('.css')) res.type('text/css');
+        else if (filename.endsWith('.svg')) res.type('image/svg+xml');
+
+        console.log(`[Asset Request] Serving file: ${filename}`);
+        res.sendFile(filepath);
+    } else {
+        console.error(`[Asset Request] File NOT FOUND at: ${filepath}`);
+        res.status(404).send('Asset not found');
+    }
+});
 
 // 2. Serve other static files (like favicon, manifest) from root dist
 app.use(express.static(distPath));
