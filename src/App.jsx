@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import './App.css'
+import LoginPage from './components/LoginPage'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -156,6 +157,27 @@ const MapUpdater = ({ route, center }) => {
 function App() {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('familyOpsDarkMode') === 'true');
 
+  // Auth state - persisted in localStorage
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('familjecentralen_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+    localStorage.setItem('familjecentralen_user', JSON.stringify(user));
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('familjecentralen_user');
+  };
+
+  // If not logged in, show login page
+  if (!currentUser) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   useEffect(() => {
     localStorage.setItem('familyOpsDarkMode', darkMode);
     if (darkMode) {
@@ -281,19 +303,16 @@ function App() {
   const [events, setEvents] = useState([]);
   const [tasks, setTasks] = useState([]); // Standalone tasks
 
-  // Persist Admin State
-  const [isAdmin, setIsAdmin] = useState(() => {
-    return localStorage.getItem('familyOpsIsAdmin') === 'true';
-  });
+  // Persist Admin State - now derived from currentUser
+  const isAdmin = currentUser?.role === 'parent';
+  const isChildUser = currentUser?.role === 'child';
 
-  useEffect(() => {
-    localStorage.setItem('familyOpsIsAdmin', isAdmin);
-  }, [isAdmin]);
-
-  const isChildUser = !isAdmin;
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPin, setAdminPin] = useState('');
-  const [filterChild, setFilterChild] = useState('Alla');
+  // Default filter: children see only their own events
+  const [filterChild, setFilterChild] = useState(() =>
+    currentUser?.role === 'child' ? currentUser.name : 'Alla'
+  );
   const [filterCategory, setFilterCategory] = useState('Alla');
   const [selectedTodoWeek, setSelectedTodoWeek] = useState(getWeekNumber(new Date()));
   const [viewMode, setViewMode] = useState('week'); // 'upcoming', 'history', 'karta', 'week', 'month'
@@ -1542,10 +1561,20 @@ function App() {
       <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ textAlign: 'left', display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <h1 style={{ margin: '0 0 0.5rem 0' }}>Örtendahls familjecentral 🏠</h1>
-          <button onClick={() => isAdmin ? setIsAdmin(false) : setShowAdminLogin(true)} style={{
+          <span style={{
+            background: currentUser.role === 'parent' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+            color: 'white',
+            padding: '0.3rem 0.8rem',
+            borderRadius: '20px',
+            fontSize: '0.85rem',
+            fontWeight: '600'
+          }}>
+            {currentUser.name}
+          </span>
+          <button onClick={handleLogout} style={{
             background: 'transparent', border: '1px solid #ccc', borderRadius: '8px', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
           }}>
-            {isAdmin ? '🔓 Admin (Logga ut)' : '🔒 Förälder-inlogg'}
+            🚪 Logga ut
           </button>
         </div>
 
