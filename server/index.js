@@ -142,7 +142,7 @@ app.get('/api/events', async (req, res) => {
         // Helper delay function
         const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-        // Hämta från iCal (Sekventiellt med native fetch för maximal kontroll)
+        // Hämta från iCal (Sekventiellt och långsamt för att undvika 429)
         for (const cal of CALENDARS) {
             try {
                 // Vi fejkar en fetch om URLen är placeholder
@@ -153,21 +153,8 @@ app.get('/api/events', async (req, res) => {
 
                 console.log(`Fetching calendar: ${cal.name}...`);
 
-                // Native fetch with headers mimicking a calendar app (Apple Calendar)
-                // This is often more effective than a browser UA for ICS files
-                const response = await fetch(cal.url, {
-                    headers: {
-                        'User-Agent': 'Mac OS X/10.15.7 (19H2) CalendarAgent/954',
-                        'Accept': '*/*'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const icsText = await response.text();
-                const data = ical.parseICS(icsText);
+                // Back to basic node-ical, but sequential and slow
+                const data = await ical.async.fromURL(cal.url);
 
                 const eventsFound = Object.values(data).filter(e => e.type === 'VEVENT').length;
                 console.log(`Successfully fetched ${eventsFound} events from ${cal.name}`);
@@ -190,8 +177,8 @@ app.get('/api/events', async (req, res) => {
                     }
                 }
 
-                // Small delay between requests to be nice to Google
-                await delay(500);
+                // 2 second delay between requests - SAFETY FIRST
+                await delay(2000);
 
             } catch (e) {
                 console.error(`Kunde inte hämta kalender: ${cal.name}. Error: ${e.message}`);
