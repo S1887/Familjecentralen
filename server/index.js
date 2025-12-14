@@ -464,6 +464,6 @@ app.use((req, res) => {
 });
 
 // Duplicate fallback removed
-app.listen(PORT, () => {
-    console.log(`Family Ops Backend körs på http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Family Ops Backend körs på http://0.0.0.0:${PORT}`);
 });
