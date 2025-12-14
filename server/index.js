@@ -139,16 +139,25 @@ app.get('/api/events', async (req, res) => {
         const includeTrash = req.query.includeTrash === 'true';
 
         // Hämta från iCal
-        await Promise.all(CALENDARS.map(async (cal) => {
+        // Hämta från iCal (Sekventiellt för att undvika 429 Too Many Requests)
+        for (const cal of CALENDARS) {
             try {
                 // Vi fejkar en fetch om URLen är placeholder
                 if (cal.url.includes('private-xxxxx')) {
                     console.log(`Skippar kalender ${cal.name} (ingen giltig URL än)`);
-                    return;
+                    continue;
                 }
 
                 console.log(`Fetching calendar: ${cal.name}...`);
-                const data = await ical.async.fromURL(cal.url);
+
+                // Add explicit User-Agent to bypass Google 429 blocks
+                const opts = {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    }
+                };
+
+                const data = await ical.async.fromURL(cal.url, opts);
                 const eventsFound = Object.values(data).filter(e => e.type === 'VEVENT').length;
                 console.log(`Successfully fetched ${eventsFound} events from ${cal.name}`);
 
@@ -172,7 +181,7 @@ app.get('/api/events', async (req, res) => {
             } catch (e) {
                 console.error(`Kunde inte hämta kalender: ${cal.name}. Error: ${e.message}`);
             }
-        }));
+        }
 
         // Lägg till lokala events
         const formattedLocalEvents = localEvents.map(ev => ({
