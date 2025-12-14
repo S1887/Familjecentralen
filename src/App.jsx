@@ -173,11 +173,6 @@ function App() {
     localStorage.removeItem('familjecentralen_user');
   };
 
-  // If not logged in, show login page
-  if (!currentUser) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
-
   useEffect(() => {
     localStorage.setItem('familyOpsDarkMode', darkMode);
     if (darkMode) {
@@ -189,6 +184,15 @@ function App() {
 
   const [viewTrash, setViewTrash] = useState(false);
   const [trashItems, setTrashItems] = useState([]);
+
+  // Mobile detection for responsive layout
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 600);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 600);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const getWeekNumber = (d) => {
     d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -315,8 +319,22 @@ function App() {
   );
   const [filterCategory, setFilterCategory] = useState('Alla');
   const [selectedTodoWeek, setSelectedTodoWeek] = useState(getWeekNumber(new Date()));
-  const [viewMode, setViewMode] = useState('week'); // 'upcoming', 'history', 'karta', 'week', 'month'
+  const [viewMode, setViewMode] = useState(() =>
+    window.innerWidth < 600 ? 'next3days' : 'week'
+  );
   const [activeAssignment, setActiveAssignment] = useState(null);
+
+  // Auto-scroll week view to center today's column on mobile
+  useEffect(() => {
+    if (isMobile && viewMode === 'week') {
+      setTimeout(() => {
+        const todayCol = document.getElementById('today-column');
+        if (todayCol) {
+          todayCol.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      }, 100);
+    }
+  }, [viewMode, isMobile]);
 
   // State för att skapa nytt event
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
@@ -968,6 +986,11 @@ function App() {
       });
   };
 
+  // If not logged in, show login page (after all hooks)
+  if (!currentUser) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   return (
     <div className="container" style={{ position: 'relative' }}>
 
@@ -1132,7 +1155,7 @@ function App() {
                 )}
               </MapContainer>
             ) : (
-              <div style={{ height: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', borderRadius: '8px', color: '#666', gap: '1rem' }}>
+              <div style={{ height: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--button-bg)', borderRadius: '8px', color: 'var(--text-muted)', gap: '1rem' }}>
                 {isSearchingLocation ? (
                   <p>🔍 Söker efter platsen...</p>
                 ) : (
@@ -1267,7 +1290,7 @@ function App() {
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
                   <button type="button" onClick={() => setIsCreatingEvent(false)} style={{
-                    padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer'
+                    padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', cursor: 'pointer'
                   }}>Avbryt</button>
                   <button type="submit" style={{
                     padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer'
@@ -1287,7 +1310,7 @@ function App() {
             background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
           }}>
             <div className="modal" style={{
-              background: 'white', padding: '2rem', borderRadius: '16px', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto',
+              background: 'var(--modal-bg)', color: 'var(--text-main)', padding: '2rem', borderRadius: '16px', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto',
               boxShadow: '0 10px 25px rgba(0,0,0,0.2)', textAlign: 'left'
             }}>
               <h2>✏️ Redigera händelse</h2>
@@ -1465,7 +1488,7 @@ function App() {
 
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <button type="button" onClick={() => setIsEditingEvent(false)} style={{
-                      padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer'
+                      padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', cursor: 'pointer'
                     }}>Avbryt</button>
                     <button type="submit" style={{
                       padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer'
@@ -1486,7 +1509,7 @@ function App() {
             background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000
           }} onClick={() => setShowAdminLogin(false)}>
             <div style={{
-              background: 'white', padding: '2rem', borderRadius: '16px', textAlign: 'center',
+              background: 'var(--modal-bg)', color: 'var(--text-main)', padding: '2rem', borderRadius: '16px', textAlign: 'center',
               boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
             }} onClick={e => e.stopPropagation()}>
               <h3>Ange Föräldrakod 🔒</h3>
@@ -1522,8 +1545,8 @@ function App() {
             background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100
           }} onClick={() => setViewTrash(false)}>
             <div className="modal" style={{
-              background: 'white', padding: '2rem', borderRadius: '16px', width: '90%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.2)', textAlign: 'left', color: '#333'
+              background: 'var(--modal-bg)', padding: '2rem', borderRadius: '16px', width: '90%', maxWidth: '600px', maxHeight: '80vh', overflowY: 'auto',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.2)', textAlign: 'left', color: 'var(--text-main)'
             }} onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h2>🗑️ Papperskorg</h2>
@@ -1535,10 +1558,10 @@ function App() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {trashItems.map(item => (
-                    <div key={item.uid} style={{ border: '1px solid #eee', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9f9f9', opacity: 0.8 }}>
+                    <div key={item.uid} style={{ border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-bg)', opacity: 0.8 }}>
                       <div>
                         <div style={{ fontWeight: 'bold' }}>{item.summary}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                           {new Date(item.start).toLocaleString('sv-SE')}
                           {item.cancelled ? <span style={{ color: 'orange', marginLeft: '0.5rem' }}>(Inställd)</span> : <span style={{ color: 'red', marginLeft: '0.5rem' }}>(Borttagen)</span>}
                         </div>
@@ -1558,23 +1581,33 @@ function App() {
       }
 
       {/* Header */}
-      <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ textAlign: 'left', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <h1 style={{ margin: '0 0 0.5rem 0' }}>Örtendahls familjecentral 🏠</h1>
+      <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div style={{ textAlign: 'left', display: 'flex', alignItems: 'center', gap: isMobile ? '0.5rem' : '1rem', flexWrap: 'wrap' }}>
+          <h1 style={{ margin: 0, fontSize: isMobile ? '1rem' : '1.5rem' }}>
+            {isMobile ? '🏠' : 'Örtendahls familjecentral 🏠'}
+          </h1>
           <span style={{
             background: currentUser.role === 'parent' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
             color: 'white',
-            padding: '0.3rem 0.8rem',
+            padding: isMobile ? '0.25rem 0.6rem' : '0.3rem 0.8rem',
             borderRadius: '20px',
-            fontSize: '0.85rem',
+            fontSize: isMobile ? '0.8rem' : '0.85rem',
             fontWeight: '600'
           }}>
             {currentUser.name}
           </span>
           <button onClick={handleLogout} style={{
-            background: 'transparent', border: '1px solid #ccc', borderRadius: '8px', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem'
+            background: 'transparent',
+            border: '1px solid #ccc',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            padding: isMobile ? '0.3rem' : '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            fontSize: isMobile ? '0.8rem' : '1rem'
           }}>
-            🚪 Logga ut
+            {isMobile ? '🚪' : '🚪 Logga ut'}
           </button>
         </div>
 
@@ -1874,40 +1907,105 @@ function App() {
         )}
       </div>
 
-      {/* Visa filter-bar för alla nu */}
-      <div>
-        <div className="filter-bar">
-          {children.map(child => (
-            <button
-              key={child}
-              className={`filter-btn ${filterChild === child ? 'active' : ''} `}
-              onClick={() => setFilterChild(child)}
-            >
-              {child === 'Alla' ? 'Hela Familjen' : child}
-            </button>
-          ))}
-        </div>
+      {/* Family filter - dropdown on mobile, buttons on desktop */}
+      <div style={{ marginBottom: '0.5rem' }}>
+        {isMobile ? (
+          <select
+            value={filterChild}
+            onChange={(e) => setFilterChild(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              fontSize: '1rem',
+              borderRadius: '25px',
+              border: '2px solid #646cff',
+              background: 'var(--card-bg)',
+              color: 'var(--text-main)',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+          >
+            {children.map(child => (
+              <option key={child} value={child}>
+                {child === 'Alla' ? '👨‍👩‍👧‍👦 Hela Familjen' : child}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="filter-bar">
+            {children.map(child => (
+              <button
+                key={child}
+                className={`filter-btn ${filterChild === child ? 'active' : ''}`}
+                onClick={() => setFilterChild(child)}
+              >
+                {child === 'Alla' ? 'Hela Familjen' : child}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Kategori-filter */}
-      <div>
-        <div className="filter-bar" style={{ marginTop: '0.5rem', flexWrap: 'wrap' }}>
-          {['Alla', 'Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => (
-            <button
-              key={cat}
-              className={`filter-btn ${filterCategory === cat ? 'active' : ''} `}
-              onClick={() => setFilterCategory(cat)}
-              style={{ fontSize: '0.9rem', padding: '0.4rem 0.8rem' }}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+      {/* Kategori-filter - dropdown for children, buttons for parents */}
+      <div style={{ marginBottom: '0.5rem' }}>
+        {isChildUser ? (
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            style={{
+              padding: '0.4rem 0.8rem',
+              fontSize: '0.85rem',
+              borderRadius: '15px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--card-bg)',
+              color: 'var(--text-main)',
+              cursor: 'pointer'
+            }}
+          >
+            {['Alla', 'Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        ) : (
+          <div className="category-filter-container" style={{
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch'
+          }}>
+            <div className="filter-bar" style={{
+              marginTop: '0.5rem',
+              flexWrap: isMobile ? 'nowrap' : 'wrap',
+              justifyContent: isMobile ? 'flex-start' : 'center'
+            }}>
+              {['Alla', 'Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => (
+                <button
+                  key={cat}
+                  className={`filter-btn ${filterCategory === cat ? 'active' : ''}`}
+                  onClick={() => setFilterCategory(cat)}
+                  style={{
+                    fontSize: isMobile ? '0.8rem' : '0.9rem',
+                    padding: isMobile ? '0.35rem 0.6rem' : '0.4rem 0.8rem',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* View Mode Selector */}
-      <div style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0 1rem 0' }}>
-        <div style={{ background: '#f5f5f5', borderRadius: '30px', padding: '0.3rem', display: 'flex', gap: '0.2rem' }}>
+      {/* View Mode Selector - order 2 on mobile (after Todo which is order 1) */}
+      <div className="view-mode-selector" style={{
+        display: 'flex',
+        justifyContent: 'center',
+        margin: '1rem 0',
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        order: isMobile ? 2 : 0
+      }}>
+        <div style={{ background: 'var(--button-bg)', borderRadius: '30px', padding: '0.3rem', display: 'flex', gap: '0.2rem', flexShrink: 0 }}>
           {[
             { id: 'upcoming', label: 'Kommande' },
             { id: 'next3days', label: '3 Dagar' },
@@ -1923,24 +2021,31 @@ function App() {
                 color: viewMode === view.id ? '#333' : '#666',
                 border: 'none',
                 borderRadius: '25px',
-                padding: '0.5rem 1rem',
+                padding: '0.4rem 0.7rem',
+                fontSize: '0.85rem',
                 cursor: 'pointer',
                 fontWeight: viewMode === view.id ? 'bold' : 'normal',
                 boxShadow: viewMode === view.id ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
                 transition: 'all 0.2s',
-                textTransform: 'capitalize'
+                textTransform: 'capitalize',
+                whiteSpace: 'nowrap'
               }}
             >
               {view.label}
             </button>
           ))}
         </div>
-      </div>
+      </div >
 
-      {/* Main Content Grid (Timeline + Todo) */}
-      <div className="main-content-grid" style={{ marginTop: '0' }}>
+      {/* Main Content Grid (Timeline + Todo) - reversed on mobile so Todo appears first */}
+      <div className="main-content-grid" style={{
+        marginTop: '0',
+        display: 'flex',
+        flexDirection: isMobile ? 'column-reverse' : 'row',
+        gap: '1rem'
+      }}>
         {/* Left: Timeline / Calendar View */}
-        <div className="timeline-section">
+        < div className="timeline-section" >
           <div className="timeline">
             <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               {(viewMode === 'week' || viewMode === 'month') ? (
@@ -2041,7 +2146,11 @@ function App() {
                     const dayEvents = filteredEventsList.filter(e => isSameDay(e.start, d));
                     const isTodayHeader = isSameDay(d, new Date());
                     return (
-                      <div key={d.toISOString()} className="week-column">
+                      <div
+                        key={d.toISOString()}
+                        className="week-column"
+                        id={isTodayHeader ? 'today-column' : undefined}
+                      >
                         <div className="week-column-header" style={isTodayHeader ? { background: '#2ed573', color: 'white' } : {}}>
                           {d.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric' })}
                         </div>
@@ -2094,7 +2203,7 @@ function App() {
             {viewMode !== 'month' && viewMode !== 'week' && (
               <>
                 {otherEvents.length === 0 ? (
-                  <p style={{ color: '#666', fontStyle: 'italic' }}>Inga kommande händelser matchar filtret.</p>
+                  <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Inga kommande händelser matchar filtret.</p>
                 ) : (
                   otherEvents.map(event => {
                     let sourceClass = '';
@@ -2131,10 +2240,10 @@ function App() {
               </>
             )}
           </div>
-        </div>
+        </div >
 
         {/* Right: Todo */}
-        <div className="todo-section">
+        < div className="todo-section" >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderLeft: '4px solid #2ed573', paddingLeft: '1rem' }}>
             <h2 style={{ margin: 0 }}>
               ✅ Att göra ({viewMode === 'month' ? selectedDate.toLocaleDateString('sv-SE', { month: 'long' }) :
@@ -2142,57 +2251,59 @@ function App() {
                   `v.${getWeekNumber(selectedDate)}`})
             </h2>
           </div>
-          {!isChildUser && (
-            <form onSubmit={addTask} style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', boxShadow: '0 2px 4px var(--shadow-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input type="text" placeholder="Vad behöver göras?" value={taskInput.text} onChange={e => setTaskInput({ ...taskInput, text: e.target.value })} style={{ flex: 3, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} />
-                {!taskInput.isRecurring && (
-                  <input type="number" placeholder="V" value={taskInput.week} onChange={e => setTaskInput({ ...taskInput, week: e.target.value })} style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} title="Vecka" />
-                )}
-              </div>
+          {
+            !isChildUser && (
+              <form onSubmit={addTask} style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', boxShadow: '0 2px 4px var(--shadow-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <input type="text" placeholder="Vad behöver göras?" value={taskInput.text} onChange={e => setTaskInput({ ...taskInput, text: e.target.value })} style={{ flex: 3, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} />
+                  {!taskInput.isRecurring && (
+                    <input type="number" placeholder="V" value={taskInput.week} onChange={e => setTaskInput({ ...taskInput, week: e.target.value })} style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} title="Vecka" />
+                  )}
+                </div>
 
-              {/* Day Selector */}
-              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
-                {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map(day => (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => {
-                      const newDays = taskInput.days.includes(day)
-                        ? taskInput.days.filter(d => d !== day)
-                        : [...taskInput.days, day];
-                      setTaskInput({ ...taskInput, days: newDays });
-                    }}
-                    style={{
-                      padding: '0.3rem 0.6rem',
-                      borderRadius: '12px',
-                      border: '1px solid var(--border-color)',
-                      background: taskInput.days.includes(day) ? '#4a90e2' : 'var(--card-bg)',
-                      color: taskInput.days.includes(day) ? 'white' : 'var(--text-main)',
-                      cursor: 'pointer',
-                      fontSize: '0.8rem'
-                    }}
-                  >
-                    {day}
-                  </button>
-                ))}
-              </div>
+                {/* Day Selector */}
+                <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                  {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map(day => (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => {
+                        const newDays = taskInput.days.includes(day)
+                          ? taskInput.days.filter(d => d !== day)
+                          : [...taskInput.days, day];
+                        setTaskInput({ ...taskInput, days: newDays });
+                      }}
+                      style={{
+                        padding: '0.3rem 0.6rem',
+                        borderRadius: '12px',
+                        border: '1px solid var(--border-color)',
+                        background: taskInput.days.includes(day) ? '#4a90e2' : 'var(--card-bg)',
+                        color: taskInput.days.includes(day) ? 'white' : 'var(--text-main)',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem'
+                      }}
+                    >
+                      {day}
+                    </button>
+                  ))}
+                </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', cursor: 'pointer', color: 'var(--text-main)', border: '1px solid var(--border-color)', padding: '0.4rem', borderRadius: '4px', background: 'var(--input-bg)' }}>
-                  <input type="checkbox" checked={taskInput.isRecurring} onChange={e => setTaskInput({ ...taskInput, isRecurring: e.target.checked })} />
-                  🔁 Återkommande
-                </label>
-                <select value={taskInput.assignee} onChange={e => setTaskInput({ ...taskInput, assignee: e.target.value })} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', flex: 1, background: 'var(--input-bg)', color: 'var(--text-main)' }}>
-                  <option value="">Vem? (Valfritt)</option>
-                  {children.filter(c => c !== 'Alla').map(c => <option key={c} value={c}>{c}</option>)}
-                  <option value="Svante">Svante</option>
-                  <option value="Sarah">Sarah</option>
-                </select>
-                <button type="submit" style={{ background: '#2ed573', color: 'white', border: 'none', borderRadius: '4px', padding: '0 1rem', cursor: 'pointer' }}>Lägg till</button>
-              </div>
-            </form>
-          )}
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', cursor: 'pointer', color: 'var(--text-main)', border: '1px solid var(--border-color)', padding: '0.4rem', borderRadius: '4px', background: 'var(--input-bg)' }}>
+                    <input type="checkbox" checked={taskInput.isRecurring} onChange={e => setTaskInput({ ...taskInput, isRecurring: e.target.checked })} />
+                    🔁 Återkommande
+                  </label>
+                  <select value={taskInput.assignee} onChange={e => setTaskInput({ ...taskInput, assignee: e.target.value })} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', flex: 1, background: 'var(--input-bg)', color: 'var(--text-main)' }}>
+                    <option value="">Vem? (Valfritt)</option>
+                    {children.filter(c => c !== 'Alla').map(c => <option key={c} value={c}>{c}</option>)}
+                    <option value="Svante">Svante</option>
+                    <option value="Sarah">Sarah</option>
+                  </select>
+                  <button type="submit" style={{ background: '#2ed573', color: 'white', border: 'none', borderRadius: '4px', padding: '0 1rem', cursor: 'pointer' }}>Lägg till</button>
+                </div>
+              </form>
+            )
+          }
           <div className="todo-list">
             {(() => {
               // 1. Filter Standard Tasks

@@ -32,10 +32,31 @@
   --header-border: #333;
 }
 
+/* Global reset for mobile */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
+  margin: 0;
+  padding: 0;
   background-color: var(--bg-main);
   color: var(--text-main);
   transition: background-color 0.3s, color 0.3s;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 #root {
@@ -226,6 +247,21 @@ body {
   background: #646cff;
   color: white;
   border-color: #646cff;
+}
+
+/* View Mode Selector - horizontal scroll on mobile */
+.view-mode-selector {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE/Edge */
+}
+
+.view-mode-selector::-webkit-scrollbar {
+  display: none;
+  /* Chrome/Safari */
 }
 
 .timeline h2 {
@@ -528,9 +564,9 @@ h3 {
 }
 
 .week-column {
-  flex: 0 0 75px;
-  /* Fixed width for scrollable columns */
-  min-width: 75px;
+  flex: 0 0 100px;
+  /* Fixed width for horizontal scroll - swipe to see more days */
+  min-width: 100px;
   background: var(--card-bg);
   border-radius: 8px;
   border: 1px solid var(--border-color);
@@ -738,5 +774,44 @@ h3 {
     min-height: 120px;
     font-size: 0.8rem !important;
     padding: 0.6rem !important;
+  }
+}
+
+/* Mobile: Hero section stacking */
+@media (max-width: 600px) {
+  .today-hero {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .today-hero>div {
+    width: 100% !important;
+  }
+
+  .weather-widget {
+    text-align: center;
+    margin-top: 0.5rem;
+  }
+
+  /* View mode tabs - horizontal scroll */
+  .view-mode-selector {
+    justify-content: flex-start !important;
+    padding: 0 0.5rem;
+  }
+
+  .view-mode-selector>div {
+    min-width: max-content;
+  }
+
+  /* Header stacking on very small screens */
+  .header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    text-align: left;
+  }
+
+  .header h1 {
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
   }
 }
