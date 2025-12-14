@@ -386,6 +386,8 @@ try {
     console.error('Error checking dist directory:', err);
 }
 
+// Explicitly serve assets to prevent fallback issues
+app.use('/assets', express.static(path.join(distPath, 'assets')));
 app.use(express.static(distPath));
 
 // Fallback handler - Matches everything not already caught
