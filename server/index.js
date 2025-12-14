@@ -153,14 +153,12 @@ app.get('/api/events', async (req, res) => {
 
                 console.log(`Fetching calendar: ${cal.name}...`);
 
-                // Native fetch with robust headers mimicking a browser
+                // Native fetch with headers mimicking a calendar app (Apple Calendar)
+                // This is often more effective than a browser UA for ICS files
                 const response = await fetch(cal.url, {
                     headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept': 'text/calendar, text/x-vcalendar, application/json, */*',
-                        'Accept-Language': 'en-US,en;q=0.9,sv;q=0.8',
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
+                        'User-Agent': 'Mac OS X/10.15.7 (19H2) CalendarAgent/954',
+                        'Accept': '*/*'
                     }
                 });
 
