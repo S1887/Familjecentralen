@@ -305,7 +305,7 @@ function App() {
   }, []);
 
   const fetchEvents = () => {
-    fetch('/api/events')
+    fetch('./api/events')
       .then(res => res.json())
       .then(data => {
         // Deduplicate: Hide external events that match a local event (Same Summary & Start)
@@ -332,7 +332,7 @@ function App() {
   };
 
   const fetchTasks = () => {
-    fetch('/api/tasks')
+    fetch('./api/tasks')
       .then(res => res.json())
       .then(data => setTasks(data))
       .catch(err => console.error("Error fetching tasks:", err));
@@ -476,7 +476,7 @@ function App() {
   const assignTask = async (eventId, role, assignedUser) => {
     if (!assignedUser) return;
     try {
-      await fetch('/api/assign', {
+      await fetch('./api/assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ eventId, user: assignedUser, role })
@@ -740,7 +740,7 @@ function App() {
     }
 
     try {
-      await fetch('/api/update-event', {
+      await fetch('./api/update-event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -773,7 +773,7 @@ function App() {
     const endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
 
     try {
-      await fetch('/api/create-event', {
+      await fetch('./api/create-event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -843,7 +843,7 @@ function App() {
     e.preventDefault();
     if (!taskInput.text) return;
 
-    fetch('/api/tasks', {
+    fetch('./api/tasks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -863,14 +863,14 @@ function App() {
   };
 
   const fetchTrash = () => {
-    fetch('/api/trash')
+    fetch('./api/trash')
       .then(res => res.json())
       .then(data => setTrashItems(data))
       .catch(err => console.error(err));
   };
 
   const restoreEvent = (uid) => {
-    fetch('/api/restore-event', {
+    fetch('./api/restore-event', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid })
@@ -884,7 +884,7 @@ function App() {
   const deleteEvent = (event) => {
     if (!window.confirm('Är du säker på att du vill ta bort denna händelse?')) return;
 
-    fetch('/api/delete-event', {
+    fetch('./api/delete-event', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...event, uid: event.uid })
@@ -913,7 +913,7 @@ function App() {
     if (!window.confirm('Vill du ställa in denna händelse?')) return;
 
     // We use update-event to set cancelled: true
-    fetch('/api/update-event', {
+    fetch('./api/update-event', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid: event.uid, cancelled: true, summary: event.summary, start: event.start, end: event.end })
