@@ -8,8 +8,8 @@ RUN apk add --no-cache nodejs npm git
 WORKDIR /app
 
 # Klona koden från GitHub
-# Klona koden från GitHub (Uppdaterad 1.0.2)
-ARG CACHEBUST=2
+# Klona koden från GitHub (Uppdaterad 2.1.5)
+ARG CACHEBUST=3
 RUN git clone https://github.com/S1887/Familjecentralen.git .
 
 # Installera beroenden
