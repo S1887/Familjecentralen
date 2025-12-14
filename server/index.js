@@ -52,33 +52,64 @@ const CALENDARS = [
     }
 ];
 
-// ============ KALENDER-CACHE (löser 429-problemet) ============
+// ============ ROBUST KALENDER-CACHE ============
+// 1. Disk persistence - survives restarts
+// 2. 1-hour cache duration
+// 3. Background scheduled refresh
+// 4. Graceful error handling
+
+const CACHE_FILE = path.join(__dirname, 'calendar_cache.json');
+const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
 let cachedCalendarEvents = [];
 let cacheTimestamp = 0;
-const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minuter
-let isFetching = false; // Förhindra parallella hämtningar
+let isFetching = false;
+let lastFetchError = null;
 
 // Helper delay function
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-// Funktion för att hämta och cacha kalendrar
-async function fetchAndCacheCalendars() {
-    // Undvik parallella anrop
-    if (isFetching) {
-        console.log('[Cache] Already fetching, returning current cache');
-        return cachedCalendarEvents;
+// Load cache from disk on startup
+function loadCacheFromDisk() {
+    try {
+        if (fs.existsSync(CACHE_FILE)) {
+            const data = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
+            cachedCalendarEvents = data.events || [];
+            cacheTimestamp = data.timestamp || 0;
+            console.log(`[Cache] Loaded ${cachedCalendarEvents.length} events from disk (age: ${Math.round((Date.now() - cacheTimestamp) / 1000 / 60)} min)`);
+            return true;
+        }
+    } catch (e) {
+        console.error('[Cache] Failed to load from disk:', e.message);
     }
+    return false;
+}
 
-    // Returnera cache om den fortfarande är giltig
-    const now = Date.now();
-    if (cachedCalendarEvents.length > 0 && (now - cacheTimestamp) < CACHE_DURATION_MS) {
-        console.log('[Cache] Returning cached data (age: ' + Math.round((now - cacheTimestamp) / 1000) + 's)');
-        return cachedCalendarEvents;
+// Save cache to disk
+function saveCacheToDisk() {
+    try {
+        fs.writeFileSync(CACHE_FILE, JSON.stringify({
+            events: cachedCalendarEvents,
+            timestamp: cacheTimestamp,
+            savedAt: new Date().toISOString()
+        }, null, 2));
+        console.log(`[Cache] Saved ${cachedCalendarEvents.length} events to disk`);
+    } catch (e) {
+        console.error('[Cache] Failed to save to disk:', e.message);
+    }
+}
+
+// Fetch calendars (internal function)
+async function fetchCalendarsFromGoogle() {
+    if (isFetching) {
+        console.log('[Cache] Already fetching, skipping...');
+        return false;
     }
 
     isFetching = true;
-    console.log('[Cache] Fetching fresh calendar data...');
+    console.log('[Cache] Fetching fresh calendar data from Google...');
     const freshEvents = [];
+    let successCount = 0;
+    let errorCount = 0;
 
     for (const cal of CALENDARS) {
         try {
@@ -97,7 +128,8 @@ async function fetchAndCacheCalendars() {
 
             const data = await ical.async.fromURL(cal.url, opts);
             const eventsFound = Object.values(data).filter(e => e.type === 'VEVENT').length;
-            console.log(`Successfully fetched ${eventsFound} events from ${cal.name}`);
+            console.log(`✓ Successfully fetched ${eventsFound} events from ${cal.name}`);
+            successCount++;
 
             for (const k in data) {
                 const ev = data[k];
@@ -117,19 +149,76 @@ async function fetchAndCacheCalendars() {
                 }
             }
         } catch (e) {
-            console.error(`Kunde inte hämta kalender: ${cal.name}. Error: ${e.message}`);
+            console.error(`✗ Kunde inte hämta kalender: ${cal.name}. Error: ${e.message}`);
+            errorCount++;
+            lastFetchError = { calendar: cal.name, error: e.message, time: new Date().toISOString() };
         }
 
-        // 3 sekunder mellan varje kalender för att vara extra snäll mot Google
-        await delay(3000);
+        // 5 seconds between each calendar - be extra nice to Google
+        await delay(5000);
     }
 
-    cachedCalendarEvents = freshEvents;
-    cacheTimestamp = Date.now();
     isFetching = false;
-    console.log(`[Cache] Updated with ${freshEvents.length} total events`);
-    return freshEvents;
+
+    // Only update cache if we got ANY new events
+    if (freshEvents.length > 0) {
+        cachedCalendarEvents = freshEvents;
+        cacheTimestamp = Date.now();
+        saveCacheToDisk();
+        console.log(`[Cache] Updated with ${freshEvents.length} events (${successCount} calendars OK, ${errorCount} failed)`);
+        return true;
+    } else if (cachedCalendarEvents.length > 0) {
+        console.log(`[Cache] Fetch returned 0 events, keeping old cache (${cachedCalendarEvents.length} events)`);
+        return false;
+    }
+
+    return false;
 }
+
+// Public function to get cached calendars
+async function fetchAndCacheCalendars() {
+    const now = Date.now();
+    const cacheAge = now - cacheTimestamp;
+
+    // Return cache if still valid
+    if (cachedCalendarEvents.length > 0 && cacheAge < CACHE_DURATION_MS) {
+        console.log(`[Cache] Returning cached data (age: ${Math.round(cacheAge / 1000 / 60)} min)`);
+        return cachedCalendarEvents;
+    }
+
+    // Try to fetch fresh data
+    const success = await fetchCalendarsFromGoogle();
+
+    // If fetch failed but we have cached data, use it
+    if (!success && cachedCalendarEvents.length > 0) {
+        console.log('[Cache] Using stale cache data due to fetch failure');
+        return cachedCalendarEvents;
+    }
+
+    return cachedCalendarEvents;
+}
+
+// Manual refresh endpoint will be added in API section
+
+// Schedule background refresh every hour
+function startScheduledRefresh() {
+    console.log('[Scheduler] Starting hourly calendar refresh...');
+
+    // Initial fetch after 30 seconds (give server time to start)
+    setTimeout(async () => {
+        console.log('[Scheduler] Running initial calendar fetch...');
+        await fetchCalendarsFromGoogle();
+    }, 30000);
+
+    // Then refresh every hour
+    setInterval(async () => {
+        console.log('[Scheduler] Running scheduled calendar refresh...');
+        await fetchCalendarsFromGoogle();
+    }, CACHE_DURATION_MS);
+}
+
+// Load cache from disk on startup
+loadCacheFromDisk();
 
 // Helper för att läsa DB (Assignments)
 const readDb = () => {
@@ -208,6 +297,36 @@ app.delete('/api/tasks/:id', (req, res) => {
     tasksData = tasksData.filter(t => t.id !== id);
     saveTasks();
     res.json({ success: true });
+});
+
+// Manual calendar refresh endpoint
+app.post('/api/refresh-calendars', async (req, res) => {
+    console.log('[API] Manual calendar refresh triggered');
+    try {
+        const success = await fetchCalendarsFromGoogle();
+        res.json({
+            success,
+            eventsCount: cachedCalendarEvents.length,
+            lastError: lastFetchError,
+            timestamp: new Date().toISOString()
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Cache status endpoint
+app.get('/api/cache-status', (req, res) => {
+    const now = Date.now();
+    const cacheAge = now - cacheTimestamp;
+    res.json({
+        eventsCount: cachedCalendarEvents.length,
+        cacheAgeMinutes: Math.round(cacheAge / 1000 / 60),
+        cacheDurationMinutes: CACHE_DURATION_MS / 1000 / 60,
+        isStale: cacheAge >= CACHE_DURATION_MS,
+        lastFetchError,
+        isFetching
+    });
 });
 
 app.get('/api/events', async (req, res) => {
@@ -466,4 +585,6 @@ app.use((req, res) => {
 // Duplicate fallback removed
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Family Ops Backend körs på http://0.0.0.0:${PORT}`);
+    // Start the background calendar refresh scheduler
+    startScheduledRefresh();
 });
