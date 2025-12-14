@@ -122,20 +122,7 @@ app.put('/api/tasks/:id', (req, res) => {
     }
 });
 
-// Express 5 kräver regex för "matcha allt"
-app.get(/.*/, (req, res) => {
-    if (!req.path.startsWith('/api')) {
-        const indexPath = path.join(__dirname, '../dist/index.html');
-        if (fs.existsSync(indexPath)) {
-            res.sendFile(indexPath);
-        } else {
-            // Fallback for dev mode without build
-            res.status(404).send('Frontend not built. In dev mode? Check console.');
-        }
-    } else {
-        res.status(404).json({ error: 'Not found' });
-    }
-});
+// Wildcard route removed - handled by fallback at end of file
 
 app.delete('/api/tasks/:id', (req, res) => {
     const { id } = req.params;
@@ -427,21 +414,7 @@ app.use((req, res) => {
     }
 });
 
-// Fallback handler - Serves index.html for SPA routing
-app.use((req, res) => {
-    // avoid serving index.html for API calls or obviously missing assets
-    if (req.path.startsWith('/api') || req.path.includes('.')) {
-        res.status(404).send('Not found');
-        return;
-    }
-
-    const indexPath = path.join(distPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
-    } else {
-        res.status(404).send('Frontend not built. In dev mode? Check console.');
-    }
-});
+// Duplicate fallback removed
 app.listen(PORT, () => {
     console.log(`Family Ops Backend körs på http://localhost:${PORT}`);
 });
