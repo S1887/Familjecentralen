@@ -153,8 +153,14 @@ app.get('/api/events', async (req, res) => {
 
                 console.log(`Fetching calendar: ${cal.name}...`);
 
-                // Back to basic node-ical, but sequential and slow
-                const data = await ical.async.fromURL(cal.url);
+                // Combine strategies: Use CalendarAgent header AND slow sequential fetching
+                const opts = {
+                    headers: {
+                        'User-Agent': 'Mac OS X/10.15.7 (19H2) CalendarAgent/954'
+                    }
+                };
+
+                const data = await ical.async.fromURL(cal.url, opts);
 
                 const eventsFound = Object.values(data).filter(e => e.type === 'VEVENT').length;
                 console.log(`Successfully fetched ${eventsFound} events from ${cal.name}`);
@@ -177,12 +183,12 @@ app.get('/api/events', async (req, res) => {
                     }
                 }
 
-                // 2 second delay between requests - SAFETY FIRST
-                await delay(2000);
-
             } catch (e) {
                 console.error(`Kunde inte hämta kalender: ${cal.name}. Error: ${e.message}`);
             }
+
+            // 2 second delay ALWAYS (even after error) to let Google breathe
+            await delay(2000);
         }
 
         // Lägg till lokala events
