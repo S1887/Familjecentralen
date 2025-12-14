@@ -147,39 +147,32 @@ app.get('/api/events', async (req, res) => {
                     return;
                 }
 
-                try {
-                    // Vi fejkar en fetch om URLen är placeholder
-                    if (cal.url.includes('private-xxxxx')) {
-                        console.log(`Skippar kalender ${cal.name} (ingen giltig URL än)`);
-                        return;
-                    }
+                console.log(`Fetching calendar: ${cal.name}...`);
+                const data = await ical.async.fromURL(cal.url);
+                const eventsFound = Object.values(data).filter(e => e.type === 'VEVENT').length;
+                console.log(`Successfully fetched ${eventsFound} events from ${cal.name}`);
 
-                    console.log(`Fetching calendar: ${cal.name}...`);
-                    const data = await ical.async.fromURL(cal.url);
-                    const eventsFound = Object.values(data).filter(e => e.type === 'VEVENT').length;
-                    console.log(`Successfully fetched ${eventsFound} events from ${cal.name}`);
-
-                    for (const k in data) {
-                        const ev = data[k];
-                        if (ev.type === 'VEVENT') {
-                            fetchedEvents.push({
-                                uid: ev.uid,
-                                summary: ev.summary,
-                                start: ev.start,
-                                end: ev.end,
-                                location: ev.location || 'Okänd plats',
-                                description: ev.description || '',
-                                source: cal.name,
-                                todoList: [], // Default empty todo list for external events
-                                tags: [],
-                                deleted: false
-                            });
-                        }
+                for (const k in data) {
+                    const ev = data[k];
+                    if (ev.type === 'VEVENT') {
+                        fetchedEvents.push({
+                            uid: ev.uid,
+                            summary: ev.summary,
+                            start: ev.start,
+                            end: ev.end,
+                            location: ev.location || 'Okänd plats',
+                            description: ev.description || '',
+                            source: cal.name,
+                            todoList: [], // Default empty todo list for external events
+                            tags: [],
+                            deleted: false
+                        });
                     }
-                } catch (e) {
-                    console.error(`Kunde inte hämta kalender: ${cal.name}. Error: ${e.message}`);
                 }
-            }));
+            } catch (e) {
+                console.error(`Kunde inte hämta kalender: ${cal.name}. Error: ${e.message}`);
+            }
+        }));
 
         // Lägg till lokala events
         const formattedLocalEvents = localEvents.map(ev => ({
