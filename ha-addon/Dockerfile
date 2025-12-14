@@ -9,7 +9,7 @@ WORKDIR /app
 
 # Klona koden från GitHub
 # Klona koden från GitHub (Uppdaterad 2.2.0 - FORCE NEW CLONE)
-ARG CACHEBUST=23
+ARG CACHEBUST=24
 RUN git clone https://github.com/S1887/Familjecentralen.git .
 
 # Installera beroenden

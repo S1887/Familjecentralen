@@ -52,6 +52,85 @@ const CALENDARS = [
     }
 ];
 
+// ============ KALENDER-CACHE (löser 429-problemet) ============
+let cachedCalendarEvents = [];
+let cacheTimestamp = 0;
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minuter
+let isFetching = false; // Förhindra parallella hämtningar
+
+// Helper delay function
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// Funktion för att hämta och cacha kalendrar
+async function fetchAndCacheCalendars() {
+    // Undvik parallella anrop
+    if (isFetching) {
+        console.log('[Cache] Already fetching, returning current cache');
+        return cachedCalendarEvents;
+    }
+
+    // Returnera cache om den fortfarande är giltig
+    const now = Date.now();
+    if (cachedCalendarEvents.length > 0 && (now - cacheTimestamp) < CACHE_DURATION_MS) {
+        console.log('[Cache] Returning cached data (age: ' + Math.round((now - cacheTimestamp) / 1000) + 's)');
+        return cachedCalendarEvents;
+    }
+
+    isFetching = true;
+    console.log('[Cache] Fetching fresh calendar data...');
+    const freshEvents = [];
+
+    for (const cal of CALENDARS) {
+        try {
+            if (cal.url.includes('private-xxxxx')) {
+                console.log(`Skippar kalender ${cal.name} (ingen giltig URL än)`);
+                continue;
+            }
+
+            console.log(`Fetching calendar: ${cal.name}...`);
+
+            const opts = {
+                headers: {
+                    'User-Agent': 'Mac OS X/10.15.7 (19H2) CalendarAgent/954'
+                }
+            };
+
+            const data = await ical.async.fromURL(cal.url, opts);
+            const eventsFound = Object.values(data).filter(e => e.type === 'VEVENT').length;
+            console.log(`Successfully fetched ${eventsFound} events from ${cal.name}`);
+
+            for (const k in data) {
+                const ev = data[k];
+                if (ev.type === 'VEVENT') {
+                    freshEvents.push({
+                        uid: ev.uid,
+                        summary: ev.summary,
+                        start: ev.start,
+                        end: ev.end,
+                        location: ev.location || 'Okänd plats',
+                        description: ev.description || '',
+                        source: cal.name,
+                        todoList: [],
+                        tags: [],
+                        deleted: false
+                    });
+                }
+            }
+        } catch (e) {
+            console.error(`Kunde inte hämta kalender: ${cal.name}. Error: ${e.message}`);
+        }
+
+        // 3 sekunder mellan varje kalender för att vara extra snäll mot Google
+        await delay(3000);
+    }
+
+    cachedCalendarEvents = freshEvents;
+    cacheTimestamp = Date.now();
+    isFetching = false;
+    console.log(`[Cache] Updated with ${freshEvents.length} total events`);
+    return freshEvents;
+}
+
 // Helper för att läsa DB (Assignments)
 const readDb = () => {
     if (!fs.existsSync(DB_FILE)) return {};
@@ -134,62 +213,11 @@ app.delete('/api/tasks/:id', (req, res) => {
 app.get('/api/events', async (req, res) => {
     try {
         const assignments = readDb();
-        const localEvents = readLocalEvents(); // Read local events
-        const fetchedEvents = [];
+        const localEvents = readLocalEvents();
         const includeTrash = req.query.includeTrash === 'true';
 
-        // Hämta från iCal
-        // Helper delay function
-        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-        // Hämta från iCal (Sekventiellt och långsamt för att undvika 429)
-        for (const cal of CALENDARS) {
-            try {
-                // Vi fejkar en fetch om URLen är placeholder
-                if (cal.url.includes('private-xxxxx')) {
-                    console.log(`Skippar kalender ${cal.name} (ingen giltig URL än)`);
-                    continue;
-                }
-
-                console.log(`Fetching calendar: ${cal.name}...`);
-
-                // Combine strategies: Use CalendarAgent header AND slow sequential fetching
-                const opts = {
-                    headers: {
-                        'User-Agent': 'Mac OS X/10.15.7 (19H2) CalendarAgent/954'
-                    }
-                };
-
-                const data = await ical.async.fromURL(cal.url, opts);
-
-                const eventsFound = Object.values(data).filter(e => e.type === 'VEVENT').length;
-                console.log(`Successfully fetched ${eventsFound} events from ${cal.name}`);
-
-                for (const k in data) {
-                    const ev = data[k];
-                    if (ev.type === 'VEVENT') {
-                        fetchedEvents.push({
-                            uid: ev.uid,
-                            summary: ev.summary,
-                            start: ev.start,
-                            end: ev.end,
-                            location: ev.location || 'Okänd plats',
-                            description: ev.description || '',
-                            source: cal.name,
-                            todoList: [], // Default empty todo list for external events
-                            tags: [],
-                            deleted: false
-                        });
-                    }
-                }
-
-            } catch (e) {
-                console.error(`Kunde inte hämta kalender: ${cal.name}. Error: ${e.message}`);
-            }
-
-            // 2 second delay ALWAYS (even after error) to let Google breathe
-            await delay(2000);
-        }
+        // Använd cachad data istället för att hämta varje gång
+        const fetchedEvents = await fetchAndCacheCalendars();
 
         // Lägg till lokala events
         const formattedLocalEvents = localEvents.map(ev => ({
