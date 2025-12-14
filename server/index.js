@@ -139,7 +139,10 @@ app.get('/api/events', async (req, res) => {
         const includeTrash = req.query.includeTrash === 'true';
 
         // Hämta från iCal
-        // Hämta från iCal (Sekventiellt för att undvika 429 Too Many Requests)
+        // Helper delay function
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Hämta från iCal (Sekventiellt med native fetch för maximal kontroll)
         for (const cal of CALENDARS) {
             try {
                 // Vi fejkar en fetch om URLen är placeholder
@@ -150,14 +153,24 @@ app.get('/api/events', async (req, res) => {
 
                 console.log(`Fetching calendar: ${cal.name}...`);
 
-                // Add explicit User-Agent to bypass Google 429 blocks
-                const opts = {
+                // Native fetch with robust headers mimicking a browser
+                const response = await fetch(cal.url, {
                     headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept': 'text/calendar, text/x-vcalendar, application/json, */*',
+                        'Accept-Language': 'en-US,en;q=0.9,sv;q=0.8',
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
                     }
-                };
+                });
 
-                const data = await ical.async.fromURL(cal.url, opts);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const icsText = await response.text();
+                const data = ical.parseICS(icsText);
+
                 const eventsFound = Object.values(data).filter(e => e.type === 'VEVENT').length;
                 console.log(`Successfully fetched ${eventsFound} events from ${cal.name}`);
 
@@ -178,6 +191,10 @@ app.get('/api/events', async (req, res) => {
                         });
                     }
                 }
+
+                // Small delay between requests to be nice to Google
+                await delay(500);
+
             } catch (e) {
                 console.error(`Kunde inte hämta kalender: ${cal.name}. Error: ${e.message}`);
             }
