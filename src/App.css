@@ -543,3 +543,176 @@ h3 {
 }
 
 /* Let's keep side-by-side for now, month view might be squeezed but responsive */
+
+/* ============ MOBILE RESPONSIVE ============ */
+@media (max-width: 768px) {
+  #root {
+    padding: 0.5rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding-bottom: 1rem;
+  }
+
+  .header h1 {
+    font-size: 1.3rem;
+  }
+
+  .today-hero {
+    padding: 0.8rem;
+    border-radius: 12px;
+  }
+
+  .today-info h2 {
+    font-size: 1.5rem;
+  }
+
+  .today-info p {
+    font-size: 1rem;
+  }
+
+  .filter-bar {
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .filter-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    border-radius: 15px;
+  }
+
+  .user-toggle button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    margin-left: 0.25rem;
+  }
+
+  /* Week view columns - scroll horizontally on mobile */
+  .week-view-container {
+    gap: 0.3rem;
+  }
+
+  .week-column {
+    min-width: 100px;
+  }
+
+  .week-column-header {
+    padding: 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  .week-column-body {
+    padding: 0.3rem;
+    font-size: 0.8rem;
+  }
+
+  /* Cards */
+  .card {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+
+  .card h3 {
+    font-size: 1rem;
+  }
+
+  /* Calendar month view */
+  .calendar-cell {
+    min-height: 60px;
+    padding: 0.3rem;
+  }
+
+  .calendar-day-header {
+    font-size: 0.7rem;
+    padding: 0.3rem;
+  }
+
+  .calendar-event {
+    font-size: 0.65rem;
+    padding: 1px 3px;
+  }
+
+  /* Weather widget */
+  .weather-widget {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  /* Todo section */
+  .todo-section {
+    padding: 0.8rem;
+  }
+}
+
+/* Extra small screens (phones in portrait) */
+@media (max-width: 480px) {
+  #root {
+    padding: 0.25rem;
+  }
+
+  .header h1 {
+    font-size: 1.1rem;
+  }
+
+  .today-hero {
+    padding: 0.5rem;
+    min-height: auto;
+  }
+
+  .today-info h2 {
+    font-size: 1.2rem;
+  }
+
+  .today-info p {
+    font-size: 0.85rem;
+  }
+
+  .filter-btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .week-column {
+    min-width: 80px;
+  }
+
+  .week-column-header {
+    font-size: 0.65rem;
+  }
+
+  .card {
+    padding: 0.7rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .card h3 {
+    font-size: 0.9rem;
+  }
+
+  .card-header {
+    font-size: 0.75rem;
+  }
+
+  /* Hide day headers text on very small screens, show abbreviation */
+  .calendar-day-header {
+    font-size: 0.6rem;
+  }
+
+  .calendar-cell {
+    min-height: 50px;
+    padding: 0.2rem;
+  }
+
+  /* Horizontal scroll events - smaller */
+  .horizontal-scroll-container .card {
+    flex: 0 0 180px !important;
+    min-width: 180px !important;
+    min-height: 120px;
+    font-size: 0.8rem !important;
+    padding: 0.6rem !important;
+  }
+}
