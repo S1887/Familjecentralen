@@ -379,12 +379,18 @@ app.post('/api/assign', (req, res) => {
 
 // --- Serve Frontend in Production ---
 // --- Serve Frontend in Production ---
-const distPath = path.resolve(__dirname, '..', 'dist'); // Go up from 'server' to root, then 'dist'
+const distPath = path.resolve(__dirname, '..', 'dist');
 console.log('Attempting to serve static files from:', distPath);
 
 try {
     if (fs.existsSync(distPath)) {
-        console.log('Dist directory contents:', fs.readdirSync(distPath));
+        console.log('Dist directory exists.');
+        const assetsPath = path.join(distPath, 'assets');
+        if (fs.existsSync(assetsPath)) {
+            console.log('Assets directory contents:', fs.readdirSync(assetsPath));
+        } else {
+            console.log('Assets directory MISSING at', assetsPath);
+        }
     } else {
         console.error('CRITICAL: Dist directory does not exist at:', distPath);
     }
@@ -392,23 +398,28 @@ try {
     console.error('Error checking dist directory:', err);
 }
 
-// Explicitly serve assets to prevent fallback issues
-app.use('/assets', express.static(path.join(distPath, 'assets')));
+// Serve static files from 'dist' (handles 'assets' folder automatically)
 app.use(express.static(distPath));
 
-// Fallback handler - Matches everything not already caught
+// DEBUG: Specific handler for missing assets to log why they fail
+app.use('/assets/*', (req, res) => {
+    console.error(`404 for asset: ${req.originalUrl}`);
+    res.status(404).send('Asset not found');
+});
+
+// Fallback handler - Serves index.html for SPA routing
 app.use((req, res) => {
-    // Only serve frontend for non-API routes
-    if (!req.path.startsWith('/api')) {
-        const indexPath = path.join(distPath, 'index.html');
-        if (fs.existsSync(indexPath)) {
-            res.sendFile(indexPath);
-        } else {
-            res.status(404).send('Frontend not built. In dev mode? Check console.');
-        }
+    // avoid serving index.html for API calls or obviously missing assets
+    if (req.path.startsWith('/api') || req.path.includes('.')) {
+        res.status(404).send('Not found');
+        return;
+    }
+
+    const indexPath = path.join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
     } else {
-        // API 404
-        res.status(404).json({ error: 'Not found' });
+        res.status(404).send('Frontend not built. In dev mode? Check console.');
     }
 });
 app.listen(PORT, () => {
