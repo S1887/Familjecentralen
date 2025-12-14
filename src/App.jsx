@@ -5,6 +5,31 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { getCoordinates, getTravelTime, formatDuration, searchAddress, getHomeCoords, formatDistance } from './mapService';
 
+// API helper - works in both direct access and Ingress contexts
+const getApiUrl = (endpoint) => {
+  // Remove leading slash if present
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+
+  // Check if running in Home Assistant Ingress context
+  const pathname = window.location.pathname;
+
+  // If we're on port 3001 directly, use absolute paths
+  if (window.location.port === '3001') {
+    return '/' + cleanEndpoint;
+  }
+
+  // If in Ingress, the pathname will contain 'ingress' or similar
+  // We need to use the current path as base
+  if (pathname.includes('ingress') || pathname.includes('hassio')) {
+    // Get the base path up to and including the ingress segment
+    const basePath = pathname.replace(/\/+$/, ''); // Remove trailing slashes
+    return basePath + '/' + cleanEndpoint;
+  }
+
+  // Default fallback - relative to current location
+  return './' + cleanEndpoint;
+};
+
 // Fix för Leaflet icon
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -305,7 +330,7 @@ function App() {
   }, []);
 
   const fetchEvents = () => {
-    fetch('./api/events')
+    fetch(getApiUrl('api/events'))
       .then(res => res.json())
       .then(data => {
         // Deduplicate: Hide external events that match a local event (Same Summary & Start)
@@ -332,7 +357,7 @@ function App() {
   };
 
   const fetchTasks = () => {
-    fetch('./api/tasks')
+    fetch(getApiUrl('api/tasks'))
       .then(res => res.json())
       .then(data => setTasks(data))
       .catch(err => console.error("Error fetching tasks:", err));
@@ -476,7 +501,7 @@ function App() {
   const assignTask = async (eventId, role, assignedUser) => {
     if (!assignedUser) return;
     try {
-      await fetch('./api/assign', {
+      await fetch(getApiUrl('api/assign'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ eventId, user: assignedUser, role })
@@ -740,7 +765,7 @@ function App() {
     }
 
     try {
-      await fetch('./api/update-event', {
+      await fetch(getApiUrl('api/update-event'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -773,7 +798,7 @@ function App() {
     const endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
 
     try {
-      await fetch('./api/create-event', {
+      await fetch(getApiUrl('api/create-event'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -843,7 +868,7 @@ function App() {
     e.preventDefault();
     if (!taskInput.text) return;
 
-    fetch('./api/tasks', {
+    fetch(getApiUrl('api/tasks'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -863,14 +888,14 @@ function App() {
   };
 
   const fetchTrash = () => {
-    fetch('./api/trash')
+    fetch(getApiUrl('api/trash'))
       .then(res => res.json())
       .then(data => setTrashItems(data))
       .catch(err => console.error(err));
   };
 
   const restoreEvent = (uid) => {
-    fetch('./api/restore-event', {
+    fetch(getApiUrl('api/restore-event'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid })
@@ -884,7 +909,7 @@ function App() {
   const deleteEvent = (event) => {
     if (!window.confirm('Är du säker på att du vill ta bort denna händelse?')) return;
 
-    fetch('./api/delete-event', {
+    fetch(getApiUrl('api/delete-event'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...event, uid: event.uid })
@@ -913,7 +938,7 @@ function App() {
     if (!window.confirm('Vill du ställa in denna händelse?')) return;
 
     // We use update-event to set cancelled: true
-    fetch('./api/update-event', {
+    fetch(getApiUrl('api/update-event'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid: event.uid, cancelled: true, summary: event.summary, start: event.start, end: event.end })
