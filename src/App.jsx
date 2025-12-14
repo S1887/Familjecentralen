@@ -318,11 +318,13 @@ function App() {
     currentUser?.role === 'child' ? currentUser.name : 'Alla'
   );
   const [filterCategory, setFilterCategory] = useState('Alla');
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [selectedTodoWeek, setSelectedTodoWeek] = useState(getWeekNumber(new Date()));
   const [viewMode, setViewMode] = useState(() =>
     window.innerWidth < 600 ? 'next3days' : 'week'
   );
   const [activeAssignment, setActiveAssignment] = useState(null);
+  const [showMobileTaskForm, setShowMobileTaskForm] = useState(false);
 
   // Auto-scroll week view to center today's column on mobile
   useEffect(() => {
@@ -732,44 +734,8 @@ function App() {
       return <div className="assignment-badge">{icon} <strong>{assignedTo}</strong> {isDriver ? 'kör' : 'packar'}</div>;
     }
 
-    // Om vi håller på att välja för just denna...
-    const isActive = activeAssignment && activeAssignment.eventId === event.uid && activeAssignment.role === role;
-
-    if (isActive) {
-      const candidates = isDriver ? ['Svante', 'Sarah'] : ['Svante', 'Sarah', 'Algot', 'Tuva'];
-      return (
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>{label}</span>
-          {candidates.map(candidate => (
-            <button
-              key={candidate}
-              onClick={() => assignTask(event.uid, role, candidate)}
-              style={{ padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
-            >
-              {candidate}
-            </button>
-          ))}
-          <button onClick={() => setActiveAssignment(null)} style={{ background: 'transparent', color: '#999', padding: '0 0.5rem' }}>✕</button>
-        </div>
-      );
-    }
-
-    // Standardknapp
-    return (
-      <button onClick={() => {
-        setActiveAssignment({ eventId: event.uid, role });
-      }} style={{
-        background: 'transparent',
-        border: '1px solid #ddd',
-        borderRadius: '20px',
-        padding: '0.4rem 1rem',
-        cursor: 'pointer',
-        fontSize: '0.9rem',
-        display: 'flex', alignItems: 'center', gap: '0.5rem'
-      }}>
-        {icon} {label}
-      </button>
-    );
+    // Annars visa ingenting (användaren vill inte ha knapparna direkt på kortet)
+    return null;
   };
 
   const openEditModal = (event) => {
@@ -895,7 +861,7 @@ function App() {
 
   const [taskInput, setTaskInput] = useState({
     text: '',
-    assignee: '',
+    assignee: [],
     week: getWeekNumber(new Date()),
     isRecurring: false,
     days: []
@@ -910,7 +876,8 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: taskInput.text,
-        assignee: taskInput.assignee || null,
+        text: taskInput.text,
+        assignee: Array.isArray(taskInput.assignee) ? taskInput.assignee.join(', ') : taskInput.assignee,
         week: parseInt(taskInput.week) || getWeekNumber(new Date()),
         isRecurring: taskInput.isRecurring,
         days: taskInput.days
@@ -919,7 +886,7 @@ function App() {
       .then(res => res.json())
       .then(newTask => {
         setTasks([...tasks, newTask]);
-        setTaskInput({ ...taskInput, text: '', assignee: '', isRecurring: false, days: [] });
+        setTaskInput({ ...taskInput, text: '', assignee: [], isRecurring: false, days: [] });
       })
       .catch(err => console.error(err));
   };
@@ -1955,95 +1922,69 @@ function App() {
       </div>
 
       {/* Kategori-filter - dropdown on mobile for everyone */}
-      <div style={{ marginBottom: '0.5rem' }}>
-        {isMobile ? (
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            style={{
-              padding: '0.4rem 0.8rem',
-              fontSize: '0.85rem',
-              borderRadius: '15px',
-              border: '1px solid var(--border-color)',
-              background: 'var(--card-bg)',
-              color: 'var(--text-main)',
-              cursor: 'pointer'
-            }}
-          >
-            {['Alla', 'Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        ) : (
-          <div className="category-filter-container" style={{
-            overflowX: 'auto',
-            WebkitOverflowScrolling: 'touch'
+      {/* Custom Dropdown Filter */}
+      <div style={{ position: 'relative', marginBottom: '0.5rem', zIndex: 10 }}>
+        <button
+          onClick={() => setShowFilterMenu(!showFilterMenu)}
+          style={{
+            width: '100%',
+            padding: '0.8rem 1rem',
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            color: 'var(--text-main)',
+            fontSize: '1rem',
+            textAlign: 'left',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer'
+          }}
+        >
+          <span>📂 Kategori: <strong>{filterCategory}</strong></span>
+          <span>{showFilterMenu ? '▲' : '▼'}</span>
+        </button>
+
+        {showFilterMenu && (
+          <div style={{
+            position: 'absolute',
+            top: '110%',
+            left: 0,
+            width: '100%',
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
-            <div className="filter-bar" style={{
-              marginTop: '0.5rem',
-              flexWrap: isMobile ? 'nowrap' : 'wrap',
-              justifyContent: isMobile ? 'flex-start' : 'center'
-            }}>
-              {['Alla', 'Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => (
-                <button
-                  key={cat}
-                  className={`filter-btn ${filterCategory === cat ? 'active' : ''}`}
-                  onClick={() => setFilterCategory(cat)}
-                  style={{
-                    fontSize: isMobile ? '0.8rem' : '0.9rem',
-                    padding: isMobile ? '0.35rem 0.6rem' : '0.4rem 0.8rem',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0
-                  }}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+            {['Alla', 'Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => (
+              <button
+                key={cat}
+                onClick={() => {
+                  setFilterCategory(cat);
+                  setShowFilterMenu(false);
+                }}
+                style={{
+                  padding: '1rem',
+                  border: 'none',
+                  borderBottom: '1px solid var(--border-color)',
+                  background: filterCategory === cat ? 'rgba(46, 213, 115, 0.1)' : 'transparent',
+                  color: filterCategory === cat ? '#2ed573' : 'var(--text-main)',
+                  textAlign: 'left',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  fontWeight: filterCategory === cat ? 'bold' : 'normal'
+                }}
+              >
+                {cat} {filterCategory === cat && '✓'}
+              </button>
+            ))}
           </div>
         )}
       </div>
 
-      {/* View Mode Selector - order 2 on mobile (after Todo which is order 1) */}
-      <div className="view-mode-selector" style={{
-        display: 'flex',
-        justifyContent: 'center',
-        margin: '1rem 0',
-        overflowX: 'auto',
-        WebkitOverflowScrolling: 'touch',
-        order: isMobile ? 2 : 0
-      }}>
-        <div style={{ background: 'var(--button-bg)', borderRadius: '30px', padding: '0.3rem', display: 'flex', gap: '0.2rem', flexShrink: 0 }}>
-          {[
-            { id: 'upcoming', label: 'Kommande' },
-            { id: 'next3days', label: '3 Dagar' },
-            { id: 'week', label: `Vecka ${getWeekNumber(selectedDate)}` },
-            { id: 'month', label: selectedDate.toLocaleDateString('sv-SE', { month: 'long' }) },
-            { id: 'history', label: 'Historik' }
-          ].map(view => (
-            <button
-              key={view.id}
-              onClick={() => setViewMode(view.id)}
-              style={{
-                background: viewMode === view.id ? 'white' : 'transparent',
-                color: viewMode === view.id ? '#333' : '#666',
-                border: 'none',
-                borderRadius: '25px',
-                padding: '0.4rem 0.7rem',
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                fontWeight: viewMode === view.id ? 'bold' : 'normal',
-                boxShadow: viewMode === view.id ? '0 2px 5px rgba(0,0,0,0.1)' : 'none',
-                transition: 'all 0.2s',
-                textTransform: 'capitalize',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {view.label}
-            </button>
-          ))}
-        </div>
-      </div >
 
       {/* Main Content Grid (Timeline + Todo) - reversed on mobile so Todo appears first */}
       <div className="main-content-grid" style={{
@@ -2054,6 +1995,58 @@ function App() {
       }}>
         {/* Left: Timeline / Calendar View */}
         < div className="timeline-section" >
+          {/* View Mode Selector - now inside timeline section to appear above calendar but below todo on mobile */}
+          <div className="view-mode-selector" style={{
+            display: 'flex',
+            justifyContent: 'center',
+            margin: '0 0 1rem 0',
+            padding: '0'
+          }}>
+            <div style={{
+              background: 'var(--button-bg)',
+              borderRadius: '30px',
+              padding: '0.2rem',
+              display: 'flex',
+              gap: '0rem',
+              width: '100%',
+              maxWidth: '600px',
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              justifyContent: 'space-between'
+            }}>
+              {[
+                { id: 'upcoming', label: 'Kommande' },
+                { id: 'next3days', label: '3 Dagar' },
+                { id: 'week', label: `Vecka ${getWeekNumber(selectedDate)}` },
+                { id: 'month', label: selectedDate.toLocaleDateString('sv-SE', { month: 'long' }) },
+                { id: 'history', label: 'Historik' }
+              ].map(view => (
+                <button
+                  key={view.id}
+                  onClick={() => setViewMode(view.id)}
+                  style={{
+                    background: viewMode === view.id ? 'var(--card-bg)' : 'transparent',
+                    color: viewMode === view.id ? 'var(--text-main)' : 'var(--text-muted)',
+                    border: 'none',
+                    borderRadius: '25px',
+                    padding: '0.4rem 0.8rem',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    fontWeight: viewMode === view.id ? '600' : '500',
+                    boxShadow: viewMode === view.id ? '0 2px 4px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.2s ease',
+                    textTransform: 'capitalize',
+                    whiteSpace: 'nowrap',
+                    flex: 1,
+                    textAlign: 'center'
+                  }}
+                >
+                  {view.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="timeline">
             <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               {(viewMode === 'week' || viewMode === 'month') ? (
@@ -2260,8 +2253,11 @@ function App() {
             </h2>
           </div>
           {
-            !isChildUser && !isMobile && (
-              <form onSubmit={addTask} style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', boxShadow: '0 2px 4px var(--shadow-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            !isChildUser && (!isMobile || showMobileTaskForm) && (
+              <form onSubmit={(e) => {
+                addTask(e);
+                if (isMobile) setShowMobileTaskForm(false);
+              }} style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', boxShadow: '0 2px 4px var(--shadow-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <input type="text" placeholder="Vad behöver göras?" value={taskInput.text} onChange={e => setTaskInput({ ...taskInput, text: e.target.value })} style={{ flex: 3, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} />
                   {!taskInput.isRecurring && (
@@ -2292,13 +2288,49 @@ function App() {
                     <input type="checkbox" checked={taskInput.isRecurring} onChange={e => setTaskInput({ ...taskInput, isRecurring: e.target.checked })} />
                     🔄 Återkommande
                   </label>
-                  <select value={taskInput.assignee} onChange={e => setTaskInput({ ...taskInput, assignee: e.target.value })} style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', flex: 1, background: 'var(--input-bg)', color: 'var(--text-main)' }}>
-                    <option value="">Vem? (Valfritt)</option>
-                    {children.filter(c => c !== 'Alla').map(c => <option key={c} value={c}>{c}</option>)}
-                    <option value="Svante">Svante</option>
-                    <option value="Sarah">Sarah</option>
-                  </select>
-                  <button type="submit" style={{ background: '#2ed573', color: 'white', border: 'none', borderRadius: '4px', padding: '0 1rem', cursor: 'pointer' }}>Lägg till</button>
+
+
+                  {/* Multi-select Assignees */}
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', flex: 1 }}>
+                    {['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => {
+                          const current = Array.isArray(taskInput.assignee) ? taskInput.assignee : [];
+                          const newAssignees = current.includes(name)
+                            ? current.filter(n => n !== name)
+                            : [...current, name];
+                          setTaskInput({ ...taskInput, assignee: newAssignees });
+                        }}
+                        style={{
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '15px',
+                          border: '1px solid var(--border-color)',
+                          background: (Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name)) ? '#2ed573' : 'var(--input-bg)',
+                          color: (Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name)) ? 'white' : 'var(--text-main)',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {(Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name)) ? '✓ ' : ''}{name}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                    <button type="submit" style={{ background: '#2ed573', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 1rem', cursor: 'pointer', flex: 1 }}>Lägg till</button>
+                    {isMobile && (
+                      <button
+                        type="button"
+                        onClick={() => setShowMobileTaskForm(false)}
+                        style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '0.5rem 1rem', cursor: 'pointer' }}
+                      >
+                        Avbryt
+                      </button>
+                    )}
+                  </div>
                 </div>
               </form>
             )
@@ -2306,7 +2338,7 @@ function App() {
           {/* Mobile: subtle add task button */}
           {isMobile && isAdmin && (
             <button
-              onClick={() => {/* TODO: open modal for adding task */ }}
+              onClick={() => setShowMobileTaskForm(!showMobileTaskForm)}
               style={{
                 background: 'transparent',
                 border: '1px dashed var(--border-color)',
@@ -2319,7 +2351,7 @@ function App() {
                 marginBottom: '0.5rem'
               }}
             >
-              + Lägg till uppgift
+              {showMobileTaskForm ? '✕ Stäng formulär' : '+ Lägg till uppgift'}
             </button>
           )}
           <div className="todo-list">
