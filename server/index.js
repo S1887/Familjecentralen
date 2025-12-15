@@ -506,6 +506,12 @@ app.get('/api/events', async (req, res) => {
 app.get('/api/feed.ics', async (req, res) => {
     console.log(`[ICS] Feed requested by ${req.ip} - User-Agent: ${req.get('User-Agent')}`);
     try {
+        // Ensure we have data (Cold Start on Render)
+        if (cachedCalendarEvents.length === 0) {
+            console.log('[ICS] Cache empty, fetching calendars before serving feed...');
+            await fetchAndCacheCalendars();
+        }
+
         const localEvents = readLocalEvents();
 
         const feedEvents = [];
