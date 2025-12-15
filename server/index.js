@@ -130,7 +130,7 @@ const IGNORED_EVENTS_FILE = path.join(DATA_DIR, 'ignored_events.json');
 const CACHE_FILE = path.join(DATA_DIR, 'calendar_cache.json');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
 
-const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
+const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutes (safe for Google API)
 let cachedCalendarEvents = [];
 let cacheTimestamp = 0;
 let isFetching = false;
