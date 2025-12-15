@@ -727,6 +727,65 @@ app.post('/api/ignore-event', (req, res) => {
     res.json({ success: true });
 });
 
+// Import event from inbox (mark as non-inbox-only by creating local override)
+app.post('/api/import-from-inbox', (req, res) => {
+    const { uid } = req.body;
+
+    if (!uid) {
+        return res.status(400).json({ error: 'UID krävs' });
+    }
+
+    try {
+        const localEvents = readLocalEvents();
+
+        // Check if already imported
+        const exists = localEvents.find(e => e.uid === uid);
+        if (exists) {
+            return res.json({ success: true, message: 'Already imported' });
+        }
+
+        // Create a minimal local event that marks this as imported (not inbox-only)
+        // This will override the inbox-only flag from the external calendar
+        const importedEvent = {
+            uid: uid,
+            inboxOnly: false, // This is the key: we're marking it as NOT inbox-only
+            source: 'Familjen (Redigerad)', // Mark as edited/imported
+            createdAt: new Date().toISOString()
+        };
+
+        localEvents.push(importedEvent);
+        writeLocalEvents(localEvents);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Import error:', error);
+        res.status(500).json({ error: 'Kunde inte importera händelse' });
+    }
+});
+
+// Return event to inbox (remove local override so it becomes inbox-only again)
+app.post('/api/return-to-inbox', (req, res) => {
+    const { uid } = req.body;
+
+    if (!uid) {
+        return res.status(400).json({ error: 'UID krävs' });
+    }
+
+    try {
+        let localEvents = readLocalEvents();
+
+        // Remove the local event with this UID (this removes the override)
+        localEvents = localEvents.filter(e => e.uid !== uid);
+
+        writeLocalEvents(localEvents);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Return to inbox error:', error);
+        res.status(500).json({ error: 'Kunde inte flytta till inkorg' });
+    }
+});
+
 // Hämta papperskorgen
 app.get('/api/trash', (req, res) => {
     try {

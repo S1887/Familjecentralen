@@ -1276,37 +1276,25 @@ function App() {
       <InboxModal
         isOpen={showInbox}
         onClose={() => setShowInbox(false)}
-        onImport={(event) => {
-          setNewEvent({
-            ...newEvent,
-            summary: event.summary,
-            date: new Date(event.start).toISOString().split('T')[0],
-            time: new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
-            endTime: new Date(event.end).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
-            location: event.location,
-            description: event.description,
-            // Pre-fill Assignee if known source
-            // Pre-fill Assignee f known source
-            assignees: (() => {
-              const src = event.source || '';
-              if (src.includes('HK Lidköping P11/P10')) return ['Algot'];
-              if (src.includes('Handbollsskola')) return ['Tuva'];
-              if (src.includes('Råda BK F7')) return ['Tuva'];
-              if (src.includes('Råda BK P2015')) return ['Algot'];
-              if (src.includes('Villa Lidköping')) return ['Algot'];
-              return [];
-            })(),
-            // Auto-detect Category based on Source
-            category: (() => {
-              const src = (event.source || '').toLowerCase();
-              if (src.includes('villa lidköping')) return 'Bandy';
-              if (src.includes('hk lidköping')) return 'Handboll';
-              if (src.includes('råda bk')) return 'Fotboll';
-              return null;
-            })()
-          });
-          setShowInbox(false);
-          setIsCreatingEvent(true);
+        onImport={async (event) => {
+          try {
+            const response = await fetch(getApiUrl('api/import-from-inbox'), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ uid: event.uid })
+            });
+
+            if (response.ok) {
+              // Refresh events to show the imported event
+              fetchEvents();
+              // Optional: show success message
+              console.log('Event imported successfully');
+            } else {
+              console.error('Failed to import event');
+            }
+          } catch (error) {
+            console.error('Import error:', error);
+          }
         }}
       />
 
@@ -2181,10 +2169,10 @@ function App() {
         )}
       </div>
 
-      {/* Family filter - custom dropdown matching category filter design */}
-      <div style={{ position: 'relative', marginBottom: '0.5rem', zIndex: 11 }}>
+      {/* Combined Filter Button */}
+      <div style={{ marginBottom: '0.5rem' }}>
         <button
-          onClick={() => { setShowFamilyMenu(!showFamilyMenu); setShowFilterMenu(false); }}
+          onClick={() => setShowFilterMenu(!showFilterMenu)}
           style={{
             width: '100%',
             padding: '0.8rem 1rem',
@@ -2192,7 +2180,7 @@ function App() {
             border: '1px solid var(--border-color)',
             borderRadius: '12px',
             color: 'var(--text-main)',
-            fontSize: '1rem',
+            fontSize: '0.9rem',
             textAlign: 'left',
             display: 'flex',
             justifyContent: 'space-between',
@@ -2200,114 +2188,135 @@ function App() {
             cursor: 'pointer'
           }}
         >
-          <span>👨‍👩‍👧‍👦 Familj: <strong>{filterChild === 'Alla' ? 'Hela Familjen' : filterChild}</strong></span>
-          <span>{showFamilyMenu ? '▲' : '▼'}</span>
-        </button>
-
-        {showFamilyMenu && (
-          <div style={{
-            position: 'absolute',
-            top: '110%',
-            left: 0,
-            width: '100%',
-            background: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '12px',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            {children.map(child => (
-              <button
-                key={child}
-                onClick={() => {
-                  setFilterChild(child);
-                  setShowFamilyMenu(false);
-                }}
-                style={{
-                  padding: '1rem',
-                  border: 'none',
-                  borderBottom: '1px solid var(--border-color)',
-                  background: filterChild === child ? 'rgba(100, 108, 255, 0.1)' : 'transparent',
-                  color: filterChild === child ? '#646cff' : 'var(--text-main)',
-                  textAlign: 'left',
-                  fontSize: '1rem',
-                  cursor: 'pointer',
-                  fontWeight: filterChild === child ? 'bold' : 'normal'
-                }}
-              >
-                {child === 'Alla' ? '👨‍👩‍👧‍👦 Hela Familjen' : child} {filterChild === child && '✓'}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Kategori-filter - dropdown on mobile for everyone */}
-      {/* Custom Dropdown Filter */}
-      <div style={{ position: 'relative', marginBottom: '0.5rem', zIndex: 10 }}>
-        <button
-          onClick={() => { setShowFilterMenu(!showFilterMenu); setShowFamilyMenu(false); }}
-          style={{
-            width: '100%',
-            padding: '0.8rem 1rem',
-            background: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '12px',
-            color: 'var(--text-main)',
-            fontSize: '1rem',
-            textAlign: 'left',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            cursor: 'pointer'
-          }}
-        >
-          <span>📂 Kategori: <strong>{filterCategory}</strong></span>
+          <span>
+            🔍 Filter: <strong>{filterChild === 'Alla' ? 'Hela Familjen' : filterChild}</strong> • <strong>{filterCategory}</strong>
+          </span>
           <span>{showFilterMenu ? '▲' : '▼'}</span>
         </button>
 
+        {/* Filter Modal */}
         {showFilterMenu && (
-          <div style={{
-            position: 'absolute',
-            top: '110%',
-            left: 0,
-            width: '100%',
-            background: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '12px',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            {['Alla', 'Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.5)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1rem'
+            }}
+            onClick={() => setShowFilterMenu(false)}
+          >
+            <div
+              style={{
+                background: 'var(--card-bg)',
+                borderRadius: '16px',
+                padding: '1.5rem',
+                maxWidth: '400px',
+                width: '100%',
+                maxHeight: '80vh',
+                overflowY: 'auto'
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Filtrera</h3>
+                <button
+                  onClick={() => setShowFilterMenu(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '1.5rem',
+                    cursor: 'pointer',
+                    color: 'var(--text-main)',
+                    padding: '0',
+                    lineHeight: 1
+                  }}
+                  aria-label="Stäng"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Two-column layout for filters */}
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                {/* Family Filter Section */}
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}>👨‍👩‍👧‍👦 Familj</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {children.map(child => (
+                      <button
+                        key={child}
+                        onClick={() => setFilterChild(child)}
+                        style={{
+                          padding: '0.8rem',
+                          background: filterChild === child ? '#2ed573' : 'transparent',
+                          color: filterChild === child ? 'white' : 'var(--text-main)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          fontWeight: filterChild === child ? 'bold' : 'normal'
+                        }}
+                      >
+                        {child === 'Alla' ? 'Hela Familjen' : child} {filterChild === child && '✓'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Category Filter Section */}
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}>📂 Kategori</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {['Alla', 'Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setFilterCategory(cat)}
+                        style={{
+                          padding: '0.8rem',
+                          background: filterCategory === cat ? '#2ed573' : 'transparent',
+                          color: filterCategory === cat ? 'white' : 'var(--text-main)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          fontWeight: filterCategory === cat ? 'bold' : 'normal'
+                        }}
+                      >
+                        {cat} {filterCategory === cat && '✓'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
               <button
-                key={cat}
-                onClick={() => {
-                  setFilterCategory(cat);
-                  setShowFilterMenu(false);
-                }}
+                onClick={() => setShowFilterMenu(false)}
                 style={{
-                  padding: '1rem',
+                  width: '100%',
+                  marginTop: '1.5rem',
+                  padding: '0.8rem',
+                  background: 'var(--primary-color)',
+                  color: 'white',
                   border: 'none',
-                  borderBottom: '1px solid var(--border-color)',
-                  background: filterCategory === cat ? 'rgba(46, 213, 115, 0.1)' : 'transparent',
-                  color: filterCategory === cat ? '#2ed573' : 'var(--text-main)',
-                  textAlign: 'left',
-                  fontSize: '1rem',
+                  borderRadius: '8px',
                   cursor: 'pointer',
-                  fontWeight: filterCategory === cat ? 'bold' : 'normal'
+                  fontWeight: 'bold'
                 }}
               >
-                {cat} {filterCategory === cat && '✓'}
+                Stäng
               </button>
-            ))}
+            </div>
           </div>
         )}
       </div>
-
 
       {/* Main Content Grid (Timeline + Todo) - reversed on mobile so Todo appears first */}
       <div className="main-content-grid" style={{

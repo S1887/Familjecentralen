@@ -59,6 +59,25 @@ export default function InboxModal({ isOpen, onClose, onImport }) {
         onImport(item);
     };
 
+    const handleReturnToInbox = async (uid) => {
+        try {
+            await fetch('http://localhost:3001/api/return-to-inbox', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ uid })
+            });
+            setImportedUids(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(uid);
+                return newSet;
+            });
+            // Refresh inbox to show it again
+            fetchInbox();
+        } catch (err) {
+            console.error("Failed to return to inbox", err);
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -154,20 +173,19 @@ export default function InboxModal({ isOpen, onClose, onImport }) {
 
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
                                     <button
-                                        onClick={() => handleImport(item)}
-                                        disabled={isImported}
+                                        onClick={() => isImported ? handleReturnToInbox(item.uid) : handleImport(item)}
                                         style={{
                                             flex: 1,
                                             padding: '0.6rem',
-                                            background: isImported ? '#bdbdbd' : (isPast ? '#95a5a6' : '#2ed573'),
+                                            background: isImported ? '#ff9800' : (isPast ? '#95a5a6' : '#2ed573'),
                                             color: 'white',
                                             border: 'none',
                                             borderRadius: '6px',
-                                            cursor: isImported ? 'not-allowed' : 'pointer',
+                                            cursor: 'pointer',
                                             fontWeight: 600
                                         }}
                                     >
-                                        ➕ {isImported ? 'Tillagd' : (isPast ? 'Lägg till (historik)' : 'Lägg till')}
+                                        {isImported ? '↩️ Flytta till inkorg' : `➕ ${isPast ? 'Lägg till (historik)' : 'Lägg till'}`}
                                     </button>
                                     <button
                                         onClick={(e) => handleIgnore(item.uid, e)}
