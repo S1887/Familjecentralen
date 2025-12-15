@@ -1033,14 +1033,8 @@ function App() {
 
       {/* Modal för Karta (Specifikt Event) */}
       {viewMapEvent && (
-        <div className="modal-overlay" style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
-        }} onClick={() => setViewMapEvent(null)}>
-          <div className="modal" style={{
-            background: 'var(--modal-bg)', padding: '1rem', borderRadius: '16px', width: '90%', maxWidth: '600px',
-            boxShadow: '0 10px 25px var(--shadow-color)', position: 'relative', display: 'flex', flexDirection: 'column', maxHeight: '80vh', color: 'var(--text-main)'
-          }} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setViewMapEvent(null)}>
+          <div className="modal" style={{ maxWidth: '600px', maxHeight: '80vh', padding: '1rem' }} onClick={e => e.stopPropagation()}>
             <button onClick={() => setViewMapEvent(null)} style={{
               position: 'absolute', top: '10px', right: '10px', zIndex: 1001,
               background: 'white', border: 'none', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', outline: 'none', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -1218,15 +1212,8 @@ function App() {
       {/* Modal för att skapa event */}
       {
         isCreatingEvent && (
-          <div className="modal-overlay" style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
-          }}>
-
-            <div className="modal" style={{
-              background: 'var(--modal-bg)', padding: '2rem', borderRadius: '16px', width: '90%', maxWidth: '500px',
-              boxShadow: '0 10px 25px var(--shadow-color)', textAlign: 'left', color: 'var(--text-main)'
-            }}>
+          <div className="modal-overlay">
+            <div className="modal" style={{ padding: '2rem' }}>
               <h2>✨ Skapa ny händelse</h2>
               <form onSubmit={createEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
@@ -1408,14 +1395,8 @@ function App() {
       {/* Modal för att redigera event */}
       {
         isEditingEvent && editEventData && (
-          <div className="modal-overlay" style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
-          }}>
-            <div className="modal" style={{
-              background: 'var(--modal-bg)', color: 'var(--text-main)', padding: '2rem', borderRadius: '16px', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.2)', textAlign: 'left'
-            }}>
+          <div className="modal-overlay">
+            <div className="modal" style={{ padding: '2rem' }}>
               <h2>✏️ Redigera händelse</h2>
               <form onSubmit={updateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
