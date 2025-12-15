@@ -50,27 +50,29 @@ function LoginPage({ onLogin }) {
                     <h1>Hej {selectedUser}! 👋</h1>
                     <p>Ange din 6-siffriga PIN-kod</p>
 
-                    <input
-                        type="password"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={6}
-                        value={pin}
-                        onChange={handlePinChange}
-                        className="pin-input"
-                        placeholder="••••••"
-                        autoFocus
-                    />
+                    <form onSubmit={(e) => { e.preventDefault(); handlePinSubmit(); }}>
+                        <input
+                            type="password"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={6}
+                            value={pin}
+                            onChange={handlePinChange}
+                            className="pin-input"
+                            placeholder="••••••"
+                            autoFocus
+                        />
 
-                    {error && <p className="error-msg">{error}</p>}
+                        {error && <p className="error-msg">{error}</p>}
 
-                    <button
-                        className="login-btn"
-                        onClick={handlePinSubmit}
-                        disabled={pin.length !== 6}
-                    >
-                        Logga in
-                    </button>
+                        <button
+                            type="submit"
+                            className="login-btn"
+                            disabled={pin.length !== 6}
+                        >
+                            Logga in
+                        </button>
+                    </form>
                 </div>
             </div>
         );
@@ -86,7 +88,7 @@ function LoginPage({ onLogin }) {
                     {USERS.map(user => (
                         <button
                             key={user.name}
-                            className={`user-btn ${user.role}`}
+                            className={`user-btn ${user.name.toLowerCase()}`}
                             onClick={() => handleUserSelect(user.name)}
                         >
                             {user.name}

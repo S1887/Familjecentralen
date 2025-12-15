@@ -296,19 +296,36 @@ body {
   /* Transparent blue works on dark too */
 }
 
-.card.source-svante {
+.card.source-svante,
+.card.assigned-svante {
   border-left-color: #ff4757;
-  /* Röd för Pappa */
+  /* Röd för Svante */
 }
 
-.card.source-mamma {
-  border-left-color: #5352ed;
-  /* Blå/Lila för Mamma */
+.card.source-mamma,
+.card.source-sarah,
+.card.assigned-sarah {
+  border-left-color: #f1c40f;
+  /* Gul för Sarah */
+}
+
+.card.assigned-algot {
+  border-left-color: #3498db;
+  /* Blå för Algot */
+}
+
+.card.assigned-leon {
+  border-left-color: #2ed573;
+  /* Grön för Leon */
+}
+
+.card.assigned-tuva {
+  border-left-color: #9b59b6;
+  /* Lila för Tuva */
 }
 
 .card.assigned {
-  border-left-color: #2ed573;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .card-header {
@@ -400,10 +417,11 @@ h3 {
   gap: 2rem;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1100px) {
   .main-content-grid {
     grid-template-columns: 2fr 1fr;
     /* Timeline wider than Todo */
+    /* Desktop layout only for screens 13" and above */
     align-items: start;
   }
 }

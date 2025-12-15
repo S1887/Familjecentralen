@@ -185,11 +185,11 @@ function App() {
   const [viewTrash, setViewTrash] = useState(false);
   const [trashItems, setTrashItems] = useState([]);
 
-  // Mobile detection for responsive layout
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 600);
+  // Mobile detection for responsive layout (under 13" screens = 1100px)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 1100);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 600);
+    const handleResize = () => setIsMobile(window.innerWidth < 1100);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -319,12 +319,22 @@ function App() {
   );
   const [filterCategory, setFilterCategory] = useState('Alla');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [showFamilyMenu, setShowFamilyMenu] = useState(false);
   const [selectedTodoWeek, setSelectedTodoWeek] = useState(getWeekNumber(new Date()));
   const [viewMode, setViewMode] = useState(() =>
-    window.innerWidth < 600 ? 'next3days' : 'week'
+    window.innerWidth < 1100 ? 'next3days' : 'week'
   );
   const [activeAssignment, setActiveAssignment] = useState(null);
   const [showMobileTaskForm, setShowMobileTaskForm] = useState(false);
+
+  // Reset filter when user changes (login/logout)
+  useEffect(() => {
+    if (currentUser?.role === 'child') {
+      setFilterChild(currentUser.name);
+    } else {
+      setFilterChild('Alla');
+    }
+  }, [currentUser]);
 
   // Auto-scroll week view to center today's column on mobile
   useEffect(() => {
@@ -345,7 +355,8 @@ function App() {
     assignments: { driver: null, packer: null },
     todoList: [],
     assignees: [], // Array for multiple selection
-    coords: null
+    coords: null,
+    category: null
   });
 
   // Task Input State
@@ -594,6 +605,10 @@ function App() {
 
   // Helper to categorize events
   const getEventCategory = (e) => {
+    // If category was explicitly set, use it
+    if (e.category) return e.category;
+
+    // Otherwise, try to auto-detect from text
     const text = ((e.summary || '') + ' ' + (e.description || '')).toLowerCase();
     if (text.includes('handboll')) return 'Handboll';
     if (text.includes('fotboll')) return 'Fotboll';
@@ -721,6 +736,42 @@ function App() {
   // I will change this to:
   const otherEvents = filteredEventsList.filter(event => !isSameDay(event.start, selectedDate));
 
+  // Helper to get color class based on who the event is FOR (checks assignees, summary, then assignments)
+  const getAssignedColorClass = (event) => {
+    const summary = (event.summary || '').toLowerCase();
+    const assignees = event.assignees || [];
+    const assigneesLower = assignees.map(a => a.toLowerCase()).join(' ');
+
+    // Priority 0: Check the assignees array (from the "Vem gäller det" field)
+    if (assigneesLower.includes('algot')) return 'assigned-algot';
+    if (assigneesLower.includes('leon')) return 'assigned-leon';
+    if (assigneesLower.includes('tuva')) return 'assigned-tuva';
+    if (assigneesLower.includes('svante')) return 'assigned-svante';
+    if (assigneesLower.includes('sarah')) return 'assigned-sarah';
+
+    // Priority 1: Check if a child's name is in the event summary (covers "Algot bandyträning" etc.)
+    if (summary.includes('algot')) return 'assigned-algot';
+    if (summary.includes('leon')) return 'assigned-leon';
+    if (summary.includes('tuva')) return 'assigned-tuva';
+
+    // Priority 2: Check assignments (driver, packer) or event assignee
+    const assignments = event.assignments || {};
+    const assignedPerson = assignments.driver || assignments.packer || event.assignee || '';
+    const personLower = assignedPerson.toLowerCase();
+
+    if (personLower.includes('algot')) return 'assigned-algot';
+    if (personLower.includes('leon')) return 'assigned-leon';
+    if (personLower.includes('tuva')) return 'assigned-tuva';
+    if (personLower.includes('svante')) return 'assigned-svante';
+    if (personLower.includes('sarah')) return 'assigned-sarah';
+
+    // Priority 3: Check summary for parents (less common in event names)
+    if (summary.includes('svante')) return 'assigned-svante';
+    if (summary.includes('sarah')) return 'assigned-sarah';
+
+    return '';
+  };
+
   // Helper to render assignment controls
   const renderAssignmentControl = (event, role) => {
     const assignments = event.assignments || {};
@@ -780,7 +831,10 @@ function App() {
           start: startDateTime.toISOString(),
           end: endDateTime.toISOString(),
           todoList: finalTodoList,
-          assignments: editEventData.assignments // Include assignments!
+          assignments: editEventData.assignments,
+          assignees: editEventData.assignees || [],
+          assignee: (editEventData.assignees || []).join(', '), // For backwards compatibility
+          category: editEventData.category || null
         })
       });
 
@@ -810,6 +864,8 @@ function App() {
           coords: newEvent.coords,
           description: newEvent.description,
           assignee: newEvent.assignees.join(', '),
+          assignees: newEvent.assignees,
+          category: newEvent.category,
           start: startDateTime.toISOString(),
           end: endDateTime.toISOString(),
           createdBy: 'Admin'
@@ -831,6 +887,7 @@ function App() {
         location: '',
         description: '',
         assignees: [],
+        category: null,
         date: new Date().toISOString().split('T')[0],
         time: '12:00',
         endTime: '13:00'
@@ -871,13 +928,17 @@ function App() {
     e.preventDefault();
     if (!taskInput.text) return;
 
+    // If child user, automatically assign to themselves
+    const effectiveAssignee = isChildUser
+      ? currentUser.name
+      : (Array.isArray(taskInput.assignee) ? taskInput.assignee.join(', ') : taskInput.assignee);
+
     fetch(getApiUrl('api/tasks'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: taskInput.text,
-        text: taskInput.text,
-        assignee: Array.isArray(taskInput.assignee) ? taskInput.assignee.join(', ') : taskInput.assignee,
+        assignee: effectiveAssignee,
         week: parseInt(taskInput.week) || getWeekNumber(new Date()),
         isRecurring: taskInput.isRecurring,
         days: taskInput.days
@@ -973,7 +1034,7 @@ function App() {
           }} onClick={e => e.stopPropagation()}>
             <button onClick={() => setViewMapEvent(null)} style={{
               position: 'absolute', top: '10px', right: '10px', zIndex: 1001,
-              background: 'white', border: '1px solid #ccc', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer'
+              background: 'white', border: 'none', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', outline: 'none', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>✕</button>
 
             <h2 style={{ marginTop: 0, marginBottom: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -1219,29 +1280,95 @@ function App() {
                 <div>
                   <label>Vem gäller det?</label>
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                    {['Hela familjen', 'Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => (
-                      <button
-                        key={name}
-                        type="button"
-                        onClick={() => {
-                          const newAssignees = newEvent.assignees.includes(name)
-                            ? newEvent.assignees.filter(n => n !== name)
-                            : [...newEvent.assignees, name];
-                          setNewEvent({ ...newEvent, assignees: newAssignees });
-                        }}
-                        style={{
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '20px',
-                          border: '1px solid var(--border-color)',
-                          background: newEvent.assignees.includes(name) ? '#4a90e2' : 'var(--input-bg)',
-                          color: newEvent.assignees.includes(name) ? 'white' : 'var(--text-main)',
-                          cursor: 'pointer',
-                          fontSize: '0.9rem'
-                        }}
-                      >
-                        {name}
-                      </button>
-                    ))}
+                    {['Hela familjen', 'Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => {
+                      const isSelected = name === 'Hela familjen'
+                        ? newEvent.assignees.length === 0
+                        : newEvent.assignees.includes(name);
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => {
+                            let newAssignees;
+                            let newSummary = newEvent.summary || '';
+
+                            // Helper to remove name prefix from summary
+                            const removePrefixFromSummary = (summary, personName) => {
+                              const regex = new RegExp(`^${personName}:\\s*`, 'i');
+                              return summary.replace(regex, '');
+                            };
+
+                            // Helper to add name prefix to summary
+                            const addPrefixToSummary = (summary, personName) => {
+                              const cleanSummary = ['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].reduce(
+                                (s, n) => removePrefixFromSummary(s, n), summary
+                              );
+                              return `${personName}: ${cleanSummary}`;
+                            };
+
+                            if (name === 'Hela familjen') {
+                              newSummary = ['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].reduce(
+                                (s, n) => removePrefixFromSummary(s, n), newSummary
+                              );
+                              newAssignees = [];
+                            } else {
+                              const current = newEvent.assignees.filter(n => n !== 'Hela familjen');
+                              if (current.includes(name)) {
+                                newAssignees = current.filter(n => n !== name);
+                                newSummary = removePrefixFromSummary(newSummary, name);
+                              } else {
+                                newAssignees = [...current, name];
+                                if (newAssignees.length === 1) {
+                                  newSummary = addPrefixToSummary(newSummary, name);
+                                }
+                              }
+                            }
+
+                            setNewEvent({ ...newEvent, assignees: newAssignees, summary: newSummary });
+                          }}
+                          style={{
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '20px',
+                            border: '1px solid var(--border-color)',
+                            background: isSelected ? '#4a90e2' : 'var(--input-bg)',
+                            color: isSelected ? 'white' : 'var(--text-main)',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem'
+                          }}
+                        >
+                          {isSelected ? '✓ ' : ''}{name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Category selection */}
+                <div>
+                  <label>📂 Kategori</label>
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                    {['Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => {
+                      const isSelected = newEvent.category === cat;
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setNewEvent({ ...newEvent, category: cat })}
+                          style={{
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '15px',
+                            border: '1px solid var(--border-color)',
+                            background: isSelected ? '#646cff' : 'var(--input-bg)',
+                            color: isSelected ? 'white' : 'var(--text-main)',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {isSelected ? '✓ ' : ''}{cat}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1335,6 +1462,109 @@ function App() {
                       onChange={val => setEditEventData({ ...editEventData, location: val })}
                       onSelect={coords => setEditEventData({ ...editEventData, coords })}
                     />
+                  </div>
+                </div>
+
+                {/* Who is this event for? */}
+                <div>
+                  <label>👥 Vem gäller det?</label>
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                    {['Hela Familjen', 'Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => {
+                      const assignees = editEventData.assignees || [];
+                      const isSelected = name === 'Hela Familjen'
+                        ? assignees.length === 0
+                        : assignees.includes(name);
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => {
+                            let newAssignees;
+                            let newSummary = editEventData.summary || '';
+
+                            // Helper to remove name prefix from summary
+                            const removePrefixFromSummary = (summary, personName) => {
+                              // Remove "Name: " or "Name " at start
+                              const regex = new RegExp(`^${personName}:\\s*`, 'i');
+                              return summary.replace(regex, '');
+                            };
+
+                            // Helper to add name prefix to summary
+                            const addPrefixToSummary = (summary, personName) => {
+                              // First clean any existing prefixes
+                              const cleanSummary = ['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].reduce(
+                                (s, n) => removePrefixFromSummary(s, n), summary
+                              );
+                              return `${personName}: ${cleanSummary}`;
+                            };
+
+                            if (name === 'Hela Familjen') {
+                              // Remove all name prefixes when selecting "Hela Familjen"
+                              newSummary = ['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].reduce(
+                                (s, n) => removePrefixFromSummary(s, n), newSummary
+                              );
+                              newAssignees = [];
+                            } else {
+                              const current = (editEventData.assignees || []).filter(n => n !== 'Hela Familjen');
+                              if (current.includes(name)) {
+                                // Deselecting - remove prefix
+                                newAssignees = current.filter(n => n !== name);
+                                newSummary = removePrefixFromSummary(newSummary, name);
+                              } else {
+                                // Selecting - add prefix (only if single person)
+                                newAssignees = [...current, name];
+                                if (newAssignees.length === 1) {
+                                  newSummary = addPrefixToSummary(newSummary, name);
+                                }
+                              }
+                            }
+
+                            setEditEventData({ ...editEventData, assignees: newAssignees, summary: newSummary });
+                          }}
+                          style={{
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '15px',
+                            border: '1px solid var(--border-color)',
+                            background: isSelected ? '#2ed573' : 'var(--input-bg)',
+                            color: isSelected ? 'white' : 'var(--text-main)',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {isSelected ? '✓ ' : ''}{name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Category selection */}
+                <div>
+                  <label>📂 Kategori</label>
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                    {['Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => {
+                      const isSelected = editEventData.category === cat;
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setEditEventData({ ...editEventData, category: cat })}
+                          style={{
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '15px',
+                            border: '1px solid var(--border-color)',
+                            background: isSelected ? '#646cff' : 'var(--input-bg)',
+                            color: isSelected ? 'white' : 'var(--text-main)',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {isSelected ? '✓ ' : ''}{cat}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1821,6 +2051,7 @@ function App() {
                     const assignments = event.assignments || {};
                     const isFullyAssigned = assignments.driver && assignments.packer;
                     const passedStyle = getEventStatusStyle(event.end);
+                    const colorClass = getAssignedColorClass(event);
 
                     const renderTravelInfoLocal = () => {
                       if (!event.travelTime) return null;
@@ -1838,7 +2069,7 @@ function App() {
                     };
 
                     return (
-                      <div key={key} className={`card ${sourceClass} ${isFullyAssigned ? 'assigned' : ''} `}
+                      <div key={key} className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''} `}
                         style={{ cursor: 'pointer', ...passedStyle }}
                         onClick={(e) => { e.stopPropagation(); if (isAdmin) openEditModal(event); else setViewMapEvent(event); }}
                       >
@@ -1882,39 +2113,63 @@ function App() {
         )}
       </div>
 
-      {/* Family filter - dropdown on mobile, buttons on desktop */}
-      <div style={{ marginBottom: '0.5rem' }}>
-        {isMobile ? (
-          <select
-            value={filterChild}
-            onChange={(e) => setFilterChild(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.75rem 1rem',
-              fontSize: '1rem',
-              borderRadius: '25px',
-              border: '2px solid #646cff',
-              background: 'var(--card-bg)',
-              color: 'var(--text-main)',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
-          >
-            {children.map(child => (
-              <option key={child} value={child}>
-                {child === 'Alla' ? '👨‍👩‍👧‍👦 Hela Familjen' : child}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <div className="filter-bar">
+      {/* Family filter - custom dropdown matching category filter design */}
+      <div style={{ position: 'relative', marginBottom: '0.5rem', zIndex: 11 }}>
+        <button
+          onClick={() => { setShowFamilyMenu(!showFamilyMenu); setShowFilterMenu(false); }}
+          style={{
+            width: '100%',
+            padding: '0.8rem 1rem',
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            color: 'var(--text-main)',
+            fontSize: '1rem',
+            textAlign: 'left',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: 'pointer'
+          }}
+        >
+          <span>👨‍👩‍👧‍👦 Familj: <strong>{filterChild === 'Alla' ? 'Hela Familjen' : filterChild}</strong></span>
+          <span>{showFamilyMenu ? '▲' : '▼'}</span>
+        </button>
+
+        {showFamilyMenu && (
+          <div style={{
+            position: 'absolute',
+            top: '110%',
+            left: 0,
+            width: '100%',
+            background: 'var(--card-bg)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
             {children.map(child => (
               <button
                 key={child}
-                className={`filter-btn ${filterChild === child ? 'active' : ''}`}
-                onClick={() => setFilterChild(child)}
+                onClick={() => {
+                  setFilterChild(child);
+                  setShowFamilyMenu(false);
+                }}
+                style={{
+                  padding: '1rem',
+                  border: 'none',
+                  borderBottom: '1px solid var(--border-color)',
+                  background: filterChild === child ? 'rgba(100, 108, 255, 0.1)' : 'transparent',
+                  color: filterChild === child ? '#646cff' : 'var(--text-main)',
+                  textAlign: 'left',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  fontWeight: filterChild === child ? 'bold' : 'normal'
+                }}
               >
-                {child === 'Alla' ? 'Hela Familjen' : child}
+                {child === 'Alla' ? '👨‍👩‍👧‍👦 Hela Familjen' : child} {filterChild === child && '✓'}
               </button>
             ))}
           </div>
@@ -1925,7 +2180,7 @@ function App() {
       {/* Custom Dropdown Filter */}
       <div style={{ position: 'relative', marginBottom: '0.5rem', zIndex: 10 }}>
         <button
-          onClick={() => setShowFilterMenu(!showFilterMenu)}
+          onClick={() => { setShowFilterMenu(!showFilterMenu); setShowFamilyMenu(false); }}
           style={{
             width: '100%',
             padding: '0.8rem 1rem',
@@ -2160,9 +2415,10 @@ function App() {
                             let sourceClass = '';
                             if (ev.source.includes('Svante')) sourceClass = 'source-svante';
                             if (ev.source.includes('Sarah')) sourceClass = 'source-mamma';
+                            const colorClass = getAssignedColorClass(ev);
                             return (
                               <div key={ev.uid}
-                                className={`card ${sourceClass}`}
+                                className={`card ${sourceClass} ${colorClass}`}
                                 style={{ padding: '0.5rem', fontSize: '0.8rem', minHeight: 'auto', marginBottom: '0.5rem', borderLeftWidth: '3px', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}
                                 onClick={(e) => { e.stopPropagation(); if (isAdmin) openEditModal(ev); else setViewMapEvent(ev); }}
                               >
@@ -2212,8 +2468,9 @@ function App() {
                     if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
                     const assignments = event.assignments || {};
                     const isFullyAssigned = assignments.driver && assignments.packer;
+                    const colorClass = getAssignedColorClass(event);
                     return (
-                      <div key={event.uid} className={`card ${sourceClass} ${isFullyAssigned ? 'assigned' : ''}`}
+                      <div key={event.uid} className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''}`}
                         style={{ cursor: isAdmin ? 'pointer' : 'default' }}
                         onClick={() => isAdmin && openEditModal(event)}
                       >
@@ -2253,10 +2510,10 @@ function App() {
             </h2>
           </div>
           {
-            !isChildUser && (!isMobile || showMobileTaskForm) && (
+            showMobileTaskForm && (
               <form onSubmit={(e) => {
                 addTask(e);
-                if (isMobile) setShowMobileTaskForm(false);
+                setShowMobileTaskForm(false);
               }} style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', boxShadow: '0 2px 4px var(--shadow-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <input type="text" placeholder="Vad behöver göras?" value={taskInput.text} onChange={e => setTaskInput({ ...taskInput, text: e.target.value })} style={{ flex: 3, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} />
@@ -2290,53 +2547,53 @@ function App() {
                   </label>
 
 
-                  {/* Multi-select Assignees */}
-                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', flex: 1 }}>
-                    {['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => (
-                      <button
-                        key={name}
-                        type="button"
-                        onClick={() => {
-                          const current = Array.isArray(taskInput.assignee) ? taskInput.assignee : [];
-                          const newAssignees = current.includes(name)
-                            ? current.filter(n => n !== name)
-                            : [...current, name];
-                          setTaskInput({ ...taskInput, assignee: newAssignees });
-                        }}
-                        style={{
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '15px',
-                          border: '1px solid var(--border-color)',
-                          background: (Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name)) ? '#2ed573' : 'var(--input-bg)',
-                          color: (Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name)) ? 'white' : 'var(--text-main)',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        {(Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name)) ? '✓ ' : ''}{name}
-                      </button>
-                    ))}
-                  </div>
+                  {/* Multi-select Assignees - only shown for parents */}
+                  {!isChildUser && (
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', flex: 1 }}>
+                      {['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => {
+                            const current = Array.isArray(taskInput.assignee) ? taskInput.assignee : [];
+                            const newAssignees = current.includes(name)
+                              ? current.filter(n => n !== name)
+                              : [...current, name];
+                            setTaskInput({ ...taskInput, assignee: newAssignees });
+                          }}
+                          style={{
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '15px',
+                            border: '1px solid var(--border-color)',
+                            background: (Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name)) ? '#2ed573' : 'var(--input-bg)',
+                            color: (Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name)) ? 'white' : 'var(--text-main)',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {(Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name)) ? '✓ ' : ''}{name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
                     <button type="submit" style={{ background: '#2ed573', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 1rem', cursor: 'pointer', flex: 1 }}>Lägg till</button>
-                    {isMobile && (
-                      <button
-                        type="button"
-                        onClick={() => setShowMobileTaskForm(false)}
-                        style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '0.5rem 1rem', cursor: 'pointer' }}
-                      >
-                        Avbryt
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowMobileTaskForm(false)}
+                      style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '0.5rem 1rem', cursor: 'pointer' }}
+                    >
+                      Avbryt
+                    </button>
                   </div>
                 </div>
               </form>
             )
           }
-          {/* Mobile: subtle add task button */}
-          {isMobile && isAdmin && (
+          {/* Add task button - shows for everyone */}
+          {(
             <button
               onClick={() => setShowMobileTaskForm(!showMobileTaskForm)}
               style={{
@@ -2422,8 +2679,31 @@ function App() {
                   }
                 };
 
+                // Get color for task based on assignee
+                const getTaskColor = () => {
+                  if (isDone) return '#ccc';
+                  if (task.isEventTodo) {
+                    // For event todos, use the event's color logic
+                    const summary = (task.event.summary || '').toLowerCase();
+                    if (summary.includes('algot')) return '#3498db';
+                    if (summary.includes('leon')) return '#2ed573';
+                    if (summary.includes('tuva')) return '#9b59b6';
+                    if (summary.includes('svante')) return '#ff4757';
+                    if (summary.includes('sarah')) return '#f1c40f';
+                    return '#ff6b81'; // default for event todos
+                  }
+                  // For regular tasks, check assignee
+                  const assignee = (task.assignee || '').toLowerCase();
+                  if (assignee.includes('algot')) return '#3498db';
+                  if (assignee.includes('leon')) return '#2ed573';
+                  if (assignee.includes('tuva')) return '#9b59b6';
+                  if (assignee.includes('svante')) return '#ff4757';
+                  if (assignee.includes('sarah')) return '#f1c40f';
+                  return '#2ed573'; // default green
+                };
+
                 return (
-                  <div key={task.id} className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: isDone ? 0.6 : 1, borderLeftColor: isDone ? '#ccc' : (task.isEventTodo ? '#ff6b81' : '#2ed573') }}>
+                  <div key={task.id} className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: isDone ? 0.6 : 1, borderLeftColor: getTaskColor() }}>
                     <input type="checkbox" checked={isDone} onChange={handleToggle} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
                     <div style={{ flex: 1, textAlign: 'left', textDecoration: isDone ? 'line-through' : 'none' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>

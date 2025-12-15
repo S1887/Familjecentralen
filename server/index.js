@@ -395,7 +395,7 @@ app.get('/api/trash', (req, res) => {
 });
 
 app.post('/api/create-event', (req, res) => {
-    const { summary, location, coords, start, end, description, createdBy } = req.body;
+    const { summary, location, coords, start, end, description, createdBy, assignee, assignees, category } = req.body;
 
     if (!summary || !start) {
         return res.status(400).json({ error: 'Titel och starttid krävs' });
@@ -410,7 +410,9 @@ app.post('/api/create-event', (req, res) => {
         start,
         end: end || start, // Om inget slutdatum, sätt samma som start
         description: description || '',
-        assignee: req.body.assignee || 'Hela familjen', // Default to family
+        assignee: assignee || 'Hela familjen', // Default to family
+        assignees: assignees || [], // Array of assignees
+        category: category || null, // Event category
         todoList: [],
         createdBy,
         createdAt: new Date().toISOString(),
@@ -425,19 +427,24 @@ app.post('/api/create-event', (req, res) => {
 });
 
 app.post('/api/update-event', (req, res) => {
-    const { uid, summary, location, coords, start, end, description, todoList, cancelled, assignments } = req.body;
+    const { uid, summary, location, coords, start, end, description, todoList, cancelled, assignments, assignee, assignees, category } = req.body;
     let events = readLocalEvents();
 
     const existingIndex = events.findIndex(e => e.uid === uid);
 
     console.log('Update Event called for:', uid);
     console.log('Assignments received:', assignments);
+    console.log('Assignees received:', assignees);
+    console.log('Category received:', category);
 
     if (existingIndex >= 0) {
         // Update existing local event
         events[existingIndex] = {
             ...events[existingIndex],
             summary, location, coords, start, end, description, todoList,
+            assignee: assignee || events[existingIndex].assignee,
+            assignees: assignees || events[existingIndex].assignees || [],
+            category: category || events[existingIndex].category,
             cancelled: cancelled !== undefined ? cancelled : events[existingIndex].cancelled
         };
     } else {
@@ -453,6 +460,9 @@ app.post('/api/update-event', (req, res) => {
             end,
             description: description || '',
             todoList: todoList || [],
+            assignee: assignee || '',
+            assignees: assignees || [],
+            category: category || null,
             source: 'Familjen (Redigerad)', // Marking it as locally modified
             createdAt: new Date().toISOString(), // effectively "claiming" it
             cancelled: cancelled || false,

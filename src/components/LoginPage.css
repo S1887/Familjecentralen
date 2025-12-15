@@ -50,13 +50,28 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.user-btn.parent {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.user-btn.svante {
+    background: linear-gradient(135deg, #ff4757 0%, #c0392b 100%);
     color: white;
 }
 
-.user-btn.child {
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+.user-btn.sarah {
+    background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+    color: white;
+}
+
+.user-btn.algot {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+}
+
+.user-btn.tuva {
+    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    color: white;
+}
+
+.user-btn.leon {
+    background: linear-gradient(135deg, #2ed573 0%, #27ae60 100%);
     color: white;
 }
 
