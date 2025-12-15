@@ -85,60 +85,82 @@ export default function InboxModal({ isOpen, onClose, onImport }) {
                 )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {items.map(item => (
-                        <div key={item.uid} style={{
-                            border: '1px solid var(--border-color, #eee)',
-                            padding: '1rem',
-                            borderRadius: '8px',
-                            background: 'var(--card-bg, #fff)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.5rem'
-                        }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div>
-                                    <h3 style={{ margin: '0 0 0.2rem 0', fontSize: '1.1rem' }}>{item.summary}</h3>
-                                    <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-                                        {new Date(item.start).toLocaleString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
+                    {items.map(item => {
+                        const isPast = new Date(item.start) < new Date();
+                        return (
+                            <div key={item.uid} style={{
+                                border: '1px solid var(--border-color, #eee)',
+                                padding: '1rem',
+                                borderRadius: '8px',
+                                background: isPast ? '#f9f9f9' : 'var(--card-bg, #fff)',
+                                opacity: isPast ? 0.8 : 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.5rem',
+                                position: 'relative'
+                            }}>
+                                {isPast && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '0.5rem',
+                                        right: '0.5rem',
+                                        background: '#95a5a6',
+                                        color: 'white',
+                                        fontSize: '0.7rem',
+                                        padding: '0.2rem 0.5rem',
+                                        borderRadius: '4px',
+                                        fontWeight: 'bold'
+                                    }}>
+                                        PASSERAD
                                     </div>
-                                    <div style={{ fontSize: '0.8rem', fontStyle: 'italic', marginTop: '0.2rem' }}>
-                                        Källa: {item.source}
+                                )}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div>
+                                        <h3 style={{ margin: '0 0 0.2rem 0', fontSize: '1.1rem', textDecoration: isPast ? 'line-through' : 'none', color: isPast ? '#7f8c8d' : 'inherit' }}>
+                                            {item.summary}
+                                        </h3>
+                                        <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                                            {new Date(item.start).toLocaleString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', fontStyle: 'italic', marginTop: '0.2rem' }}>
+                                            Källa: {item.source}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                                <button
-                                    onClick={() => onImport(item)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '0.6rem',
-                                        background: '#2ed573',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                        fontWeight: 600
-                                    }}
-                                >
-                                    ➕ Lägg till
-                                </button>
-                                <button
-                                    onClick={(e) => handleIgnore(item.uid, e)}
-                                    style={{
-                                        padding: '0.6rem 1rem',
-                                        background: 'transparent',
-                                        border: '1px solid #ff4757',
-                                        color: '#ff4757',
-                                        borderRadius: '6px',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    🚫 Ignorera
-                                </button>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                                    <button
+                                        onClick={() => onImport(item)}
+                                        style={{
+                                            flex: 1,
+                                            padding: '0.6rem',
+                                            background: isPast ? '#95a5a6' : '#2ed573',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontWeight: 600
+                                        }}
+                                    >
+                                        ➕ {isPast ? 'Lägg till (historik)' : 'Lägg till'}
+                                    </button>
+                                    <button
+                                        onClick={(e) => handleIgnore(item.uid, e)}
+                                        style={{
+                                            padding: '0.6rem 1rem',
+                                            background: 'transparent',
+                                            border: '1px solid #ff4757',
+                                            color: '#ff4757',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        🚫 Ignorera
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
             </div>

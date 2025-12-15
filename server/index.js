@@ -72,6 +72,12 @@ const CALENDARS = [
         name: 'Råda BK F7',
         url: 'https://cal.laget.se/RadaBK-F7.ics',
         inboxOnly: true
+    },
+    {
+        id: 'villa_lidkoping_algot',
+        name: 'Villa Lidköping (Algot)',
+        url: 'https://portalweb.sportadmin.se/webcal?id=d9a0805a-8cb5-4c5c-8eb9-679ecb6c70c0',
+        inboxOnly: true
     }
 ];
 
@@ -227,12 +233,14 @@ async function fetchCalendarsFromGoogle() {
                     }
 
                     // AUTO-RULES
+                    let category = null; // Initialize category here
                     // 1. HK Lidköping (Algot): "Träning" goes directly to calendar
                     if (cal.id === 'hkl_p11_p10' && summary.toLowerCase().includes('träning')) {
-                        console.log(`[Auto-Rule] Bypassing inbox for Algot: ${summary}`);
+                        console.log(`[Auto-Rule] Bypassing inbox for Algot (Handboll): ${summary}`);
                         isInbox = false;
                         summary = `Algot: ${summary}`;
                         assignees = ['Algot'];
+                        category = 'Handboll';
                     }
                     // 2. HK Lidköping (Tuva): "Träning" goes directly to calendar
                     if (cal.id === 'hkl_handbollsskola' && summary.toLowerCase().includes('träning')) {
@@ -240,6 +248,7 @@ async function fetchCalendarsFromGoogle() {
                         isInbox = false;
                         summary = `Tuva: ${summary}`;
                         assignees = ['Tuva'];
+                        category = 'Handboll';
                     }
                     // 3. Råda BK F7 (Tuva): "Träning" goes directly to calendar
                     if (cal.id === 'rada_bk_f7' && summary.toLowerCase().includes('träning')) {
@@ -247,6 +256,7 @@ async function fetchCalendarsFromGoogle() {
                         isInbox = false;
                         summary = `Tuva: ${summary}`;
                         assignees = ['Tuva'];
+                        category = 'Fotboll';
                     }
                     // 4. Råda BK P2015 (Algot): "Träning" goes directly to calendar
                     if (cal.id === 'rada_bk_p2015' && summary.toLowerCase().includes('träning')) {
@@ -254,6 +264,18 @@ async function fetchCalendarsFromGoogle() {
                         isInbox = false;
                         summary = `Algot: ${summary}`;
                         assignees = ['Algot'];
+                        category = 'Fotboll';
+                    }
+                    // 5. Villa Lidköping (Algot): "Träning" goes directly to calendar
+                    if (cal.id === 'villa_lidkoping_algot' && summary.toLowerCase().includes('träning')) {
+                        console.log(`[Auto-Rule] Bypassing inbox for Algot (Bandy): ${summary}`);
+                        isInbox = false;
+                        // Special fix: If they wrote "Handbollsträning" by mistake, fix it to "Bandyträning"
+                        summary = summary.replace(/Handbollsträning/i, 'Bandyträning');
+
+                        summary = `Algot: ${summary}`;
+                        assignees = ['Algot'];
+                        category = 'Bandy';
                     }
 
                     freshEvents.push({
@@ -266,6 +288,7 @@ async function fetchCalendarsFromGoogle() {
                         source: cal.name,
                         inboxOnly: isInbox,
                         assignees: assignees,
+                        category: category,
                         todoList: [],
                         tags: [],
                         deleted: false
@@ -565,7 +588,7 @@ app.get('/api/feed.ics', async (req, res) => {
         });
 
         // Add Auto-Approved External Events (from cache)
-        const inboxSourceIds = ['hkl_p11_p10', 'hkl_handbollsskola', 'rada_bk_p2015', 'rada_bk_f7'];
+        const inboxSourceIds = ['hkl_p11_p10', 'hkl_handbollsskola', 'rada_bk_p2015', 'rada_bk_f7', 'villa_lidkoping_algot'];
 
         cachedCalendarEvents.forEach(ev => {
             const originCal = CALENDARS.find(c => c.name === ev.source);
@@ -652,9 +675,18 @@ app.get('/api/inbox', async (req, res) => {
         const localUids = new Set(localEvents.map(e => e.uid));
         const ignoredUids = new Set(ignoredEvents);
 
+        // Date Filter: Show future events AND events from the last 7 days
+        const now = new Date();
+        const cutoffDate = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000)); // 7 days ago
+
         const finalInbox = inboxEventsCandidate.filter(e => {
             if (localUids.has(e.uid)) return false; // Already imported
             if (ignoredUids.has(e.uid)) return false; // Explicitly ignored
+
+            // Check Date
+            const eventStart = new Date(e.start);
+            if (eventStart < cutoffDate) return false;
+
             return true;
         });
 

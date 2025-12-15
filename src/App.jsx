@@ -1142,10 +1142,25 @@ function App() {
                   <div style={{ fontWeight: 'bold', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Att göra:</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                     {viewMapEvent.todoList.map((todo, idx) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: todo.done ? '#aaa' : '#333' }}>
-                        <span style={{ color: todo.done ? '#4caf50' : '#ccc' }}>
-                          {todo.done ? '☑️' : '⬜'}
-                        </span>
+                      <div key={todo.id || idx}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: todo.done ? '#aaa' : '#333', cursor: 'pointer' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (todo.id) {
+                            // Optimistic update
+                            const newTodos = viewMapEvent.todoList.map(t => t.id === todo.id ? { ...t, done: !t.done } : t);
+                            setViewMapEvent({ ...viewMapEvent, todoList: newTodos });
+                            // Backend update
+                            toggleEventTask(viewMapEvent, todo.id);
+                          }
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!todo.done}
+                          readOnly
+                          style={{ cursor: 'pointer', width: '1.2rem', height: '1.2rem', accentColor: '#2ed573' }}
+                        />
                         <span style={{ textDecoration: todo.done ? 'line-through' : 'none' }}>
                           {todo.text || todo}
                         </span>
@@ -1278,13 +1293,23 @@ function App() {
             location: event.location,
             description: event.description,
             // Pre-fill Assignee if known source
+            // Pre-fill Assignee f known source
             assignees: (() => {
               const src = event.source || '';
               if (src.includes('HK Lidköping P11/P10')) return ['Algot'];
               if (src.includes('Handbollsskola')) return ['Tuva'];
               if (src.includes('Råda BK F7')) return ['Tuva'];
               if (src.includes('Råda BK P2015')) return ['Algot'];
+              if (src.includes('Villa Lidköping')) return ['Algot'];
               return [];
+            })(),
+            // Auto-detect Category based on Source
+            category: (() => {
+              const src = (event.source || '').toLowerCase();
+              if (src.includes('villa lidköping')) return 'Bandy';
+              if (src.includes('hk lidköping')) return 'Handboll';
+              if (src.includes('råda bk')) return 'Fotboll';
+              return null;
             })()
           });
           setShowInbox(false);
@@ -1703,24 +1728,28 @@ function App() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button type="button" onClick={() => deleteEvent(editEventData)} style={{
-                      padding: '0.75rem 1rem', borderRadius: '8px', border: 'none', background: '#ff4757', color: 'white', cursor: 'pointer'
-                    }}>🗑️ Ta bort</button>
+                      padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ff4757', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
+                    }} title="Ta bort event">
+                      <span>🗑️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ta bort</span>
+                    </button>
                     {!editEventData.cancelled && (
                       <button type="button" onClick={() => cancelEvent(editEventData)} style={{
-                        padding: '0.75rem 1rem', borderRadius: '8px', border: 'none', background: '#ffa502', color: 'white', cursor: 'pointer'
-                      }}>🚫 Ställ in</button>
+                        padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ffa502', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
+                      }} title="Ställ in">
+                        <span>🚫</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ställ in</span>
+                      </button>
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button type="button" onClick={() => setIsEditingEvent(false)} style={{
-                      padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', cursor: 'pointer'
+                      padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontSize: '0.9rem'
                     }}>Avbryt</button>
                     <button type="submit" style={{
-                      padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer'
+                      padding: '0.5rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(100, 108, 255, 0.3)'
                     }}>Spara</button>
                   </div>
                 </div>
@@ -2727,7 +2756,7 @@ function App() {
                     // Optimistic Update (optional, but good for UI)
                     // ... complex to update UI state deep in events list without re-fetch
                     // For now, let's just push to backend and re-fetch.
-                    fetch('http://localhost:3001/api/update-event', {
+                    fetch(getApiUrl('api/update-event'), {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ ...ev, todoList: newTodoList })
