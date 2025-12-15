@@ -154,7 +154,10 @@ const MapUpdater = ({ route, center }) => {
   return null;
 };
 
+import InboxModal from './components/InboxModal';
+
 function App() {
+  const [showInbox, setShowInbox] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('familyOpsDarkMode') === 'true');
 
   // Auth state - persisted in localStorage
@@ -775,6 +778,10 @@ function App() {
     if (assigneesLower.includes('svante')) return 'assigned-svante';
     if (assigneesLower.includes('sarah')) return 'assigned-sarah';
 
+    // Source based coloring
+    if ((event.source || '').includes('HK Lidköping P11/P10')) return 'assigned-algot';
+    if ((event.source || '').includes('Handbollsskola')) return 'assigned-tuva';
+
     // Priority 1: Check if a child's name is in the event summary (covers "Algot bandyträning" etc.)
     if (summary.includes('algot')) return 'assigned-algot';
     if (summary.includes('leon')) return 'assigned-leon';
@@ -871,6 +878,33 @@ function App() {
       console.error("Could not update event", err);
       alert("Något gick fel vid uppdatering.");
     }
+  };
+
+  // Helper to update summary with smart prefix
+  const updateSummaryWithPrefix = (currentSummary, newAssignees) => {
+    // 1. Identify valid names for prefix
+    const allowedNames = ['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'];
+
+    // 2. Clean existing prefix
+    // Matches "Name: " or "Name1 & Name2: "
+    const namePattern = allowedNames.join('|');
+    const prefixRegex = new RegExp(`^(${namePattern})( & (${namePattern}))?:\\s*`, 'i');
+    const cleanSummary = currentSummary.replace(prefixRegex, '');
+
+    // 3. Generate new prefix
+    // Filter to only include allowed names (exclude "Hela Familjen" or others)
+    const relevantAssignees = newAssignees.filter(n => allowedNames.includes(n));
+
+    let prefix = '';
+    if (relevantAssignees.length === 1) {
+      prefix = `${relevantAssignees[0]}: `;
+    } else if (relevantAssignees.length === 2) {
+      const sorted = [...relevantAssignees].sort();
+      prefix = `${sorted[0]} & ${sorted[1]}: `;
+    }
+    // 3+ items -> No prefix
+
+    return prefix + cleanSummary;
   };
 
   const createEvent = async (e) => {
@@ -1227,6 +1261,33 @@ function App() {
       }
 
       {/* Modal för att skapa event */}
+      {/* Inbox Modal */}
+      <InboxModal
+        isOpen={showInbox}
+        onClose={() => setShowInbox(false)}
+        onImport={(event) => {
+          setNewEvent({
+            ...newEvent,
+            summary: event.summary,
+            date: new Date(event.start).toISOString().split('T')[0],
+            time: new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
+            endTime: new Date(event.end).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
+            location: event.location,
+            description: event.description,
+            // Pre-fill Assignee if known source
+            assignees: (() => {
+              const src = event.source || '';
+              if (src.includes('HK Lidköping P11/P10')) return ['Algot'];
+              if (src.includes('Handbollsskola')) return ['Tuva'];
+              return [];
+            })()
+          });
+          setShowInbox(false);
+          setIsCreatingEvent(true);
+        }}
+      />
+
+      {/* Create Event Modal */}
       {
         isCreatingEvent && (
           <div className="modal-overlay">
@@ -1303,40 +1364,21 @@ function App() {
                           type="button"
                           onClick={() => {
                             let newAssignees;
-                            let newSummary = newEvent.summary || '';
-
-                            // Helper to remove name prefix from summary
-                            const removePrefixFromSummary = (summary, personName) => {
-                              const regex = new RegExp(`^${personName}:\\s*`, 'i');
-                              return summary.replace(regex, '');
-                            };
-
-                            // Helper to add name prefix to summary
-                            const addPrefixToSummary = (summary, personName) => {
-                              const cleanSummary = ['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].reduce(
-                                (s, n) => removePrefixFromSummary(s, n), summary
-                              );
-                              return `${personName}: ${cleanSummary}`;
-                            };
 
                             if (name === 'Hela familjen') {
-                              newSummary = ['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].reduce(
-                                (s, n) => removePrefixFromSummary(s, n), newSummary
-                              );
+                              // If selecting "Hela familjen", clear specific assignees but keep text clean
+                              // actually, "Hela familjen" usually implies clearing specific assignees
                               newAssignees = [];
                             } else {
                               const current = newEvent.assignees.filter(n => n !== 'Hela familjen');
                               if (current.includes(name)) {
                                 newAssignees = current.filter(n => n !== name);
-                                newSummary = removePrefixFromSummary(newSummary, name);
                               } else {
                                 newAssignees = [...current, name];
-                                if (newAssignees.length === 1) {
-                                  newSummary = addPrefixToSummary(newSummary, name);
-                                }
                               }
                             }
 
+                            const newSummary = updateSummaryWithPrefix(newEvent.summary || '', newAssignees);
                             setNewEvent({ ...newEvent, assignees: newAssignees, summary: newSummary });
                           }}
                           style={{
@@ -1489,43 +1531,21 @@ function App() {
                             let newAssignees;
                             let newSummary = editEventData.summary || '';
 
-                            // Helper to remove name prefix from summary
-                            const removePrefixFromSummary = (summary, personName) => {
-                              // Remove "Name: " or "Name " at start
-                              const regex = new RegExp(`^${personName}:\\s*`, 'i');
-                              return summary.replace(regex, '');
-                            };
-
-                            // Helper to add name prefix to summary
-                            const addPrefixToSummary = (summary, personName) => {
-                              // First clean any existing prefixes
-                              const cleanSummary = ['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].reduce(
-                                (s, n) => removePrefixFromSummary(s, n), summary
-                              );
-                              return `${personName}: ${cleanSummary}`;
-                            };
-
                             if (name === 'Hela Familjen') {
                               // Remove all name prefixes when selecting "Hela Familjen"
-                              newSummary = ['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].reduce(
-                                (s, n) => removePrefixFromSummary(s, n), newSummary
-                              );
                               newAssignees = [];
                             } else {
                               const current = (editEventData.assignees || []).filter(n => n !== 'Hela Familjen');
                               if (current.includes(name)) {
-                                // Deselecting - remove prefix
+                                // Deselecting
                                 newAssignees = current.filter(n => n !== name);
-                                newSummary = removePrefixFromSummary(newSummary, name);
                               } else {
-                                // Selecting - add prefix (only if single person)
+                                // Selecting
                                 newAssignees = [...current, name];
-                                if (newAssignees.length === 1) {
-                                  newSummary = addPrefixToSummary(newSummary, name);
-                                }
                               }
                             }
 
+                            newSummary = updateSummaryWithPrefix(newSummary, newAssignees);
                             setEditEventData({ ...editEventData, assignees: newAssignees, summary: newSummary });
                           }}
                           style={{
@@ -1800,6 +1820,20 @@ function App() {
           }}>
             {currentUser.name}
           </span>
+          <button onClick={() => setShowInbox(true)} style={{
+            background: 'transparent',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            padding: isMobile ? '0.3rem' : '0.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.3rem',
+            fontSize: isMobile ? '0.8rem' : '1rem',
+            color: 'var(--text-main)'
+          }}>
+            📥 Inkorg
+          </button>
           <button onClick={handleLogout} style={{
             background: 'transparent',
             border: '1px solid var(--border-color)',
