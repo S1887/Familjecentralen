@@ -2706,19 +2706,64 @@ function App() {
                 };
 
                 return (
-                  <div key={task.id} className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: isDone ? 0.6 : 1, borderLeftColor: getTaskColor() }}>
-                    <input type="checkbox" checked={isDone} onChange={handleToggle} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
+                  <div
+                    key={task.id}
+                    className="card"
+                    onClick={handleToggle}
+                    style={{
+                      padding: '1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem', // Increased gap
+                      opacity: isDone ? 0.6 : 1,
+                      borderLeftColor: getTaskColor(),
+                      cursor: 'pointer', // Indicate clickable
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isDone}
+                      onChange={() => { }} // Handled by parent onClick
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        cursor: 'pointer',
+                        transform: 'scale(1.2)', // Make visual target larger
+                        marginRight: '0.5rem',
+                        pointerEvents: 'none' // Let parent handle click
+                      }}
+                    />
                     <div style={{ flex: 1, textAlign: 'left', textDecoration: isDone ? 'line-through' : 'none' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: 'bold' }}>{task.text}</span>
-                        {task.isEventTodo && <span style={{ fontSize: '0.7rem', background: '#ff6b81', color: 'white', padding: '2px 6px', borderRadius: '4px' }}>Event: {task.event.summary}</span>}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <span style={{ fontWeight: 'bold', fontSize: '1rem', lineHeight: '1.4' }}>{task.text}</span>
+                        {task.isEventTodo && <span style={{ fontSize: '0.7rem', background: '#ff6b81', color: 'white', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem', whiteSpace: 'nowrap' }}>Event</span>}
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                        {task.isEventTodo ? 'Kopplad till händelse' : (task.assignee ? `Tilldelad: ${task.assignee}` : 'Ej tilldelad')}
+                      <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.2rem' }}>
+                        {task.isEventTodo ? `Kopplad till: ${task.event.summary}` : (task.assignee ? `👤 ${task.assignee}` : 'Ej tilldelad')}
                       </div>
                     </div>
                     {!task.isEventTodo && (
-                      <button onClick={(e) => { e.stopPropagation(); deleteTask(task.id); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: '#ff6b6b' }}>🗑️</button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteTask(task.id);
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '1.4rem', // Larger icon
+                          color: '#ff6b6b',
+                          padding: '0.8rem', // Touchable area padding
+                          margin: '-0.8rem', // Counteract padding for layout
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        🗑️
+                      </button>
                     )}
                   </div>
                 );
