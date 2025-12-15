@@ -16,6 +16,7 @@ export default function InboxModal({ isOpen, onClose, onImport }) {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [importedUids, setImportedUids] = useState(new Set());
 
     useEffect(() => {
         if (isOpen) {
@@ -51,6 +52,11 @@ export default function InboxModal({ isOpen, onClose, onImport }) {
         } catch (err) {
             console.error("Failed to ignore event", err);
         }
+    };
+
+    const handleImport = (item) => {
+        setImportedUids(prev => new Set([...prev, item.uid]));
+        onImport(item);
     };
 
     if (!isOpen) return null;
@@ -89,19 +95,20 @@ export default function InboxModal({ isOpen, onClose, onImport }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {items.map(item => {
                         const isPast = new Date(item.start) < new Date();
+                        const isImported = importedUids.has(item.uid);
                         return (
                             <div key={item.uid} style={{
                                 border: '1px solid var(--border-color, #eee)',
                                 padding: '1rem',
                                 borderRadius: '8px',
-                                background: isPast ? '#f9f9f9' : 'var(--card-bg, #fff)',
-                                opacity: isPast ? 0.8 : 1,
+                                background: isImported ? '#e8f5e9' : (isPast ? '#f9f9f9' : 'var(--card-bg, #fff)'),
+                                opacity: (isPast || isImported) ? 0.8 : 1,
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '0.5rem',
                                 position: 'relative'
                             }}>
-                                {isPast && (
+                                {isPast && !isImported && (
                                     <div style={{
                                         position: 'absolute',
                                         top: '0.5rem',
@@ -116,9 +123,24 @@ export default function InboxModal({ isOpen, onClose, onImport }) {
                                         PASSERAD
                                     </div>
                                 )}
+                                {isImported && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '0.5rem',
+                                        right: '0.5rem',
+                                        background: '#4caf50',
+                                        color: 'white',
+                                        fontSize: '0.7rem',
+                                        padding: '0.2rem 0.5rem',
+                                        borderRadius: '4px',
+                                        fontWeight: 'bold'
+                                    }}>
+                                        ✓ TILLAGD
+                                    </div>
+                                )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                     <div>
-                                        <h3 style={{ margin: '0 0 0.2rem 0', fontSize: '1.1rem', textDecoration: isPast ? 'line-through' : 'none', color: isPast ? '#7f8c8d' : 'inherit' }}>
+                                        <h3 style={{ margin: '0 0 0.2rem 0', fontSize: '1.1rem', textDecoration: (isPast || isImported) ? 'line-through' : 'none', color: (isPast || isImported) ? '#7f8c8d' : 'inherit' }}>
                                             {item.summary}
                                         </h3>
                                         <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
@@ -132,19 +154,20 @@ export default function InboxModal({ isOpen, onClose, onImport }) {
 
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
                                     <button
-                                        onClick={() => onImport(item)}
+                                        onClick={() => handleImport(item)}
+                                        disabled={isImported}
                                         style={{
                                             flex: 1,
                                             padding: '0.6rem',
-                                            background: isPast ? '#95a5a6' : '#2ed573',
+                                            background: isImported ? '#bdbdbd' : (isPast ? '#95a5a6' : '#2ed573'),
                                             color: 'white',
                                             border: 'none',
                                             borderRadius: '6px',
-                                            cursor: 'pointer',
+                                            cursor: isImported ? 'not-allowed' : 'pointer',
                                             fontWeight: 600
                                         }}
                                     >
-                                        ➕ {isPast ? 'Lägg till (historik)' : 'Lägg till'}
+                                        ➕ {isImported ? 'Tillagd' : (isPast ? 'Lägg till (historik)' : 'Lägg till')}
                                     </button>
                                     <button
                                         onClick={(e) => handleIgnore(item.uid, e)}

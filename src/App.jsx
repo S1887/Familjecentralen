@@ -935,14 +935,7 @@ function App() {
         })
       });
 
-      // Google Calendar Logic
-      if (isAdmin) {
-        const startStr = startDateTime.toISOString().replace(/-|:|\.\d\d\d/g, "");
-        const endStr = endDateTime.toISOString().replace(/-|:|\.\d\d\d/g, "");
-        const assignedText = newEvent.assignees.join(', ');
-        const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(newEvent.summary)}&dates=${startStr}/${endStr}&details=${encodeURIComponent(newEvent.description || '')}%0A%0ATilldelad%3A%20${encodeURIComponent(assignedText)}&location=${encodeURIComponent(newEvent.location || '')}`;
-        window.open(gcalUrl, '_blank');
-      }
+      // Google Calendar redirect removed - events now sync automatically via ICS feed!
 
       setIsCreatingEvent(false);
       setNewEvent({ // Återställ formulär
