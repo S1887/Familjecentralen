@@ -209,27 +209,12 @@ async function fetchCalendarsFromGoogle() {
                     let isInbox = !!cal.inboxOnly;
                     let assignees = [];
 
-                    // Sport Context Injection
-                    const lowerSummary = summary.toLowerCase();
-                    let isHandball = cal.id.includes('hkl') || cal.name.includes('Lidköping');
-                    let isFootball = cal.id.includes('rada') || cal.name.includes('Råda');
+                    // Sport Context Injection - REMOVED per user request
+                    // We only want exact source titles + specific fixes (like Handboll->Bandy below)
 
-                    if (isHandball) {
-                        if (lowerSummary.includes('träning') && !lowerSummary.includes('handboll')) {
-                            summary = summary.replace(/Träning/i, 'Handbollsträning');
-                        } else if (lowerSummary.includes('match') && !lowerSummary.includes('handboll')) {
-                            summary = summary.replace(/Match/i, 'Handbollsmatch');
-                        } else if (!lowerSummary.includes('handboll')) {
-                            summary = `Handboll: ${summary}`;
-                        }
-                    } else if (isFootball) {
-                        if (lowerSummary.includes('träning') && !lowerSummary.includes('fotboll')) {
-                            summary = summary.replace(/Träning/i, 'Fotbollsträning');
-                        } else if (lowerSummary.includes('match') && !lowerSummary.includes('fotboll')) {
-                            summary = summary.replace(/Match/i, 'Fotbollsmatch');
-                        } else if (!lowerSummary.includes('fotboll')) {
-                            summary = `Fotboll: ${summary}`;
-                        }
+                    // Global fix for Villa Lidköping: Replace Handboll -> Bandy (often labeled wrong in source)
+                    if (cal.id === 'villa_lidkoping_algot') {
+                        summary = summary.replace(/Handboll/gi, 'Bandy');
                     }
 
                     // AUTO-RULES
@@ -270,8 +255,6 @@ async function fetchCalendarsFromGoogle() {
                     if (cal.id === 'villa_lidkoping_algot' && summary.toLowerCase().includes('träning')) {
                         console.log(`[Auto-Rule] Bypassing inbox for Algot (Bandy): ${summary}`);
                         isInbox = false;
-                        // Special fix: If they wrote "Handbollsträning" by mistake, fix it to "Bandyträning"
-                        summary = summary.replace(/Handbollsträning/i, 'Bandyträning');
 
                         summary = `Algot: ${summary}`;
                         assignees = ['Algot'];

@@ -28,6 +28,8 @@ export default function InboxModal({ isOpen, onClose, onImport }) {
         try {
             const res = await fetch(getApiUrl('/api/inbox'));
             const data = await res.json();
+            // Sort by date (ascending)
+            data.sort((a, b) => new Date(a.start) - new Date(b.start));
             setItems(data);
         } catch (err) {
             console.error("Failed to fetch inbox", err);
