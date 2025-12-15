@@ -2504,11 +2504,11 @@ function App() {
               <form onSubmit={(e) => {
                 addTask(e);
                 setShowMobileTaskForm(false);
-              }} style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', boxShadow: '0 2px 4px var(--shadow-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <input type="text" placeholder="Vad behöver göras?" value={taskInput.text} onChange={e => setTaskInput({ ...taskInput, text: e.target.value })} style={{ flex: 3, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} />
+              }} style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', boxShadow: '0 2px 4px var(--shadow-color)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <input type="text" placeholder="Vad behöver göras?" value={taskInput.text} onChange={e => setTaskInput({ ...taskInput, text: e.target.value })} style={{ flex: '1 1 200px', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} />
                   {!taskInput.isRecurring && (
-                    <input type="number" placeholder="V" value={taskInput.week} onChange={e => setTaskInput({ ...taskInput, week: e.target.value })} style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} title="Vecka" />
+                    <input type="number" placeholder="V" value={taskInput.week} onChange={e => setTaskInput({ ...taskInput, week: e.target.value })} style={{ flex: '0 0 60px', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} title="Vecka" />
                   )}
                 </div>
 
@@ -2530,17 +2530,22 @@ function App() {
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={taskInput.isRecurring} onChange={e => setTaskInput({ ...taskInput, isRecurring: e.target.checked })} />
-                    🔄 Återkommande
-                  </label>
+                {/* Multi-select Assignees - only shown for parents */}
+                {!isChildUser && (
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    {['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => {
+                      const isSelected = Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name);
 
+                      let bg = isSelected ? '#2ed573' : 'var(--input-bg)'; // Default green for others/generic
+                      if (isSelected) {
+                        if (name === 'Svante') bg = '#ff4757';
+                        if (name === 'Sarah') bg = '#f1c40f';
+                        if (name === 'Algot') bg = '#3498db';
+                        if (name === 'Tuva') bg = '#9b59b6';
+                        if (name === 'Leon') bg = '#2ed573';
+                      }
 
-                  {/* Multi-select Assignees - only shown for parents */}
-                  {!isChildUser && (
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', flex: 1 }}>
-                      {['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => (
+                      return (
                         <button
                           key={name}
                           type="button"
@@ -2555,20 +2560,28 @@ function App() {
                             padding: '0.4rem 0.8rem',
                             borderRadius: '15px',
                             border: '1px solid var(--border-color)',
-                            background: (Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name)) ? '#2ed573' : 'var(--input-bg)',
-                            color: (Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name)) ? 'white' : 'var(--text-main)',
+                            background: bg,
+                            color: isSelected ? 'white' : 'var(--text-main)',
                             fontSize: '0.8rem',
                             cursor: 'pointer',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            fontWeight: isSelected ? 'bold' : 'normal'
                           }}
                         >
-                          {(Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name)) ? '✓ ' : ''}{name}
+                          {isSelected ? '✓ ' : ''}{name}
                         </button>
-                      ))}
-                    </div>
-                  )}
+                      );
+                    })}
+                  </div>
+                )}
 
-                  <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={taskInput.isRecurring} onChange={e => setTaskInput({ ...taskInput, isRecurring: e.target.checked })} />
+                    🔄 Återkommande
+                  </label>
+
+                  <div style={{ display: 'flex', gap: '0.5rem', flex: 1, minWidth: '200px' }}>
                     <button type="submit" style={{ background: '#2ed573', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 1rem', cursor: 'pointer', flex: 1 }}>Lägg till</button>
                     <button
                       type="button"
