@@ -372,7 +372,16 @@ function App() {
   const [isEditingEvent, setIsEditingEvent] = useState(false);
   const [editEventData, setEditEventData] = useState(null);
 
-
+  // Lock body scroll when any modal is open
+  useEffect(() => {
+    const isAnyModalOpen = isCreatingEvent || isEditingEvent || viewMapEvent;
+    if (isAnyModalOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [isCreatingEvent, isEditingEvent, viewMapEvent]);
 
   useEffect(() => {
     fetchEvents();

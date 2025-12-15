@@ -833,3 +833,136 @@ h3 {
     margin-bottom: 0.3rem;
   }
 }
+
+/* ============ MODAL STYLES FOR MOBILE ============ */
+
+/* Body lock when modal is open - applied via JS */
+body.modal-open {
+  overflow: hidden !important;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* Modal overlay - fullscreen with scroll */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 1000;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+/* Modal content box */
+.modal {
+  background: var(--modal-bg);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  max-height: none;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  text-align: left;
+  color: var(--text-main);
+  margin: auto;
+  position: relative;
+}
+
+/* Mobile-specific modal adjustments */
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 0.5rem;
+    align-items: flex-start;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+  }
+
+  .modal {
+    padding: 1rem !important;
+    border-radius: 12px;
+    max-width: 100%;
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+
+  .modal h2 {
+    font-size: 1.2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Smaller form elements in modal */
+  .modal input,
+  .modal textarea,
+  .modal select {
+    font-size: 16px !important;
+    /* Prevent zoom on iOS */
+    padding: 0.5rem !important;
+  }
+
+  .modal label {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+    display: block;
+  }
+
+  /* Compact button rows */
+  .modal button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  /* Tighter spacing between form sections */
+  .modal>form>div {
+    margin-bottom: 0.5rem;
+  }
+
+  /* Assignee/category button grid - more compact */
+  .modal [style*="gap: 0.4rem"] {
+    gap: 0.3rem !important;
+  }
+
+  .modal [style*="gap: 0.5rem"] {
+    gap: 0.3rem !important;
+  }
+}
+
+/* Samsung S23 and similar tall phones (around 360-412px width) */
+@media (max-width: 420px) {
+  .modal-overlay {
+    padding: 0.25rem;
+    padding-top: 0.5rem;
+  }
+
+  .modal {
+    padding: 0.75rem !important;
+  }
+
+  .modal h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .modal label {
+    font-size: 0.8rem;
+  }
+
+  /* Even smaller buttons */
+  .modal button[type="button"],
+  .modal button[type="submit"] {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  /* Reduce textarea height */
+  .modal textarea {
+    min-height: 60px !important;
+  }
+}
