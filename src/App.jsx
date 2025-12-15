@@ -460,6 +460,23 @@ function App() {
       });
   };
 
+  const deleteEventTask = (event, todoItem) => {
+    if (!window.confirm('Vill du ta bort denna uppgift från händelsen?')) return;
+
+    const updatedTodos = (event.todoList || []).filter(t => t !== todoItem);
+    const updatedEvent = { ...event, todoList: updatedTodos };
+
+    fetch(getApiUrl('api/update-event'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedEvent)
+    })
+      .then(res => res.json())
+      .then(() => {
+        fetchEvents();
+      });
+  };
+
   const toggleEventTask = (event, todoId) => {
     const updatedTodos = event.todoList.map(t => t.id === todoId ? { ...t, done: !t.done } : t);
     const updatedEvent = { ...event, todoList: updatedTodos };
@@ -2757,6 +2774,28 @@ function App() {
                           color: '#ff6b6b',
                           padding: '0.8rem', // Touchable area padding
                           margin: '-0.8rem', // Counteract padding for layout
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    )}
+                    {task.isEventTodo && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteEventTask(task.event, task.originalTodo);
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '1.4rem',
+                          color: '#ff6b6b',
+                          padding: '0.8rem',
+                          margin: '-0.8rem',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center'
