@@ -66,6 +66,12 @@ const CALENDARS = [
         name: 'HK Lidköping Handbollsskola',
         url: 'https://cal.laget.se/HKLidkoping-Handbollsskola.ics',
         inboxOnly: true
+    },
+    {
+        id: 'rada_bk_f7',
+        name: 'Råda BK F7',
+        url: 'https://cal.laget.se/RadaBK-F7.ics',
+        inboxOnly: true
     }
 ];
 
@@ -197,20 +203,57 @@ async function fetchCalendarsFromGoogle() {
                     let isInbox = !!cal.inboxOnly;
                     let assignees = [];
 
+                    // Sport Context Injection
+                    const lowerSummary = summary.toLowerCase();
+                    let isHandball = cal.id.includes('hkl') || cal.name.includes('Lidköping');
+                    let isFootball = cal.id.includes('rada') || cal.name.includes('Råda');
+
+                    if (isHandball) {
+                        if (lowerSummary.includes('träning') && !lowerSummary.includes('handboll')) {
+                            summary = summary.replace(/Träning/i, 'Handbollsträning');
+                        } else if (lowerSummary.includes('match') && !lowerSummary.includes('handboll')) {
+                            summary = summary.replace(/Match/i, 'Handbollsmatch');
+                        } else if (!lowerSummary.includes('handboll')) {
+                            summary = `Handboll: ${summary}`;
+                        }
+                    } else if (isFootball) {
+                        if (lowerSummary.includes('träning') && !lowerSummary.includes('fotboll')) {
+                            summary = summary.replace(/Träning/i, 'Fotbollsträning');
+                        } else if (lowerSummary.includes('match') && !lowerSummary.includes('fotboll')) {
+                            summary = summary.replace(/Match/i, 'Fotbollsmatch');
+                        } else if (!lowerSummary.includes('fotboll')) {
+                            summary = `Fotboll: ${summary}`;
+                        }
+                    }
+
                     // AUTO-RULES
                     // 1. HK Lidköping (Algot): "Träning" goes directly to calendar
-                    if (cal.id === 'hkl_p11_p10' && ev.summary.toLowerCase().includes('träning')) {
-                        console.log(`[Auto-Rule] Bypassing inbox for Algot: ${ev.summary}`);
+                    if (cal.id === 'hkl_p11_p10' && summary.toLowerCase().includes('träning')) {
+                        console.log(`[Auto-Rule] Bypassing inbox for Algot: ${summary}`);
                         isInbox = false;
-                        summary = `Algot: ${ev.summary}`;
+                        summary = `Algot: ${summary}`;
                         assignees = ['Algot'];
                     }
                     // 2. HK Lidköping (Tuva): "Träning" goes directly to calendar
-                    if (cal.id === 'hkl_handbollsskola' && ev.summary.toLowerCase().includes('träning')) {
-                        console.log(`[Auto-Rule] Bypassing inbox for Tuva: ${ev.summary}`);
+                    if (cal.id === 'hkl_handbollsskola' && summary.toLowerCase().includes('träning')) {
+                        console.log(`[Auto-Rule] Bypassing inbox for Tuva: ${summary}`);
                         isInbox = false;
-                        summary = `Tuva: ${ev.summary}`;
+                        summary = `Tuva: ${summary}`;
                         assignees = ['Tuva'];
+                    }
+                    // 3. Råda BK F7 (Tuva): "Träning" goes directly to calendar
+                    if (cal.id === 'rada_bk_f7' && summary.toLowerCase().includes('träning')) {
+                        console.log(`[Auto-Rule] Bypassing inbox for Tuva (Fotboll): ${summary}`);
+                        isInbox = false;
+                        summary = `Tuva: ${summary}`;
+                        assignees = ['Tuva'];
+                    }
+                    // 4. Råda BK P2015 (Algot): "Träning" goes directly to calendar
+                    if (cal.id === 'rada_bk_p2015' && summary.toLowerCase().includes('träning')) {
+                        console.log(`[Auto-Rule] Bypassing inbox for Algot (Fotboll): ${summary}`);
+                        isInbox = false;
+                        summary = `Algot: ${summary}`;
+                        assignees = ['Algot'];
                     }
 
                     freshEvents.push({
@@ -522,7 +565,7 @@ app.get('/api/feed.ics', async (req, res) => {
         });
 
         // Add Auto-Approved External Events (from cache)
-        const inboxSourceIds = ['hkl_p11_p10', 'hkl_handbollsskola', 'rada_bk_p2015'];
+        const inboxSourceIds = ['hkl_p11_p10', 'hkl_handbollsskola', 'rada_bk_p2015', 'rada_bk_f7'];
 
         cachedCalendarEvents.forEach(ev => {
             const originCal = CALENDARS.find(c => c.name === ev.source);
@@ -680,7 +723,7 @@ app.post('/api/create-event', (req, res) => {
 });
 
 app.post('/api/update-event', (req, res) => {
-    const { uid, summary, location, coords, start, end, description, todoList, cancelled, assignments, assignee, assignees, category } = req.body;
+    const { uid, summary, location, coords, start, end, description, todoList, cancelled, assignments, assignee, assignees, category, source } = req.body;
     let events = readLocalEvents();
 
     const existingIndex = events.findIndex(e => e.uid === uid);
@@ -689,15 +732,30 @@ app.post('/api/update-event', (req, res) => {
     console.log('Assignments received:', assignments);
     console.log('Assignees received:', assignees);
     console.log('Category received:', category);
+    console.log('Source received:', source);
 
     if (existingIndex >= 0) {
         // Update existing local event
+        let newSource = events[existingIndex].source;
+        // If we received a source and it differs (maybe we want to tag it as edited?)
+        // Actually, for existing LOCAL events, the source is likely already set correctly (e.g. "HK Lidköping (Redigerad)" or just "Familjen (Eget)").
+        // If the incoming source is different and doesn't have Redigerad, maybe append it?
+        // But usually frontend sends back what it has.
+        if (source) {
+            if (!source.includes('(Redigerad)') && !source.includes('Familjen (Eget)') && source !== 'FamilyOps') {
+                newSource = `${source} (Redigerad)`;
+            } else {
+                newSource = source;
+            }
+        }
+
         events[existingIndex] = {
             ...events[existingIndex],
             summary, location, coords, start, end, description, todoList,
             assignee: assignee || events[existingIndex].assignee,
             assignees: assignees || events[existingIndex].assignees || [],
             category: category || events[existingIndex].category,
+            source: newSource,
             cancelled: cancelled !== undefined ? cancelled : events[existingIndex].cancelled
         };
     } else {
@@ -716,7 +774,7 @@ app.post('/api/update-event', (req, res) => {
             assignee: assignee || '',
             assignees: assignees || [],
             category: category || null,
-            source: 'Familjen (Redigerad)', // Marking it as locally modified
+            source: source ? (source.includes('(Redigerad)') ? source : `${source} (Redigerad)`) : 'Familjen (Redigerad)', // Preserve original source + (Redigerad)
             createdAt: new Date().toISOString(), // effectively "claiming" it
             cancelled: cancelled || false,
             deleted: false

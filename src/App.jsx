@@ -781,6 +781,8 @@ function App() {
     // Source based coloring
     if ((event.source || '').includes('HK Lidköping P11/P10')) return 'assigned-algot';
     if ((event.source || '').includes('Handbollsskola')) return 'assigned-tuva';
+    if ((event.source || '').includes('Råda BK F7')) return 'assigned-tuva';
+    if ((event.source || '').includes('Råda BK P2015')) return 'assigned-algot';
 
     // Priority 1: Check if a child's name is in the event summary (covers "Algot bandyträning" etc.)
     if (summary.includes('algot')) return 'assigned-algot';
@@ -867,7 +869,8 @@ function App() {
           assignments: editEventData.assignments,
           assignees: editEventData.assignees || [],
           assignee: (editEventData.assignees || []).join(', '), // For backwards compatibility
-          category: editEventData.category || null
+          category: editEventData.category || null,
+          source: editEventData.source // Pass source to preserve it
         })
       });
 
@@ -1279,6 +1282,8 @@ function App() {
               const src = event.source || '';
               if (src.includes('HK Lidköping P11/P10')) return ['Algot'];
               if (src.includes('Handbollsskola')) return ['Tuva'];
+              if (src.includes('Råda BK F7')) return ['Tuva'];
+              if (src.includes('Råda BK P2015')) return ['Algot'];
               return [];
             })()
           });
