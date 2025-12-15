@@ -504,6 +504,7 @@ app.get('/api/events', async (req, res) => {
 
 // ICS Feed Endpoint
 app.get('/api/feed.ics', async (req, res) => {
+    console.log(`[ICS] Feed requested by ${req.ip} - User-Agent: ${req.get('User-Agent')}`);
     try {
         const localEvents = readLocalEvents();
 
@@ -576,7 +577,7 @@ app.get('/api/feed.ics', async (req, res) => {
         icsContent.push('END:VCALENDAR');
 
         res.set('Content-Type', 'text/calendar; charset=utf-8');
-        res.set('Content-Disposition', 'attachment; filename="feed.ics"');
+        // Removed Content-Disposition to allow inline fetching/debugging
         res.send(icsContent.join('\r\n'));
 
     } catch (e) {
