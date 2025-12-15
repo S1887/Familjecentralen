@@ -441,7 +441,7 @@ function App() {
       updated = { ...task, done: !task.done };
     }
 
-    fetch(`http://localhost:3001/api/tasks/${task.id}`, {
+    fetch(getApiUrl(`api/tasks/${task.id}`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updated)
@@ -454,7 +454,7 @@ function App() {
   };
 
   const deleteTask = (id) => {
-    fetch(`http://localhost:3001/api/tasks/${id}`, { method: 'DELETE' })
+    fetch(getApiUrl(`api/tasks/${id}`), { method: 'DELETE' })
       .then(() => {
         setTasks(tasks.filter(t => t.id !== id));
       });
@@ -466,7 +466,7 @@ function App() {
 
     // Optimistic update logic helper (would ideally reuse updateEvent but need to be careful with refresh)
     // Let's just call the update endpoint.
-    fetch(`http://localhost:3001/api/update-event`, {
+    fetch(getApiUrl('api/update-event'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedEvent)
