@@ -595,6 +595,30 @@ app.get('/api/feed.ics', async (req, res) => {
             'X-WR-TIMEZONE:Europe/Stockholm',
         ];
 
+        // Helper: Sanitize and escape ICS content
+        const sanitizeICSText = (text) => {
+            if (!text) return '';
+            return text
+                .replace(/<[^>]*>/g, '') // Strip HTML tags
+                .replace(/[\\,;]/g, (m) => '\\' + m) // Escape special chars
+                .replace(/\n/g, '\\n') // Escape newlines
+                .trim();
+        };
+
+        // Helper: Fold lines to max 75 chars per RFC 5545
+        const foldLine = (line) => {
+            if (line.length <= 75) return line;
+            const chunks = [];
+            let start = 0;
+            chunks.push(line.substring(0, 75));
+            start = 75;
+            while (start < line.length) {
+                chunks.push(' ' + line.substring(start, start + 74)); // Space prefix for continuation
+                start += 74;
+            }
+            return chunks.join('\r\n');
+        };
+
         feedEvents.forEach(ev => {
             const now = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
             const formatDate = (dateStr) => {
@@ -623,9 +647,19 @@ app.get('/api/feed.ics', async (req, res) => {
                 icsContent.push(`DTEND:${dtEnd}`);
             }
 
-            icsContent.push(`SUMMARY:${ev.summary}`);
-            if (ev.location) icsContent.push(`LOCATION:${ev.location}`);
-            if (ev.description) icsContent.push(`DESCRIPTION:${ev.description.replace(/\\n/g, '\\n')}`);
+            const summary = sanitizeICSText(ev.summary);
+            icsContent.push(foldLine(`SUMMARY:${summary}`));
+
+            if (ev.location) {
+                const location = sanitizeICSText(ev.location);
+                icsContent.push(foldLine(`LOCATION:${location}`));
+            }
+
+            if (ev.description) {
+                const description = sanitizeICSText(ev.description);
+                icsContent.push(foldLine(`DESCRIPTION:${description}`));
+            }
+
             icsContent.push('END:VEVENT');
         });
 
