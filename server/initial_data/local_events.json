@@ -1,0 +1,163 @@
+[
+  {
+    "uid": "k6ssv3i4a9d0egvp5jum71lvk1anr7pc8ei9ll08l3vpj0oare4dcs8oo6@google.com",
+    "summary": "Algot bandyträning",
+    "location": "Sparbanken Lidköping Arena, O 2578",
+    "start": "2025-12-15T15:20:00.000Z",
+    "end": "2025-12-15T16:20:00.000Z",
+    "description": "Arenan",
+    "todoList": [
+      {
+        "id": 1765657972745,
+        "text": "Slipa skridskorna",
+        "done": false
+      }
+    ],
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-13T13:23:06.441Z",
+    "coords": {
+      "lat": 58.494426,
+      "lon": 13.1427987
+    }
+  },
+  {
+    "uid": "goj2vmg0vkn94130hasvpcbmurmk1fi5lk7s4hbo0fpqagn53es98k9chb@google.com",
+    "summary": "Tuva handbollsskola",
+    "location": "De la Gardiegymnasiet",
+    "coords": {
+      "lat": 58.5047424,
+      "lon": 13.1496512
+    },
+    "start": "2025-12-13T09:00:00.000Z",
+    "end": "2025-12-13T10:00:00.000Z",
+    "description": "",
+    "todoList": [],
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-13T13:47:51.510Z"
+  },
+  {
+    "uid": "20dcb03d-379b-4531-94ad-4b01bb09dbab",
+    "summary": "Test 1",
+    "start": "2025-12-14T18:35:00.000Z",
+    "end": "2025-12-14T16:38:00.000Z",
+    "createdBy": "Svante",
+    "createdAt": "2025-12-13T16:36:27.140Z",
+    "deleted": true,
+    "deletedAt": "2025-12-13T18:06:31.684Z"
+  },
+  {
+    "uid": "134989b3-1760-4637-87f7-973a8ad5e65b",
+    "summary": "Test 2",
+    "location": "Cypressvägen 8 lidköping",
+    "coords": {
+      "lat": 58.5381222,
+      "lon": 13.1199763
+    },
+    "start": "2025-12-14T18:50:00.000Z",
+    "end": "2025-12-14T19:50:00.000Z",
+    "description": "TEstar del 2",
+    "assignee": "Hela familjen",
+    "todoList": [],
+    "createdBy": "Svante",
+    "createdAt": "2025-12-13T16:48:21.528Z",
+    "deleted": true,
+    "deletedAt": "2025-12-13T18:09:17.906Z"
+  },
+  {
+    "uid": "7a28cb9e-a290-4e44-bca6-4a220e9f58ce",
+    "summary": "test 3",
+    "start": "2025-12-14T19:00:00.000Z",
+    "end": "2025-12-14T20:00:00.000Z",
+    "assignee": "Svante",
+    "createdBy": "Svante",
+    "createdAt": "2025-12-13T16:50:36.686Z",
+    "cancelled": true
+  },
+  {
+    "uid": "4hiqcv5njnpto33qnq7njn2cgj@google.com",
+    "summary": "test 3",
+    "start": "2025-12-14T19:00:00.000Z",
+    "end": "2025-12-14T20:00:00.000Z",
+    "source": "Svante (Privat)",
+    "deleted": true,
+    "deletedAt": "2025-12-13T19:03:26.180Z"
+  },
+  {
+    "uid": "3d81t3n8nvqjobj765ifn0223n@google.com",
+    "summary": "Mariestad 2HKL 2",
+    "location": "Stöpenhallen, Hästskovägen 4, 549 70 Skövde, Sverige",
+    "coords": null,
+    "start": "2025-12-20T11:50:00.000Z",
+    "end": "2025-12-20T12:50:00.000Z",
+    "description": "<table> <colgroup><col /> <col /> </colgroup><tbody><tr>  <td>3</td>  <td>4</td>  <td>Stöpenhallen, Skövde</td> </tr></tbody></table>",
+    "todoList": [],
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-13T20:16:49.843Z",
+    "cancelled": false,
+    "deleted": false,
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ]
+  },
+  {
+    "uid": "in3l6o1at5eb8o1m15ig1iu28rdl91kk36mg3s7hhaou10kv2lsnoeq2lk@google.com",
+    "summary": "Algot bandyträning?",
+    "start": "2025-12-17T17:00:00.000Z",
+    "end": "2025-12-17T18:00:00.000Z",
+    "source": "Sarah (Privat)",
+    "deleted": true,
+    "deletedAt": "2025-12-13T20:30:57.694Z"
+  },
+  {
+    "uid": "3c3b1888-026d-4666-8bd8-21ccdcee9088",
+    "summary": "Leon: TEst55",
+    "location": "",
+    "coords": null,
+    "start": "2025-12-16T14:00:00.000Z",
+    "end": "2025-12-16T15:00:00.000Z",
+    "description": "Hur syns dett?",
+    "assignee": "Leon",
+    "todoList": [],
+    "createdBy": "Admin",
+    "createdAt": "2025-12-15T09:33:27.828Z",
+    "deleted": false,
+    "cancelled": false,
+    "assignees": [
+      "Leon"
+    ]
+  },
+  {
+    "uid": "hcogcfgo8ilgc7cc9ht3cd40hdud3kf1psf9hv9i737t1mtguqk5secne5@google.com",
+    "summary": "Semester",
+    "location": "Okänd plats",
+    "coords": null,
+    "start": "2025-12-16T23:00:00.000Z",
+    "end": "2025-12-16T23:00:00.000Z",
+    "description": "",
+    "todoList": [],
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-15T09:38:21.615Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "uid": "2hc9ng36kasjurfq6i9c0sne3si0lqd3mvqui5g6jed0f32uhsg0q2dgo3@google.com",
+    "summary": "Algot: Algot handbollsträning",
+    "location": "Rörstrand",
+    "coords": null,
+    "start": "2025-12-16T17:00:00.000Z",
+    "end": "2025-12-16T18:30:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": null,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-15T09:58:06.237Z",
+    "cancelled": false,
+    "deleted": false
+  }
+]

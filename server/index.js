@@ -70,6 +70,29 @@ if (process.env.DATA_DIR && !fs.existsSync(DATA_DIR)) {
     }
 }
 
+// === SEEDING LOGIC ===
+// Om datafiler saknas i DATA_DIR, kopiera från server/initial_data (om de finns där)
+// Detta säkerställer att vi inte startar med tom databas vid första deploy
+const INITIAL_DATA_DIR = path.join(__dirname, 'initial_data');
+const FILES_TO_SEED = ['tasks.json', 'db.json', 'local_events.json'];
+
+if (fs.existsSync(INITIAL_DATA_DIR)) {
+    FILES_TO_SEED.forEach(file => {
+        const sourcePath = path.join(INITIAL_DATA_DIR, file);
+        const destPath = path.join(DATA_DIR, file);
+
+        if (fs.existsSync(sourcePath) && !fs.existsSync(destPath)) {
+            try {
+                fs.copyFileSync(sourcePath, destPath);
+                console.log(`[Init] Seeded ${file} from initial_data`);
+            } catch (e) {
+                console.error(`[Init] Failed to seed ${file}: ${e.message}`);
+            }
+        }
+    });
+}
+// =====================
+
 // Datafiler
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 const LOCAL_EVENTS_FILE = path.join(DATA_DIR, 'local_events.json');

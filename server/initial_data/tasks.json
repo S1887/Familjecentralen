@@ -1,0 +1,53 @@
+[
+  {
+    "id": "1765643113974",
+    "text": "Tillaga fläskfile",
+    "assignee": "Svante",
+    "week": 50,
+    "days": [
+      "Lör"
+    ],
+    "isRecurring": false,
+    "done": true,
+    "createdAt": "2025-12-13T16:25:13.974Z"
+  },
+  {
+    "id": "1765643523777",
+    "text": "Tömma diskmaskinen x3",
+    "assignee": "Algot",
+    "week": 50,
+    "days": [],
+    "isRecurring": true,
+    "done": true,
+    "createdAt": "2025-12-13T16:32:03.777Z",
+    "completedWeeks": [
+      50
+    ]
+  },
+  {
+    "id": "1765787385345",
+    "text": "Test1",
+    "assignee": "Leon",
+    "week": 51,
+    "days": [
+      0
+    ],
+    "isRecurring": false,
+    "done": false,
+    "completedWeeks": [],
+    "createdAt": "2025-12-15T08:29:45.345Z"
+  },
+  {
+    "id": "1765789182724",
+    "text": "fjh",
+    "assignee": "Tuva",
+    "week": 51,
+    "days": [
+      0
+    ],
+    "isRecurring": false,
+    "done": false,
+    "completedWeeks": [],
+    "createdAt": "2025-12-15T08:59:42.724Z"
+  }
+]
