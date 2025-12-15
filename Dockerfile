@@ -22,4 +22,5 @@ RUN npm run build
 EXPOSE 3001
 
 # Start command
+ENV DATA_DIR=/data
 CMD ["npm", "run", "server"]

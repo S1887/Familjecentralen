@@ -25,8 +25,7 @@ app.use((req, res, next) => {
 // En enkel databas för att spara vem som gör vad
 
 // Hjälpfunktion för att läsa/skriva databas
-const DB_FILE = path.join(__dirname, 'db.json'); // Changed from assignments.json to db.json
-const LOCAL_EVENTS_FILE = path.join(__dirname, 'local_events.json'); // Added local events file
+// DB_FILE and LOCAL_EVENTS_FILE defined centrally above
 
 // Dina kalender-källor (Dessa ska vi fylla på)
 const CALENDARS = [
@@ -58,7 +57,25 @@ const CALENDARS = [
 // 3. Background scheduled refresh
 // 4. Graceful error handling
 
-const CACHE_FILE = path.join(__dirname, 'calendar_cache.json');
+// Datakatalog
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+
+// Se till att katalogen finns (om den inte är root)
+if (process.env.DATA_DIR && !fs.existsSync(DATA_DIR)) {
+    try {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+        console.log(`[Init] Created data directory: ${DATA_DIR}`);
+    } catch (e) {
+        console.error(`[Init] Failed to create data directory: ${e.message}`);
+    }
+}
+
+// Datafiler
+const DB_FILE = path.join(DATA_DIR, 'db.json');
+const LOCAL_EVENTS_FILE = path.join(DATA_DIR, 'local_events.json');
+const CACHE_FILE = path.join(DATA_DIR, 'calendar_cache.json');
+const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
+
 const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
 let cachedCalendarEvents = [];
 let cacheTimestamp = 0;
@@ -243,8 +260,8 @@ const writeLocalEvents = (data) => {
 // Ladda tasks
 let tasksData = [];
 try {
-    if (fs.existsSync(path.join(__dirname, 'tasks.json'))) {
-        tasksData = JSON.parse(fs.readFileSync(path.join(__dirname, 'tasks.json'), 'utf8'));
+    if (fs.existsSync(TASKS_FILE)) {
+        tasksData = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
     }
 } catch (error) {
     console.error("Error loading tasks.json:", error);
@@ -252,7 +269,7 @@ try {
 }
 
 const saveTasks = () => {
-    fs.writeFileSync(path.join(__dirname, 'tasks.json'), JSON.stringify(tasksData, null, 2));
+    fs.writeFileSync(TASKS_FILE, JSON.stringify(tasksData, null, 2));
 };
 
 // --- API ---
