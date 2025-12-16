@@ -328,6 +328,7 @@ function App() {
   const [viewMode, setViewMode] = useState('week');
   const [activeAssignment, setActiveAssignment] = useState(null);
   const [showMobileTaskForm, setShowMobileTaskForm] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Reset filter when user changes (login/logout)
   useEffect(() => {
@@ -1841,7 +1842,7 @@ function App() {
             <h1 style={{ margin: 0, fontSize: isMobile ? '1rem' : '1.5rem' }}>
               {isMobile ? '' : 'Örtendahls familjecentral'}
             </h1>
-            {/* Tab Navigation Icons */}
+            {/* Primary Icons: Home, Schedule */}
             <button
               onClick={() => setActiveTab('dashboard')}
               title="Översikt"
@@ -1851,8 +1852,8 @@ function App() {
                 border: activeTab === 'dashboard' ? 'none' : '1px solid var(--border-color)',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                padding: isMobile ? '0.3rem' : '0.5rem',
-                fontSize: isMobile ? '1rem' : '1.2rem',
+                padding: isMobile ? '0.4rem' : '0.5rem',
+                fontSize: isMobile ? '1.3rem' : '1.4rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -1869,8 +1870,8 @@ function App() {
                 border: activeTab === 'schedule' ? 'none' : '1px solid var(--border-color)',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                padding: isMobile ? '0.3rem' : '0.5rem',
-                fontSize: isMobile ? '1rem' : '1.2rem',
+                padding: isMobile ? '0.4rem' : '0.5rem',
+                fontSize: isMobile ? '1.3rem' : '1.4rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -1878,135 +1879,185 @@ function App() {
             >
               📅
             </button>
-            <button onClick={() => setShowInbox(true)} style={{
-              background: 'transparent',
-              border: '1px solid var(--border-color)',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              padding: isMobile ? '0.3rem' : '0.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.3rem',
-              fontSize: isMobile ? '0.8rem' : '1rem',
-              color: 'var(--text-main)'
-            }}>
-              📥 Inkorg
-            </button>
-            <button onClick={handleLogout} style={{
-              background: 'transparent',
-              border: '1px solid var(--border-color)',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              padding: isMobile ? '0.3rem' : '0.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.3rem',
-              fontSize: isMobile ? '0.8rem' : '1rem',
-              color: 'var(--text-main)'
-            }}>
-              {isMobile ? '🚪' : '🚪 Logga ut'}
-            </button>
+
+            {/* Add Event - Admin only */}
             {isAdmin && (
-              <>
-                <button
-                  onClick={() => { fetchTrash(); setViewTrash(true); }}
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    padding: isMobile ? '0.3rem' : '0.5rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontSize: isMobile ? '0.8rem' : '1rem',
-                    color: 'var(--text-main)'
-                  }}
-                >
-                  🗑️
-                </button>
-                <button
-                  onClick={() => setIsCreatingEvent(true)}
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    padding: isMobile ? '0.3rem' : '0.5rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontSize: isMobile ? '0.8rem' : '1rem',
-                    color: 'var(--text-main)'
-                  }}
-                >
-                  ➕
-                </button>
-              </>
+              <button
+                onClick={() => setIsCreatingEvent(true)}
+                title="Lägg till händelse"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  padding: isMobile ? '0.4rem' : '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: isMobile ? '1.3rem' : '1.4rem',
+                  color: 'var(--text-main)'
+                }}
+              >
+                ➕
+              </button>
             )}
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              style={{
-                background: 'transparent',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                padding: isMobile ? '0.3rem' : '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                fontSize: isMobile ? '0.8rem' : '1rem',
-                color: 'var(--text-main)'
-              }}
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
-          </div>
 
-          {/* Next Match Ticker for Arsenal / ÖIS */}
-          {(() => {
-            const now = new Date();
-            const nextMatch = events
-              .filter(e => {
-                const isArsenal = e.source === 'Arsenal FC';
-                const isOis = e.source === 'Örgryte IS';
-                return (isArsenal || isOis) && new Date(e.start) > now;
-              })
-              .sort((a, b) => new Date(a.start) - new Date(b.start))[0];
+            {/* Next Match Ticker - inline in header */}
+            {(() => {
+              const now = new Date();
+              const nextMatch = events
+                .filter(e => {
+                  const isArsenal = e.source === 'Arsenal FC';
+                  const isOis = e.source === 'Örgryte IS';
+                  return (isArsenal || isOis) && new Date(e.start) > now;
+                })
+                .sort((a, b) => new Date(a.start) - new Date(b.start))[0];
 
-            if (!nextMatch) {
+              if (!nextMatch) return null;
+
+              const isArsenal = nextMatch.source === 'Arsenal FC' || (nextMatch.summary || '').toLowerCase().includes('arsenal');
               return (
                 <div style={{
-                  background: 'var(--card-bg)', padding: '0.3rem 0.8rem', borderRadius: '20px', fontSize: '0.8rem', margin: '0 1rem',
-                  border: '1px solid var(--border-color)', opacity: 0.7, color: 'var(--text-main)'
+                  background: 'var(--card-bg)',
+                  padding: '0.15rem 0.4rem',
+                  borderRadius: '12px',
+                  fontSize: '0.6rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  whiteSpace: 'nowrap',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-main)'
                 }}>
-                  ⚽ Inga kommande matcher
+                  <span style={{ fontSize: '0.7rem' }}>{isArsenal ? '🔴⚪' : '🔴🔵'}</span>
+                  <span style={{ fontWeight: 600 }}>{nextMatch.summary}</span>
+                  <span style={{ opacity: 0.7 }}>
+                    {new Date(nextMatch.start).toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric' })}
+                  </span>
                 </div>
               );
-            }
+            })()}
 
-            const isArsenal = nextMatch.source === 'Arsenal FC' || (nextMatch.summary || '').toLowerCase().includes('arsenal');
-            return (
-              <div style={{
-                background: 'var(--card-bg)',
-                padding: '0.3rem 0.8rem',
-                borderRadius: '20px',
-                fontSize: '0.85rem',
-                boxShadow: '0 2px 5px var(--shadow-color)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                whiteSpace: 'nowrap',
-                margin: '0 1rem',
-                border: '1px solid var(--border-color)',
-                color: 'var(--text-main)'
-              }}>
-                <span style={{ fontSize: '1rem' }}>{isArsenal ? '🔴⚪' : '🔴🔵'}</span>
-                <strong>{nextMatch.summary}</strong>
-                <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>
-                  • {new Date(nextMatch.start).toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric' })} {' '}
-                  {new Date(nextMatch.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            )
-          })()}
+            {/* Spacer to push hamburger menu to right */}
+            <div style={{ flex: 1 }}></div>
+
+            {/* More Menu (hamburger) - far right */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowMoreMenu(!showMoreMenu)}
+                title="Mer"
+                style={{
+                  background: showMoreMenu ? '#646cff' : 'transparent',
+                  color: showMoreMenu ? 'white' : 'var(--text-main)',
+                  border: showMoreMenu ? 'none' : '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  padding: isMobile ? '0.4rem' : '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: isMobile ? '1.3rem' : '1.4rem'
+                }}
+              >
+                ☰
+              </button>
+
+              {/* Dropdown Menu */}
+              {showMoreMenu && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '0.5rem',
+                  background: 'var(--card-bg)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 12px var(--shadow-color)',
+                  zIndex: 1000,
+                  minWidth: '150px',
+                  overflow: 'hidden'
+                }}>
+                  <button
+                    onClick={() => { setShowInbox(true); setShowMoreMenu(false); }}
+                    style={{
+                      width: '100%',
+                      padding: '0.8rem 1rem',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid var(--border-color)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.95rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      textAlign: 'left'
+                    }}
+                  >
+                    📥 Inkorg
+                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => { fetchTrash(); setViewTrash(true); setShowMoreMenu(false); }}
+                      style={{
+                        width: '100%',
+                        padding: '0.8rem 1rem',
+                        background: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px solid var(--border-color)',
+                        color: 'var(--text-main)',
+                        fontSize: '0.95rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        textAlign: 'left'
+                      }}
+                    >
+                      🗑️ Papperskorg
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setDarkMode(!darkMode); setShowMoreMenu(false); }}
+                    style={{
+                      width: '100%',
+                      padding: '0.8rem 1rem',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid var(--border-color)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.95rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      textAlign: 'left'
+                    }}
+                  >
+                    {darkMode ? '☀️ Ljust läge' : '🌙 Mörkt läge'}
+                  </button>
+                  <button
+                    onClick={() => { handleLogout(); setShowMoreMenu(false); }}
+                    style={{
+                      width: '100%',
+                      padding: '0.8rem 1rem',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ff4757',
+                      fontSize: '0.95rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      textAlign: 'left'
+                    }}
+                  >
+                    🚪 Logga ut
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
 
 
 

@@ -27,3 +27,6 @@ dist-ssr
 server/db.json
 server/tasks.json
 server/local_events.json
+
+# Environment variables
+.env

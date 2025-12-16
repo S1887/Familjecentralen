@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import ical from 'node-ical';
@@ -6,6 +7,23 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
+import {
+    connectToMongo,
+    isMongoConnected,
+    getAllAssignments,
+    setAssignment,
+    getAllTasks,
+    createTask,
+    updateTask,
+    deleteTask,
+    getAllLocalEvents,
+    createLocalEvent,
+    updateLocalEvent,
+    deleteLocalEvent,
+    getIgnoredEventIds,
+    addIgnoredEvent,
+    migrateFromJson
+} from './db/mongodb.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -142,7 +160,7 @@ const IGNORED_EVENTS_FILE = path.join(DATA_DIR, 'ignored_events.json');
 const CACHE_FILE = path.join(DATA_DIR, 'calendar_cache.json');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
 
-const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutes (safe for Google API)
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes (faster sync, still safe for Google API)
 let cachedCalendarEvents = [];
 let cacheTimestamp = 0;
 let isFetching = false;
@@ -418,28 +436,44 @@ function startScheduledRefresh() {
 // Load cache from disk on startup
 loadCacheFromDisk();
 
-// Helper för att läsa DB (Assignments)
-const readDb = () => {
+// Helper för att läsa DB (Assignments) - Hybrid: MongoDB first, fallback to JSON
+const readDb = async () => {
+    if (isMongoConnected()) {
+        return await getAllAssignments();
+    }
     if (!fs.existsSync(DB_FILE)) return {};
     return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
 };
 
-const writeDb = (data) => {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+const writeDb = async (eventId, data) => {
+    if (isMongoConnected()) {
+        await setAssignment(eventId, data);
+    }
+    // Always write to file as backup
+    const allData = await readDb();
+    allData[eventId] = data;
+    fs.writeFileSync(DB_FILE, JSON.stringify(allData, null, 2));
 };
 
-// Helper för att läsa lokala events
-const readLocalEvents = () => {
+// Helper för att läsa lokala events - Hybrid
+const readLocalEvents = async () => {
+    if (isMongoConnected()) {
+        return await getAllLocalEvents();
+    }
     if (!fs.existsSync(LOCAL_EVENTS_FILE)) return [];
     return JSON.parse(fs.readFileSync(LOCAL_EVENTS_FILE, 'utf8'));
 };
 
-const writeLocalEvents = (data) => {
+const writeLocalEvents = async (data) => {
+    // data is the full events array here
     fs.writeFileSync(LOCAL_EVENTS_FILE, JSON.stringify(data, null, 2));
 };
 
-// Helper för att läsa ignorerade events
-const readIgnoredEvents = () => {
+// Helper för att läsa ignorerade events - Hybrid
+const readIgnoredEvents = async () => {
+    if (isMongoConnected()) {
+        return await getIgnoredEventIds();
+    }
     if (!fs.existsSync(IGNORED_EVENTS_FILE)) return [];
     try {
         return JSON.parse(fs.readFileSync(IGNORED_EVENTS_FILE, 'utf8'));
@@ -450,16 +484,22 @@ const writeIgnoredEvents = (data) => {
     fs.writeFileSync(IGNORED_EVENTS_FILE, JSON.stringify(data, null, 2));
 };
 
-// Ladda tasks
+// Ladda tasks - will be loaded from MongoDB after connection
 let tasksData = [];
-try {
-    if (fs.existsSync(TASKS_FILE)) {
-        tasksData = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
+
+const loadTasksFromFile = () => {
+    try {
+        if (fs.existsSync(TASKS_FILE)) {
+            tasksData = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
+        }
+    } catch (error) {
+        console.error("Error loading tasks.json:", error);
+        tasksData = [];
     }
-} catch (error) {
-    console.error("Error loading tasks.json:", error);
-    tasksData = [];
-}
+};
+
+// Load from file initially
+loadTasksFromFile();
 
 const saveTasks = () => {
     fs.writeFileSync(TASKS_FILE, JSON.stringify(tasksData, null, 2));
@@ -467,32 +507,62 @@ const saveTasks = () => {
 
 // --- API ---
 
-app.get('/api/tasks', (req, res) => {
-    res.json(tasksData);
+app.get('/api/tasks', async (req, res) => {
+    try {
+        if (isMongoConnected()) {
+            const tasks = await getAllTasks();
+            res.json(tasks);
+        } else {
+            res.json(tasksData);
+        }
+    } catch (error) {
+        console.error('[Tasks] Error fetching tasks:', error);
+        res.json(tasksData); // Fallback to in-memory
+    }
 });
 
-app.post('/api/tasks', (req, res) => {
+app.post('/api/tasks', async (req, res) => {
     const newTask = {
         id: Date.now().toString(),
         text: req.body.text,
         assignee: req.body.assignee || null,
         week: req.body.week || null,
-        days: req.body.days || [], // Array of strings e.g. ['Mån', 'Tis']
+        days: req.body.days || [],
         isRecurring: req.body.isRecurring || false,
         done: false,
-        completedWeeks: [], // For recurring tasks: list of week numbers where task is done
+        completedWeeks: [],
         createdAt: new Date().toISOString()
     };
+
+    try {
+        if (isMongoConnected()) {
+            await createTask(newTask);
+        }
+    } catch (error) {
+        console.error('[Tasks] MongoDB error, falling back to file:', error);
+    }
+
+    // Always update in-memory and file as backup
     tasksData.push(newTask);
     saveTasks();
     res.json(newTask);
 });
 
-app.put('/api/tasks/:id', (req, res) => {
+app.put('/api/tasks/:id', async (req, res) => {
     const { id } = req.params;
     const taskIndex = tasksData.findIndex(t => t.id === id);
+
     if (taskIndex > -1) {
         tasksData[taskIndex] = { ...tasksData[taskIndex], ...req.body };
+
+        try {
+            if (isMongoConnected()) {
+                await updateTask(id, req.body);
+            }
+        } catch (error) {
+            console.error('[Tasks] MongoDB error:', error);
+        }
+
         saveTasks();
         res.json(tasksData[taskIndex]);
     } else {
@@ -502,9 +572,18 @@ app.put('/api/tasks/:id', (req, res) => {
 
 // Wildcard route removed - handled by fallback at end of file
 
-app.delete('/api/tasks/:id', (req, res) => {
+app.delete('/api/tasks/:id', async (req, res) => {
     const { id } = req.params;
     tasksData = tasksData.filter(t => t.id !== id);
+
+    try {
+        if (isMongoConnected()) {
+            await deleteTask(id);
+        }
+    } catch (error) {
+        console.error('[Tasks] MongoDB error:', error);
+    }
+
     saveTasks();
     res.json({ success: true });
 });
@@ -825,7 +904,7 @@ app.get('/api/schedule', async (req, res) => {
 });
 
 // Import event from inbox (mark as non-inbox-only by creating local override)
-app.post('/api/import-from-inbox', (req, res) => {
+app.post('/api/import-from-inbox', async (req, res) => {
     const { uid } = req.body;
 
     if (!uid) {
@@ -833,7 +912,7 @@ app.post('/api/import-from-inbox', (req, res) => {
     }
 
     try {
-        const localEvents = readLocalEvents();
+        const localEvents = await readLocalEvents();
 
         // Check if already imported
         const exists = localEvents.find(e => e.uid === uid);
@@ -850,8 +929,14 @@ app.post('/api/import-from-inbox', (req, res) => {
             createdAt: new Date().toISOString()
         };
 
+        // Save to MongoDB if connected
+        if (isMongoConnected()) {
+            await createLocalEvent(importedEvent);
+        }
+
+        // Also save to file as backup
         localEvents.push(importedEvent);
-        writeLocalEvents(localEvents);
+        await writeLocalEvents(localEvents);
 
         res.json({ success: true });
     } catch (error) {
@@ -861,7 +946,7 @@ app.post('/api/import-from-inbox', (req, res) => {
 });
 
 // Return event to inbox (remove local override so it becomes inbox-only again)
-app.post('/api/return-to-inbox', (req, res) => {
+app.post('/api/return-to-inbox', async (req, res) => {
     const { uid } = req.body;
 
     if (!uid) {
@@ -869,12 +954,17 @@ app.post('/api/return-to-inbox', (req, res) => {
     }
 
     try {
-        let localEvents = readLocalEvents();
+        let localEvents = await readLocalEvents();
 
         // Remove the local event with this UID (this removes the override)
         localEvents = localEvents.filter(e => e.uid !== uid);
 
-        writeLocalEvents(localEvents);
+        // Delete from MongoDB if connected
+        if (isMongoConnected()) {
+            await deleteLocalEvent(uid);
+        }
+
+        await writeLocalEvents(localEvents);
 
         res.json({ success: true });
     } catch (error) {
@@ -884,9 +974,9 @@ app.post('/api/return-to-inbox', (req, res) => {
 });
 
 // Hämta papperskorgen
-app.get('/api/trash', (req, res) => {
+app.get('/api/trash', async (req, res) => {
     try {
-        const localEvents = readLocalEvents();
+        const localEvents = await readLocalEvents();
         // Returnera bara de som är deleted eller cancelled
         const trash = localEvents.filter(e => e.deleted || e.cancelled);
         res.json(trash);
@@ -895,167 +985,210 @@ app.get('/api/trash', (req, res) => {
     }
 });
 
-app.post('/api/create-event', (req, res) => {
+app.post('/api/create-event', async (req, res) => {
     const { summary, location, coords, start, end, description, createdBy, assignee, assignees, category } = req.body;
 
     if (!summary || !start) {
         return res.status(400).json({ error: 'Titel och starttid krävs' });
     }
 
-    const events = readLocalEvents();
-    const newEvent = {
-        uid: uuidv4(),
-        summary,
-        location: location || '',
-        coords: coords || null,
-        start,
-        end: end || start, // Om inget slutdatum, sätt samma som start
-        description: description || '',
-        assignee: assignee || 'Hela familjen', // Default to family
-        assignees: assignees || [], // Array of assignees
-        category: category || null, // Event category
-        todoList: [],
-        createdBy,
-        createdAt: new Date().toISOString(),
-        deleted: false,
-        cancelled: false
-    };
-
-    events.push(newEvent);
-    writeLocalEvents(events);
-
-    res.json({ success: true, event: newEvent });
-});
-
-app.post('/api/update-event', (req, res) => {
-    const { uid, summary, location, coords, start, end, description, todoList, cancelled, assignments, assignee, assignees, category, source } = req.body;
-    let events = readLocalEvents();
-
-    const existingIndex = events.findIndex(e => e.uid === uid);
-
-    console.log('Update Event called for:', uid);
-    console.log('Assignments received:', assignments);
-    console.log('Assignees received:', assignees);
-    console.log('Category received:', category);
-    console.log('Source received:', source);
-
-    if (existingIndex >= 0) {
-        // Update existing local event
-        let newSource = events[existingIndex].source;
-        // If we received a source and it differs (maybe we want to tag it as edited?)
-        // Actually, for existing LOCAL events, the source is likely already set correctly (e.g. "HK Lidköping (Redigerad)" or just "Familjen (Eget)").
-        // If the incoming source is different and doesn't have Redigerad, maybe append it?
-        // But usually frontend sends back what it has.
-        if (source) {
-            if (!source.includes('(Redigerad)') && !source.includes('Familjen (Eget)') && source !== 'FamilyOps') {
-                newSource = `${source} (Redigerad)`;
-            } else {
-                newSource = source;
-            }
-        }
-
-        events[existingIndex] = {
-            ...events[existingIndex],
-            summary, location, coords, start, end, description, todoList,
-            assignee: assignee || events[existingIndex].assignee,
-            assignees: assignees || events[existingIndex].assignees || [],
-            category: category || events[existingIndex].category,
-            source: newSource,
-            cancelled: cancelled !== undefined ? cancelled : events[existingIndex].cancelled
-        };
-    } else {
-        // Probably editing an external event -> Create a local "shadow" copy to persist edits
-        console.log(`Simulating Google Calendar Sync for event ${uid} ... (Requires API Credentials)`);
-
-        const shadowEvent = {
-            uid, // Keep original UID to override it in the get loop
+    try {
+        const events = await readLocalEvents();
+        const newEvent = {
+            uid: uuidv4(),
             summary,
             location: location || '',
             coords: coords || null,
             start,
-            end,
+            end: end || start,
             description: description || '',
-            todoList: todoList || [],
-            assignee: assignee || '',
+            assignee: assignee || 'Hela familjen',
             assignees: assignees || [],
             category: category || null,
-            source: source ? (source.includes('(Redigerad)') ? source : `${source} (Redigerad)`) : 'Familjen (Redigerad)', // Preserve original source + (Redigerad)
-            createdAt: new Date().toISOString(), // effectively "claiming" it
-            cancelled: cancelled || false,
-            deleted: false
+            todoList: [],
+            createdBy,
+            createdAt: new Date().toISOString(),
+            deleted: false,
+            cancelled: false
         };
-        events.push(shadowEvent);
+
+        // Save to MongoDB if connected
+        if (isMongoConnected()) {
+            await createLocalEvent(newEvent);
+        }
+
+        events.push(newEvent);
+        await writeLocalEvents(events);
+
+        res.json({ success: true, event: newEvent });
+    } catch (error) {
+        console.error('Create event error:', error);
+        res.status(500).json({ error: 'Kunde inte skapa händelse' });
     }
-
-    writeLocalEvents(events);
-
-    // Save Assignments if provided
-    if (assignments) {
-        const db = readDb();
-        db[uid] = { ...db[uid], ...assignments }; // Merge with existing or create new
-        writeDb(db);
-    }
-
-    res.json({ success: true });
 });
 
-app.post('/api/delete-event', (req, res) => {
-    const { uid, summary, start, end, source } = req.body; // Vi behöver info för att skapa "skuggan" om den inte finns
-    let events = readLocalEvents();
-    const existingIndex = events.findIndex(e => e.uid === uid);
+app.post('/api/update-event', async (req, res) => {
+    const { uid, summary, location, coords, start, end, description, todoList, cancelled, assignments, assignee, assignees, category, source } = req.body;
 
-    if (existingIndex >= 0) {
-        // Markera som deleted
-        events[existingIndex].deleted = true;
-        events[existingIndex].deletedAt = new Date().toISOString();
-    } else {
-        // Skapa skugga av externt event som deleted
-        const shadowEvent = {
-            uid,
-            summary: summary || 'Borttaget event',
-            start,
-            end,
-            source: source || 'Externt',
-            deleted: true,
-            deletedAt: new Date().toISOString()
-        };
-        events.push(shadowEvent);
-    }
+    try {
+        let events = await readLocalEvents();
+        const existingIndex = events.findIndex(e => e.uid === uid);
 
-    writeLocalEvents(events);
-    res.json({ success: true });
-});
+        console.log('Update Event called for:', uid);
 
-app.post('/api/restore-event', (req, res) => {
-    const { uid } = req.body;
-    let events = readLocalEvents();
-    const existingIndex = events.findIndex(e => e.uid === uid);
+        if (existingIndex >= 0) {
+            let newSource = events[existingIndex].source;
+            if (source) {
+                if (!source.includes('(Redigerad)') && !source.includes('Familjen (Eget)') && source !== 'FamilyOps') {
+                    newSource = `${source} (Redigerad)`;
+                } else {
+                    newSource = source;
+                }
+            }
 
-    if (existingIndex >= 0) {
-        events[existingIndex].deleted = false;
-        events[existingIndex].cancelled = false; // Reset cancel too?
-        delete events[existingIndex].deletedAt;
-        writeLocalEvents(events);
+            events[existingIndex] = {
+                ...events[existingIndex],
+                summary, location, coords, start, end, description, todoList,
+                assignee: assignee || events[existingIndex].assignee,
+                assignees: assignees || events[existingIndex].assignees || [],
+                category: category || events[existingIndex].category,
+                source: newSource,
+                cancelled: cancelled !== undefined ? cancelled : events[existingIndex].cancelled
+            };
+
+            // Update in MongoDB if connected
+            if (isMongoConnected()) {
+                await updateLocalEvent(uid, events[existingIndex]);
+            }
+        } else {
+            // Create shadow event for external event
+            const shadowEvent = {
+                uid,
+                summary,
+                location: location || '',
+                coords: coords || null,
+                start,
+                end,
+                description: description || '',
+                todoList: todoList || [],
+                assignee: assignee || '',
+                assignees: assignees || [],
+                category: category || null,
+                source: source ? (source.includes('(Redigerad)') ? source : `${source} (Redigerad)`) : 'Familjen (Redigerad)',
+                createdAt: new Date().toISOString(),
+                cancelled: cancelled || false,
+                deleted: false
+            };
+            events.push(shadowEvent);
+
+            // Save to MongoDB if connected
+            if (isMongoConnected()) {
+                await createLocalEvent(shadowEvent);
+            }
+        }
+
+        await writeLocalEvents(events);
+
+        // Save Assignments if provided
+        if (assignments) {
+            await writeDb(uid, assignments);
+        }
+
         res.json({ success: true });
-    } else {
-        res.status(404).json({ error: 'Event not found in local db' });
+    } catch (error) {
+        console.error('Update event error:', error);
+        res.status(500).json({ error: 'Kunde inte uppdatera händelse' });
     }
 });
 
-app.post('/api/assign', (req, res) => {
-    const { eventId, user, role } = req.body; // role: 'driver' | 'packer'
-    const db = readDb();
+app.post('/api/delete-event', async (req, res) => {
+    const { uid, summary, start, end, source } = req.body;
 
-    if (!db[eventId]) {
-        db[eventId] = {};
+    try {
+        let events = await readLocalEvents();
+        const existingIndex = events.findIndex(e => e.uid === uid);
+
+        if (existingIndex >= 0) {
+            events[existingIndex].deleted = true;
+            events[existingIndex].deletedAt = new Date().toISOString();
+
+            // Update in MongoDB if connected
+            if (isMongoConnected()) {
+                await updateLocalEvent(uid, { deleted: true, deletedAt: events[existingIndex].deletedAt });
+            }
+        } else {
+            const shadowEvent = {
+                uid,
+                summary: summary || 'Borttaget event',
+                start,
+                end,
+                source: source || 'Externt',
+                deleted: true,
+                deletedAt: new Date().toISOString()
+            };
+            events.push(shadowEvent);
+
+            // Save to MongoDB if connected
+            if (isMongoConnected()) {
+                await createLocalEvent(shadowEvent);
+            }
+        }
+
+        await writeLocalEvents(events);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Delete event error:', error);
+        res.status(500).json({ error: 'Kunde inte ta bort händelse' });
     }
+});
 
-    // Uppdatera specifik roll
-    db[eventId][role] = user;
+app.post('/api/restore-event', async (req, res) => {
+    const { uid } = req.body;
 
-    writeDb(db);
+    try {
+        let events = await readLocalEvents();
+        const existingIndex = events.findIndex(e => e.uid === uid);
 
-    res.json({ success: true, assignments: db[eventId] });
+        if (existingIndex >= 0) {
+            events[existingIndex].deleted = false;
+            events[existingIndex].cancelled = false;
+            delete events[existingIndex].deletedAt;
+
+            // Update in MongoDB if connected
+            if (isMongoConnected()) {
+                await updateLocalEvent(uid, { deleted: false, cancelled: false, deletedAt: null });
+            }
+
+            await writeLocalEvents(events);
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ error: 'Event not found in local db' });
+        }
+    } catch (error) {
+        console.error('Restore event error:', error);
+        res.status(500).json({ error: 'Kunde inte återställa händelse' });
+    }
+});
+
+app.post('/api/assign', async (req, res) => {
+    try {
+        const { eventId, user, role } = req.body; // role: 'driver' | 'packer'
+        const db = await readDb();
+
+        if (!db[eventId]) {
+            db[eventId] = {};
+        }
+
+        // Uppdatera specifik roll
+        db[eventId][role] = user;
+
+        await writeDb(eventId, db[eventId]);
+
+        res.json({ success: true, assignments: db[eventId] });
+    } catch (error) {
+        console.error('Assign error:', error);
+        res.status(500).json({ error: 'Kunde inte spara tilldelning' });
+    }
 });
 
 // --- Serve Frontend in Production ---
@@ -1109,8 +1242,41 @@ app.use((req, res) => {
 });
 
 // Duplicate fallback removed
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Family Ops Backend körs på http://0.0.0.0:${PORT}`);
-    // Start the background calendar refresh scheduler
-    startScheduledRefresh();
-});
+
+// Initialize MongoDB and start server
+async function startServer() {
+    // Try to connect to MongoDB
+    const mongoDb = await connectToMongo();
+
+    if (mongoDb) {
+        console.log('[Startup] MongoDB connected - running one-time migration check...');
+
+        // Migrate existing JSON data to MongoDB (only if collections are empty)
+        try {
+            const existingTasks = await getAllTasks();
+            if (existingTasks.length === 0 && tasksData.length > 0) {
+                console.log('[Migration] MongoDB tasks empty, migrating from JSON...');
+                const fileAssignments = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) : {};
+                const fileLocalEvents = fs.existsSync(LOCAL_EVENTS_FILE) ? JSON.parse(fs.readFileSync(LOCAL_EVENTS_FILE, 'utf8')) : [];
+                const fileIgnored = fs.existsSync(IGNORED_EVENTS_FILE) ? JSON.parse(fs.readFileSync(IGNORED_EVENTS_FILE, 'utf8')) : [];
+
+                await migrateFromJson(fileAssignments, tasksData, fileLocalEvents, fileIgnored);
+            } else {
+                console.log(`[Migration] MongoDB already has ${existingTasks.length} tasks - skipping migration`);
+            }
+        } catch (migrationError) {
+            console.error('[Migration] Error during migration:', migrationError);
+        }
+    } else {
+        console.log('[Startup] Running in file-only mode (no MongoDB)');
+    }
+
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`Family Ops Backend körs på http://0.0.0.0:${PORT}`);
+        console.log(`MongoDB status: ${isMongoConnected() ? 'CONNECTED ✓' : 'NOT CONNECTED (using files)'}`);
+        // Start the background calendar refresh scheduler
+        startScheduledRefresh();
+    });
+}
+
+startServer();

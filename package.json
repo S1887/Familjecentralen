@@ -1,7 +1,7 @@
 {
   "name": "family-ops",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,6 +19,7 @@
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "leaflet": "^1.9.4",
+    "mongodb": "^6.12.0",
     "node-ical": "^0.22.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
