@@ -839,12 +839,12 @@ function App() {
     // Only adults can edit
     if (!isAdmin) return;
 
-    // Check if this is an external Google Calendar event (Svante/Sarah's private calendar)
-    // Google is ALWAYS master for these - title/date/time fields should always be locked
-    const isExternalGoogle = (event.source?.includes('Svante') ||
-      event.source?.includes('Sarah') ||
-      event.source?.includes('Privat')) &&
-      !event.source?.includes('Eget');
+    // Check if this is an external event (synced from any external source)
+    // External sources = locked fields. Only own events (Eget/FamilyOps) are fully editable
+    const isExternalSource = event.source &&
+      !event.source.includes('Eget') &&
+      !event.source.includes('FamilyOps') &&
+      event.source !== 'Familjen';
 
     setEditEventData({
       ...event,
@@ -853,7 +853,7 @@ function App() {
       time: new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
       endTime: new Date(event.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
       todoList: event.todoList || [],
-      isExternalGoogle // Flag to lock title/date/time fields
+      isExternalSource // Flag to lock title/date/time fields for external events
     });
     setIsEditingEvent(true);
   };
@@ -1327,7 +1327,24 @@ function App() {
         {
           isCreatingEvent && (
             <div className="modal-overlay">
-              <div className="modal" style={{ padding: '2rem' }}>
+              <div className="modal" style={{ padding: '2rem', position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsCreatingEvent(false)}
+                  style={{
+                    position: 'absolute',
+                    top: '1rem',
+                    right: '1rem',
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '1.5rem',
+                    cursor: 'pointer',
+                    color: 'var(--text-secondary)',
+                    padding: '0.25rem',
+                    lineHeight: 1
+                  }}
+                  aria-label="Stäng"
+                >×</button>
                 <h2>✨ Skapa ny händelse</h2>
                 <form onSubmit={createEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div>
@@ -1491,25 +1508,46 @@ function App() {
         {
           isEditingEvent && editEventData && (
             <div className="modal-overlay">
-              <div className="modal" style={{ padding: '2rem' }}>
+              <div className="modal" style={{ padding: '2rem', position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingEvent(false)}
+                  style={{
+                    position: 'absolute',
+                    top: '1rem',
+                    right: '1rem',
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '1.5rem',
+                    cursor: 'pointer',
+                    color: 'var(--text-secondary)',
+                    padding: '0.25rem',
+                    lineHeight: 1
+                  }}
+                  aria-label="Stäng"
+                >×</button>
                 <h2>✏️ Redigera händelse</h2>
 
-                {/* Show Google Calendar link for external events */}
-                {(editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') ||
-                  editEventData.source?.includes('Privat')) && !editEventData.source?.includes('Eget') && (
-                    <div style={{
-                      background: 'linear-gradient(135deg, #4285f4, #34a853)',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '8px',
-                      marginBottom: '1rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem'
-                    }}>
-                      <span>📅</span>
-                      <span style={{ color: 'white', fontSize: '0.85rem', flex: 1 }}>
-                        Ändringar sparas lokalt. Uppdatera även i Google Kalender!
-                      </span>
+                {/* Show info banner for external events */}
+                {editEventData.isExternalSource && (
+                  <div style={{
+                    background: (editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Privat'))
+                      ? 'linear-gradient(135deg, #4285f4, #34a853)'
+                      : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '8px',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    flexWrap: 'wrap'
+                  }}>
+                    <span>🔒</span>
+                    <span style={{ color: 'white', fontSize: '0.85rem', flex: 1 }}>
+                      Extern källa: {editEventData.source?.split(' (')[0]}. Tid/datum kan ej ändras här.
+                    </span>
+                    {/* Only show Google Calendar link for Google sources */}
+                    {(editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Privat')) && (
                       <a
                         href={`https://calendar.google.com/calendar/r/day/${editEventData.date?.replace(/-/g, '/')}`}
                         target="_blank"
@@ -1527,19 +1565,20 @@ function App() {
                       >
                         Öppna Google Kalender →
                       </a>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                )}
 
                 <form onSubmit={updateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div>
-                    <label>Vad händer? {editEventData.isExternalGoogle && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
+                    <label>Vad händer? {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(extern källa)</span>}</label>
                     <input
                       type="text"
                       required
                       value={editEventData.summary}
-                      onChange={e => !editEventData.isExternalGoogle && setEditEventData({ ...editEventData, summary: e.target.value })}
-                      readOnly={editEventData.isExternalGoogle}
-                      style={editEventData.isExternalGoogle
+                      onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, summary: e.target.value })}
+                      readOnly={editEventData.isExternalSource}
+                      style={editEventData.isExternalSource
                         ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
                         : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
                       }
@@ -1548,28 +1587,28 @@ function App() {
 
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
-                      <label>När? {editEventData.isExternalGoogle && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
+                      <label>När? {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
                       <input
                         type="date"
                         required
                         value={editEventData.date}
-                        onChange={e => !editEventData.isExternalGoogle && setEditEventData({ ...editEventData, date: e.target.value })}
-                        readOnly={editEventData.isExternalGoogle}
-                        style={editEventData.isExternalGoogle
+                        onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, date: e.target.value })}
+                        readOnly={editEventData.isExternalSource}
+                        style={editEventData.isExternalSource
                           ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
                           : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
                         }
                       />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <label>Tid start {editEventData.isExternalGoogle && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
+                      <label>Tid start {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
                       <input
                         type="time"
                         required
                         value={editEventData.time}
-                        onChange={e => !editEventData.isExternalGoogle && setEditEventData({ ...editEventData, time: e.target.value })}
-                        readOnly={editEventData.isExternalGoogle}
-                        style={editEventData.isExternalGoogle
+                        onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, time: e.target.value })}
+                        readOnly={editEventData.isExternalSource}
+                        style={editEventData.isExternalSource
                           ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
                           : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
                         }
@@ -1579,14 +1618,14 @@ function App() {
 
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
-                      <label>Tid slut {editEventData.isExternalGoogle && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
+                      <label>Tid slut {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
                       <input
                         type="time"
                         required
                         value={editEventData.endTime}
-                        onChange={e => !editEventData.isExternalGoogle && setEditEventData({ ...editEventData, endTime: e.target.value })}
-                        readOnly={editEventData.isExternalGoogle}
-                        style={editEventData.isExternalGoogle
+                        onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, endTime: e.target.value })}
+                        readOnly={editEventData.isExternalSource}
+                        style={editEventData.isExternalSource
                           ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
                           : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
                         }
@@ -1898,8 +1937,8 @@ function App() {
         }
 
         {/* Header */}
-        <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <div style={{ textAlign: 'left', display: 'flex', alignItems: 'center', gap: isMobile ? '0.3rem' : '0.5rem', flexWrap: 'wrap' }}>
+        <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: isMobile ? '0.3rem' : '0.5rem', flexWrap: 'nowrap' }}>
             <h1 style={{ margin: 0, fontSize: isMobile ? '1rem' : '1.5rem' }}>
               {isMobile ? '' : 'Örtendahls familjecentral'}
             </h1>
@@ -1941,27 +1980,7 @@ function App() {
               📅
             </button>
 
-            {/* Add Event - Admin only */}
-            {isAdmin && (
-              <button
-                onClick={() => setIsCreatingEvent(true)}
-                title="Lägg till händelse"
-                style={{
-                  background: 'transparent',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  padding: isMobile ? '0.4rem' : '0.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: isMobile ? '1.3rem' : '1.4rem',
-                  color: 'var(--text-main)'
-                }}
-              >
-                ➕
-              </button>
-            )}
+
 
             {/* Next Match Ticker - inline in header */}
             {(() => {
@@ -1977,25 +1996,43 @@ function App() {
               if (!nextMatch) return null;
 
               const isArsenal = nextMatch.source === 'Arsenal FC' || (nextMatch.summary || '').toLowerCase().includes('arsenal');
+
+              // Adjust time for Arsenal (UK time +1h for SE) if needed
+              const displayDate = new Date(nextMatch.start);
+              // if (isArsenal) {
+              //   displayDate.setTime(displayDate.getTime() + 3600000); // Add 1 hour
+              // }
+
               return (
-                <div style={{
-                  background: 'var(--card-bg)',
-                  padding: '0.15rem 0.4rem',
-                  borderRadius: '12px',
-                  fontSize: '0.6rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  whiteSpace: 'nowrap',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-main)'
-                }}>
-                  <span style={{ fontSize: '0.7rem' }}>{isArsenal ? '🔴⚪' : '🔴🔵'}</span>
-                  <span style={{ fontWeight: 600 }}>{nextMatch.summary}</span>
-                  <span style={{ opacity: 0.7 }}>
-                    {new Date(nextMatch.start).toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric' })}
+                <a
+                  href="https://www.svenskafans.com/fotboll/lag/arsenal/spelschema"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    background: 'var(--card-bg)',
+                    padding: '0.15rem 0.4rem',
+                    borderRadius: '12px',
+                    fontSize: '0.6rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    whiteSpace: 'nowrap',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-main)',
+                    maxWidth: isMobile ? '160px' : 'auto', // Increased slightly for time
+                    overflow: 'hidden',
+                    textDecoration: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <span style={{ fontSize: '0.7rem', flexShrink: 0 }}>{isArsenal ? '🔴⚪' : '🔴🔵'}</span>
+                  <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>{nextMatch.summary}</span>
+                  <span style={{ opacity: 0.7, flexShrink: 0 }}>
+                    {displayDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric' })}
+                    {' '}
+                    {displayDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                   </span>
-                </div>
+                </a>
               );
             })()}
 
@@ -2035,7 +2072,7 @@ function App() {
                   borderRadius: '12px',
                   boxShadow: '0 4px 12px var(--shadow-color)',
                   zIndex: 1000,
-                  minWidth: '150px',
+                  minWidth: '200px',
                   overflow: 'hidden'
                 }}>
                   <button
@@ -2052,7 +2089,8 @@ function App() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
-                      textAlign: 'left'
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap'
                     }}
                   >
                     📥 Inkorg
@@ -2072,7 +2110,8 @@ function App() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
-                        textAlign: 'left'
+                        textAlign: 'left',
+                        whiteSpace: 'nowrap'
                       }}
                     >
                       🗑️ Papperskorg
@@ -2092,7 +2131,8 @@ function App() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
-                      textAlign: 'left'
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap'
                     }}
                   >
                     {darkMode ? '☀️ Ljust läge' : '🌙 Mörkt läge'}
@@ -2110,7 +2150,8 @@ function App() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
-                      textAlign: 'left'
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap'
                     }}
                   >
                     🚪 Logga ut
@@ -2338,6 +2379,28 @@ function App() {
                 })()}
               </div>
             </div>
+          )}
+
+          {/* Add Calendar Event Button (Dashboard) */}
+          {isAdmin && (
+            <button
+              onClick={() => setIsCreatingEvent(true)}
+              style={{
+                width: '100%',
+                padding: '0.8rem',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px dashed rgba(255,255,255,0.6)',
+                color: 'white',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                marginBottom: '1rem',
+                marginTop: '1rem',
+                fontSize: '0.95rem',
+                fontWeight: '500'
+              }}
+            >
+              + Lägg till kalenderhändelse
+            </button>
           )}
         </div>
 
@@ -3056,7 +3119,7 @@ function App() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   )
 }
 
