@@ -1485,6 +1485,43 @@ function App() {
             <div className="modal-overlay">
               <div className="modal" style={{ padding: '2rem' }}>
                 <h2>✏️ Redigera händelse</h2>
+
+                {/* Show Google Calendar link for external events */}
+                {(editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') ||
+                  editEventData.source?.includes('Privat')) && !editEventData.source?.includes('Eget') && (
+                    <div style={{
+                      background: 'linear-gradient(135deg, #4285f4, #34a853)',
+                      padding: '0.75rem 1rem',
+                      borderRadius: '8px',
+                      marginBottom: '1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span>📅</span>
+                      <span style={{ color: 'white', fontSize: '0.85rem', flex: 1 }}>
+                        Ändringar sparas lokalt. Uppdatera även i Google Kalender!
+                      </span>
+                      <a
+                        href={`https://calendar.google.com/calendar/r/day/${editEventData.date?.replace(/-/g, '/')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          background: 'white',
+                          color: '#4285f4',
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '4px',
+                          textDecoration: 'none',
+                          fontWeight: '600',
+                          fontSize: '0.85rem',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        Öppna Google Kalender →
+                      </a>
+                    </div>
+                  )}
+
                 <form onSubmit={updateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div>
                     <label>Vad händer?</label>
