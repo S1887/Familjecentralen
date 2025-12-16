@@ -839,13 +839,21 @@ function App() {
     // Only adults can edit
     if (!isAdmin) return;
 
+    // Check if this is an external Google Calendar event (Svante/Sarah's private calendar)
+    // Google is ALWAYS master for these - title/date/time fields should always be locked
+    const isExternalGoogle = (event.source?.includes('Svante') ||
+      event.source?.includes('Sarah') ||
+      event.source?.includes('Privat')) &&
+      !event.source?.includes('Eget');
+
     setEditEventData({
       ...event,
       // Ensure we have correct date inputs format
       date: new Date(event.start).toISOString().split('T')[0],
       time: new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
       endTime: new Date(event.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
-      todoList: event.todoList || []
+      todoList: event.todoList || [],
+      isExternalGoogle // Flag to lock title/date/time fields
     });
     setIsEditingEvent(true);
   };
@@ -1524,48 +1532,64 @@ function App() {
 
                 <form onSubmit={updateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div>
-                    <label>Vad händer?</label>
+                    <label>Vad händer? {editEventData.isExternalGoogle && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
                     <input
                       type="text"
                       required
                       value={editEventData.summary}
-                      onChange={e => setEditEventData({ ...editEventData, summary: e.target.value })}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                      onChange={e => !editEventData.isExternalGoogle && setEditEventData({ ...editEventData, summary: e.target.value })}
+                      readOnly={editEventData.isExternalGoogle}
+                      style={editEventData.isExternalGoogle
+                        ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
+                        : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
+                      }
                     />
                   </div>
 
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
-                      <label>När?</label>
+                      <label>När? {editEventData.isExternalGoogle && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
                       <input
                         type="date"
                         required
                         value={editEventData.date}
-                        onChange={e => setEditEventData({ ...editEventData, date: e.target.value })}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                        onChange={e => !editEventData.isExternalGoogle && setEditEventData({ ...editEventData, date: e.target.value })}
+                        readOnly={editEventData.isExternalGoogle}
+                        style={editEventData.isExternalGoogle
+                          ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
+                          : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
+                        }
                       />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <label>Tid start</label>
+                      <label>Tid start {editEventData.isExternalGoogle && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
                       <input
                         type="time"
                         required
                         value={editEventData.time}
-                        onChange={e => setEditEventData({ ...editEventData, time: e.target.value })}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                        onChange={e => !editEventData.isExternalGoogle && setEditEventData({ ...editEventData, time: e.target.value })}
+                        readOnly={editEventData.isExternalGoogle}
+                        style={editEventData.isExternalGoogle
+                          ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
+                          : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
+                        }
                       />
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
-                      <label>Tid slut</label>
+                      <label>Tid slut {editEventData.isExternalGoogle && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
                       <input
                         type="time"
                         required
                         value={editEventData.endTime}
-                        onChange={e => setEditEventData({ ...editEventData, endTime: e.target.value })}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                        onChange={e => !editEventData.isExternalGoogle && setEditEventData({ ...editEventData, endTime: e.target.value })}
+                        readOnly={editEventData.isExternalGoogle}
+                        style={editEventData.isExternalGoogle
+                          ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
+                          : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
+                        }
                       />
                     </div>
                     <div style={{ flex: 1 }}>
