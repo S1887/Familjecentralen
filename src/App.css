@@ -970,12 +970,14 @@ body.modal-open {
 
 /* Custom Background for Hero */
 .today-hero.has-custom-bg {
-  background-size: cover;
+  background-size: contain;
+  background-repeat: no-repeat;
   background-position: center;
+  background-color: #354a36;
+  /* Dark green to match forest/grass context */
   position: relative;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
   border: none !important;
-  /* Override potential borders */
 }
 
 .today-hero.has-custom-bg::before {
