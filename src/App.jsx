@@ -1494,9 +1494,57 @@ function App() {
                     <button type="button" onClick={() => setIsCreatingEvent(false)} style={{
                       padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', cursor: 'pointer'
                     }}>Avbryt</button>
-                    <button type="submit" style={{
-                      padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer'
-                    }}>Skapa händelse</button>
+                    {(() => {
+                      const hasSvante = newEvent.assignees.includes('Svante');
+                      const hasSarah = newEvent.assignees.includes('Sarah');
+                      // Only redirect to Google Calendar if exactly ONE of parents is selected (and no conflict)
+                      let googleTarget = null;
+                      if (hasSvante && !hasSarah) googleTarget = 'Svante';
+                      if (hasSarah && !hasSvante) googleTarget = 'Sarah';
+
+                      if (googleTarget) {
+                        const baseDate = (newEvent.date || '').replace(/-/g, '');
+                        const startTime = (newEvent.time || '12:00').replace(/:/g, '') + '00';
+                        const endTime = (newEvent.endTime || newEvent.time || '13:00').replace(/:/g, '') + '00';
+                        const dates = `${baseDate}T${startTime}/${baseDate}T${endTime}`;
+
+                        const text = encodeURIComponent(newEvent.summary || 'Ny händelse');
+                        const details = encodeURIComponent(`${newEvent.description || ''}\n\n(Skapad via Family-Ops)`);
+                        const location = encodeURIComponent(newEvent.location || '');
+
+                        const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}`;
+
+                        return (
+                          <a
+                            href={googleUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setIsCreatingEvent(false)}
+                            style={{
+                              padding: '0.75rem 1.5rem',
+                              borderRadius: '8px',
+                              border: 'none',
+                              background: '#2ed573',
+                              color: 'white',
+                              cursor: 'pointer',
+                              fontWeight: 'bold',
+                              textDecoration: 'none',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem'
+                            }}
+                          >
+                            📅 Skapa i {googleTarget}s G-Kalender ↗
+                          </a>
+                        );
+                      }
+
+                      return (
+                        <button type="submit" style={{
+                          padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer', fontWeight: 'bold'
+                        }}>Skapa händelse</button>
+                      );
+                    })()}
                   </div>
                 </form>
               </div>
