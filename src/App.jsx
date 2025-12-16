@@ -935,30 +935,30 @@ function App() {
     // Handle redirect to Google Calendar for Svante/Sarah specific events
     const hasSvante = newEvent.assignees && newEvent.assignees.includes('Svante');
     const hasSarah = newEvent.assignees && newEvent.assignees.includes('Sarah');
-    
+
     // Logic: If exactly one parent is selected (and no complex combo logic conflicting), redirect.
     let googleTarget = null;
     if (hasSvante && !hasSarah) googleTarget = 'Svante';
     if (hasSarah && !hasSvante) googleTarget = 'Sarah';
 
     if (googleTarget) {
-        const baseDate = (newEvent.date || '').replace(/-/g, '');
-        const startTime = (newEvent.time || '12:00').replace(/:/g, '') + '00';
-        const endTime = (newEvent.endTime || newEvent.time || '13:00').replace(/:/g, '') + '00';
-        const dates = `${baseDate}T${startTime}/${baseDate}T${endTime}`;
-        
-        const text = encodeURIComponent(newEvent.summary || 'Ny händelse');
-        const details = encodeURIComponent(`${newEvent.description || ''}\n\n(Skapad via Family-Ops)`);
-        const location = encodeURIComponent(newEvent.location || '');
-        
-        const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}`;
+      const baseDate = (newEvent.date || '').replace(/-/g, '');
+      const startTime = (newEvent.time || '12:00').replace(/:/g, '') + '00';
+      const endTime = (newEvent.endTime || newEvent.time || '13:00').replace(/:/g, '') + '00';
+      const dates = `${baseDate}T${startTime}/${baseDate}T${endTime}`;
 
-        window.open(googleUrl, '_blank');
-        setIsCreatingEvent(false);
-        
-        // Reset form slightly just in case but keep date
-        setNewEvent(prev => ({ ...prev, summary: '', location: '', description: '', assignees: [] }));
-        return;
+      const text = encodeURIComponent(newEvent.summary || 'Ny händelse');
+      const details = encodeURIComponent(`${newEvent.description || ''}\n\n(Skapad via Family-Ops)`);
+      const location = encodeURIComponent(newEvent.location || '');
+
+      const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}`;
+
+      window.open(googleUrl, '_blank');
+      setIsCreatingEvent(false);
+
+      // Reset form slightly just in case but keep date
+      setNewEvent(prev => ({ ...prev, summary: '', location: '', description: '', assignees: [] }));
+      return;
     }
 
     // Bygg ihop datum och tid
@@ -1905,11 +1905,36 @@ function App() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button type="button" onClick={() => deleteEvent(editEventData)} style={{
-                        padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ff4757', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
-                      }} title="Ta bort event">
-                        <span>🗑️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ta bort</span>
-                      </button>
+                      {editEventData.isExternalSource ? (
+                        <a
+                          href="https://calendar.google.com/calendar/r"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            padding: '0.5rem 0.8rem',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: '#3498db',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            whiteSpace: 'nowrap',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            textDecoration: 'none'
+                          }}
+                          title="Hanteras i Google Kalender"
+                        >
+                          <span>📅</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Öppna i Google Kalender-appen</span>
+                        </a>
+                      ) : (
+                        <button type="button" onClick={() => deleteEvent(editEventData)} style={{
+                          padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ff4757', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
+                        }} title="Ta bort event">
+                          <span>🗑️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ta bort</span>
+                        </button>
+                      )}
                       {!editEventData.cancelled && (
                         <button type="button" onClick={() => cancelEvent(editEventData)} style={{
                           padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ffa502', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'

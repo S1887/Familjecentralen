@@ -243,8 +243,17 @@ async function fetchCalendarsFromGoogle() {
                     // We only want exact source titles + specific fixes (like Handboll->Bandy below)
 
                     // Global fix for Villa Lidköping: Replace Handboll -> Bandy (often labeled wrong in source)
+                    // Global fix for Villa Lidköping: Replace Handboll -> Bandy (often labeled wrong in source)
                     if (cal.id === 'villa_lidkoping_algot') {
                         summary = summary.replace(/Handboll/gi, 'Bandy');
+                    }
+
+                    // AUTO-TAGGING PARENTS
+                    if (cal.id === 'svante_personal') {
+                        assignees = ['Svante'];
+                    }
+                    if (cal.id === 'sarah_personal') {
+                        assignees = ['Sarah'];
                     }
 
                     // AUTO-RULES
