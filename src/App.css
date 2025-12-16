@@ -593,20 +593,21 @@ h3 {
 }
 
 .week-column-header {
-  padding: 0.5rem;
+  padding: 0.3rem;
   text-align: center;
   border-bottom: 1px solid var(--border-color);
   font-weight: bold;
   background: var(--button-bg);
   border-radius: 8px 8px 0 0;
+  font-size: 0.85rem;
 }
 
 .week-column-body {
-  padding: 0.5rem;
+  padding: 0.3rem;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.3rem;
 }
 
 /* Adjust grid layout when calendar view is active? */

@@ -78,6 +78,18 @@ const CALENDARS = [
         name: 'Villa Lidköping (Algot)',
         url: 'https://portalweb.sportadmin.se/webcal?id=d9a0805a-8cb5-4c5c-8eb9-679ecb6c70c0',
         inboxOnly: true
+    },
+    {
+        id: 'vklass_skola',
+        name: 'Vklass (Skola)',
+        url: 'https://cal.vklass.se/d0cc0c1d-b064-40b8-a82c-0b2c90ba41c4.ics?custodian=true',
+        inboxOnly: true
+    },
+    {
+        id: 'vklass_skola_tuva',
+        name: 'Vklass (Skola Tuva)',
+        url: 'https://cal.vklass.se/5bfb5374-1d00-4dc0-b688-4dc5a60765a9.ics?custodian=true',
+        inboxOnly: true
     }
 ];
 
@@ -261,6 +273,58 @@ async function fetchCalendarsFromGoogle() {
                         category = 'Bandy';
                     }
 
+                    // 6. Vklass (Skola): Smart Tagging for Lessons
+                    // Tag events with child name based on code (sth15=Algot, sth18=Tuva)
+                    // Codes can be in Summary OR Description
+                    if (cal.id === 'vklass_skola' || cal.id === 'vklass_skola_tuva') {
+                        let match = summary.match(/\((.*?)\)/);
+                        let sourceField = 'summary';
+
+                        if (!match && ev.description) {
+                            match = ev.description.match(/\((.*?)\)/);
+                            sourceField = 'description';
+                        }
+
+                        if (match) {
+                            const content = match[1];
+                            const isCode =
+                                content.includes('__') ||
+                                content.includes('/') ||
+                                /^[a-z]+\d+$/i.test(content);
+
+                            // Detect Student
+                            let student = null;
+                            if (content.toLowerCase().includes('sth15')) student = 'Algot';
+                            else if (content.toLowerCase().includes('sth18')) student = 'Tuva';
+
+                            if (isCode && student) {
+                                // It IS a lesson
+                                isInbox = false; // Don't show in inbox
+                                category = 'Skola';
+                                assignees = [student]; // Assign to child
+
+                                // Only clean summary if the code was actually IN the summary
+                                if (sourceField === 'summary') {
+                                    summary = summary.replace(/\s*\(.*?\)/, '').trim();
+                                }
+
+                                // Extra properties for our app
+                                ev.isLesson = true;
+                                ev.scheduleOnly = true; // Flag to hide from main calendar
+                                ev.student = student;
+                            } else if (isCode) {
+                                // Code found but no student? 
+                                // Ideally we should hide it too if it looks like a lesson code to avoid spam
+                                // But without student we can't show it in schedule.
+                                // Let's hide it from main calendar anyway if it looks like a school code
+                                if (content.includes('__')) {
+                                    isInbox = false;
+                                    ev.scheduleOnly = true;
+                                }
+                            }
+                        }
+                    }
+
                     freshEvents.push({
                         uid: ev.uid,
                         summary: summary,
@@ -274,7 +338,11 @@ async function fetchCalendarsFromGoogle() {
                         category: category,
                         todoList: [],
                         tags: [],
-                        deleted: false
+                        deleted: false,
+                        // Custom props
+                        scheduleOnly: ev.scheduleOnly || false,
+                        student: ev.student || null,
+                        isLesson: ev.isLesson || false
                     });
                 }
             }
@@ -495,7 +563,18 @@ app.get('/api/events', async (req, res) => {
         fetchedEvents.forEach(ev => eventMap.set(ev.uid, ev));
 
         // Then add/overwrite with local events
-        formattedLocalEvents.forEach(ev => eventMap.set(ev.uid, ev));
+        let overrideCount = 0;
+        formattedLocalEvents.forEach(ev => {
+            if (eventMap.has(ev.uid)) {
+                // If the event in map is NOT deleted, but local IS deleted, we are effectively HIDING it (which is an override)
+                // If local is NOT deleted, we are modifying it
+                overrideCount++;
+                // console.log(`[Debug] Overriding event ${ev.uid} (deleted: ${ev.deleted})`);
+            }
+            eventMap.set(ev.uid, ev);
+        });
+
+        console.log(`[Debug] Events: Fetched=${fetchedEvents.length}, Local=${formattedLocalEvents.length} (Deleted=${formattedLocalEvents.filter(e => e.deleted).length}), Overrides=${overrideCount}`);
 
         let allEvents = Array.from(eventMap.values());
 
@@ -534,6 +613,9 @@ app.get('/api/events', async (req, res) => {
         if (!includeTrash) {
             allEvents = allEvents.filter(e => !e.deleted && !e.cancelled);
         }
+
+        // Filter out scheduleOnly events (they have their own endpoint)
+        allEvents = allEvents.filter(e => !e.scheduleOnly);
 
         // Sortera: Närmast i tid först
         allEvents.sort((a, b) => new Date(a.start) - new Date(b.start));
@@ -725,6 +807,21 @@ app.post('/api/ignore-event', (req, res) => {
     }
 
     res.json({ success: true });
+});
+
+app.get('/api/schedule', async (req, res) => {
+    try {
+        // Fetch fresh/cached calendars
+        const allFetchedEvents = await fetchAndCacheCalendars();
+
+        // Filter for scheduleOnly events
+        const scheduleEvents = allFetchedEvents.filter(e => e.scheduleOnly && !e.deleted);
+
+        res.json(scheduleEvents);
+    } catch (error) {
+        console.error("Schedule fetch error:", error);
+        res.status(500).json({ error: 'Kunde inte hämta schema' });
+    }
 });
 
 // Import event from inbox (mark as non-inbox-only by creating local override)
