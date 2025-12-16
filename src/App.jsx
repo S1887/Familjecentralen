@@ -5,6 +5,7 @@ import ScheduleViewer from './components/ScheduleViewer'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import heroCustomImg from './assets/hero-custom.jpg';
 import { getCoordinates, getTravelTime, formatDuration, searchAddress, getHomeCoords, formatDistance } from './mapService';
 
 // API helper - works in both direct access and Ingress contexts
@@ -2259,7 +2260,7 @@ function App() {
       <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
 
         {/* Today Hero Section */}
-        <div className={getHeroClass()}>
+        <div className={`${getHeroClass()} has-custom-bg`} style={{ backgroundImage: `url(${heroCustomImg})` }}>
           <div className="hero-header" style={{ width: '100%', marginBottom: '0.5rem' }}>
             {/* Greeting */}
             <p style={{ margin: 0, marginBottom: '0.2rem', fontSize: isMobile ? '1rem' : '1.1rem', opacity: 0.9 }}>
