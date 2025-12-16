@@ -701,7 +701,7 @@ app.get('/api/events', async (req, res) => {
 
         // Filter out deleted events unless requested
         if (!includeTrash) {
-            allEvents = allEvents.filter(e => !e.deleted && !e.cancelled);
+            allEvents = allEvents.filter(e => !e.deleted);
         }
 
         // Filter out scheduleOnly events (they have their own endpoint)

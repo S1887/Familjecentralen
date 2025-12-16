@@ -972,13 +972,21 @@ body.modal-open {
 .today-hero.has-custom-bg {
   min-height: 250px;
   background-size: contain;
+  /* Show full original image */
   background-repeat: no-repeat;
-  background-position: center;
+  background-position: top center;
+  /* Align to top */
   background-color: #354a36;
-  /* Dark green to match forest/grass context */
   position: relative;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
   border: none !important;
+}
+
+@media (max-width: 768px) {
+  .today-hero.has-custom-bg {
+    background-size: contain;
+    background-position: top center;
+  }
 }
 
 .today-hero.has-custom-bg::before {

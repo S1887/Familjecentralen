@@ -421,11 +421,19 @@ function App() {
           return !isDuplicate;
         });
 
-        const dedupedData = [...localEvents, ...uniqueExternal];
+        let processedData = [...localEvents, ...uniqueExternal];
 
-        setEvents(dedupedData);
+        // Auto-detect cancellation for Google events (if title contains "Inställd")
+        processedData = processedData.map(ev => {
+          if (ev.summary && ev.summary.toLowerCase().includes('inställd')) {
+            return { ...ev, cancelled: true };
+          }
+          return ev;
+        });
+
+        setEvents(processedData);
         // Försök hämta koordinater och restid för events (asynkront i bakgrunden)
-        enrichEventsWithGeo(dedupedData).then(enriched => setEvents(enriched));
+        enrichEventsWithGeo(processedData).then(enriched => setEvents(enriched));
       })
       .catch(err => console.error("Error fetching events:", err));
   };
@@ -621,6 +629,13 @@ function App() {
   };
 
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const [showHeroDetails, setShowHeroDetails] = useState(false);
+
+  // Reset hero details view when day changes
+  useEffect(() => {
+    setShowHeroDetails(false);
+  }, [selectedDate]);
 
   const changeDay = (direction) => {
     // Top Header: Always change ONLY 1 day
@@ -2267,13 +2282,47 @@ function App() {
               Hej {currentUser.name}!
             </p>
             {/* Date row */}
-            <h2 style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, marginBottom: '0.3rem' }}>
-              <button onClick={() => changeDay(-1)} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer', opacity: 0.8 }}>‹</button>
-              {isToday(selectedDate)
-                ? `Idag, ${selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' })}, ${selectedDate.toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' })}`
-                : selectedDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })
-              }
-              <button onClick={() => changeDay(1)} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer', opacity: 0.8 }}>›</button>
+            <h2 style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem' }}>
+              <button
+                onClick={() => changeDay(-1)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '2.5rem',
+                  fontWeight: '300',
+                  cursor: 'pointer',
+                  opacity: 1,
+                  padding: '0 0.5rem',
+                  textShadow: '0 2px 5px rgba(0,0,0,0.5)',
+                  lineHeight: 1
+                }}
+              >
+                ‹
+              </button>
+              <span style={{ textAlign: 'center', flexGrow: 1, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                {isToday(selectedDate)
+                  ? `Idag, ${selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' })}, ${selectedDate.toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' })}`
+                  : selectedDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })
+                }
+              </span>
+              <button
+                onClick={() => changeDay(1)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '2.5rem',
+                  fontWeight: '300',
+                  cursor: 'pointer',
+                  opacity: 1,
+                  padding: '0 0.5rem',
+                  textShadow: '0 2px 5px rgba(0,0,0,0.5)',
+                  lineHeight: 1
+                }}
+              >
+                ›
+              </button>
             </h2>
             {/* Clock + Weather row */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
@@ -2284,13 +2333,15 @@ function App() {
                 style={{
                   cursor: 'pointer',
                   background: 'rgba(255,255,255,0.2)',
-                  padding: isMobile ? '0.5rem 1rem' : '0.5rem 1rem',
+                  padding: isMobile ? '0.3rem 0.6rem' : '0.5rem 1rem',
                   borderRadius: '8px',
                   display: 'flex',
                   flexDirection: 'row',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  width: isMobile ? '100%' : 'auto'
+                  width: 'auto',
+                  backdropFilter: 'blur(5px)',
+                  zIndex: 10
                 }}
                 onClick={() => window.open('https://www.smhi.se/vader/prognoser-och-varningar/vaderprognos/q/Lidk%C3%B6ping/2696329', '_blank')}
                 title="Se prognos hos SMHI"
@@ -2322,9 +2373,9 @@ function App() {
 
                     return (
                       <>
-                        <span style={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>{getWeatherIcon(w.code, isDay)}</span>
-                        <span style={{ fontSize: isMobile ? '1.2rem' : '2rem', fontWeight: 'bold' }}>{w.temp}°C</span>
-                        <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>Lidköping</span>
+                        <span style={{ fontSize: isMobile ? '1.2rem' : '2rem' }}>{getWeatherIcon(w.code, isDay)}</span>
+                        <span style={{ fontSize: isMobile ? '1rem' : '2rem', fontWeight: 'bold' }}>{w.temp}°C</span>
+                        {!isMobile && <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>Lidköping</span>}
                       </>
                     );
                   }
@@ -2336,12 +2387,49 @@ function App() {
 
           {(heroEvents.length > 0 || heroTasks.length > 0) && (
             <div className="today-events-list" style={{ marginTop: '0.5rem' }}>
-              <h3 style={{ color: 'white', borderBottom: '1px solid rgba(255,255,255,0.3)', paddingBottom: '0.2rem', marginBottom: '0.5rem', fontSize: '1rem' }}>
-                {isToday(selectedDate) ? 'Händer idag:' : `Händer ${selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' })}:`}
-              </h3>
 
-              <div className="horizontal-scroll-container">
+
+              <div className="hero-content-wrapper" style={{ display: 'flex', alignItems: 'center' }}>
                 {(() => {
+                  // CONDITIONAL RENDER: Summary
+                  if (!showHeroDetails) {
+                    return (
+                      <div
+                        className="card summary-card"
+                        onClick={() => setShowHeroDetails(true)}
+                        style={{
+                          width: '100%',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          padding: isMobile ? '0.3rem' : '0.6rem',
+                          background: 'rgba(255,255,255,0.15)',
+                          backdropFilter: 'blur(5px)',
+                          color: 'white',
+                          maxWidth: isMobile ? '130px' : '220px',
+                          margin: isMobile ? '0' : '0 auto',
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                          textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                          position: isMobile ? 'absolute' : 'relative',
+                          bottom: isMobile ? '50px' : 'auto',
+                          left: isMobile ? '0.5rem' : 'auto',
+                          zIndex: 5
+                        }}
+                      >
+                        <h3 style={{ margin: '0 0 0.2rem 0', fontSize: isMobile ? '0.75rem' : '0.9rem' }}>
+                          Dagens händelser
+                        </h3>
+                        <p style={{ margin: 0, fontSize: isMobile ? '0.7rem' : '0.8rem' }}>
+                          📅 {heroEvents.length}
+                          {heroTasks.length > 0 && ` • ✅ ${heroTasks.length}`}
+                        </p>
+                        <div style={{ marginTop: '0.2rem', fontSize: '0.65rem', opacity: 0.8, fontStyle: 'italic', display: isMobile ? 'none' : 'block' }}>
+                          Klicka för detaljer
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // DETAILS VIEW with BACK BUTTON
                   const combined = [];
                   const now = new Date();
 
@@ -2379,85 +2467,119 @@ function App() {
                   });
 
                   // 4. Render
-                  return combined.map((item) => {
-                    const key = item.type === 'task' ? `task-${item.data.id}` : `event-${item.data.uid}`;
+                  return (
+                    <>
+                      <button
+                        onClick={() => setShowHeroDetails(false)}
+                        title="Tillbaka"
+                        style={{
+                          background: 'rgba(255,255,255,0.9)',
+                          color: '#333',
+                          border: 'none',
+                          borderRadius: '8px',
+                          width: '40px',
+                          height: '40px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          marginRight: '0.5rem',
+                          fontSize: '1.2rem',
+                          flexShrink: 0,
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }}
+                      >
+                        ‹
+                      </button>
+                      <div className="horizontal-scroll-container" style={{ flexGrow: 1, width: 'calc(100% - 60px)' }}>
+                        {combined.map((item) => {
+                          const key = item.type === 'task' ? `task-${item.data.id}` : `event-${item.data.uid}`;
 
-                    if (item.type === 'task') {
-                      const task = item.data;
-                      return (
-                        <div key={key} className="card" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.9)', color: '#333', borderLeft: '4px solid #2ed573', opacity: task.done ? 0.6 : 1 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 'bold', textDecoration: task.done ? 'line-through' : 'none' }}>{task.done ? '✅' : '⬜'} {task.text}</span>
-                            <span style={{ fontSize: '0.8rem', background: '#e1f7e7', padding: '2px 6px', borderRadius: '4px', color: '#2ed573' }}>Dagens uppgift</span>
-                          </div>
-                          {task.assignee && <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.2rem' }}>👤 {task.assignee}</div>}
-                        </div>
-                      );
-                    } else {
-                      const event = item.data;
-                      let sourceClass = '';
-                      if (event.source === 'Svante (Privat)') sourceClass = 'source-svante';
-                      if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
+                          if (item.type === 'task') {
+                            const task = item.data;
+                            return (
+                              <div key={key} className="card" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.9)', color: '#333', borderLeft: '4px solid #2ed573', opacity: task.done ? 0.6 : 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontWeight: 'bold', textDecoration: task.done ? 'line-through' : 'none' }}>{task.done ? '✅' : '⬜'} {task.text}</span>
+                                  <span style={{ fontSize: '0.8rem', background: '#e1f7e7', padding: '2px 6px', borderRadius: '4px', color: '#2ed573' }}>Dagens uppgift</span>
+                                </div>
+                                {task.assignee && <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.2rem' }}>👤 {task.assignee}</div>}
+                              </div>
+                            );
+                          } else {
+                            const event = item.data;
+                            let sourceClass = '';
+                            if (event.source === 'Svante (Privat)') sourceClass = 'source-svante';
+                            if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
 
-                      const assignments = event.assignments || {};
-                      const isFullyAssigned = assignments.driver && assignments.packer;
-                      const passedStyle = getEventStatusStyle(event.end);
-                      const colorClass = getAssignedColorClass(event);
+                            const assignments = event.assignments || {};
+                            const isFullyAssigned = assignments.driver && assignments.packer;
+                            const passedStyle = getEventStatusStyle(event.end);
+                            const colorClass = getAssignedColorClass(event);
 
-                      const renderTravelInfoLocal = () => {
-                        if (!event.travelTime) return null;
-                        return (
-                          <div className="travel-info" style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}>
-                            <div className="travel-badge">🚗 {formatDuration(event.travelTime.duration)}</div>
-                            {event.travelTime.distance < 10000 && (
-                              <>
-                                {event.travelTimeBike && <div className="travel-badge">🚲 {formatDuration(event.travelTimeBike.duration)}</div>}
-                                {event.travelTimeWalk && <div className="travel-badge">🚶 {formatDuration(event.travelTimeWalk.duration)}</div>}
-                              </>
-                            )}
-                          </div>
-                        );
-                      };
+                            const renderTravelInfoLocal = () => {
+                              if (!event.travelTime) return null;
+                              return (
+                                <div className="travel-info" style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}>
+                                  <div className="travel-badge">🚗 {formatDuration(event.travelTime.duration)}</div>
+                                  {event.travelTime.distance < 10000 && (
+                                    <>
+                                      {event.travelTimeBike && <div className="travel-badge">🚲 {formatDuration(event.travelTimeBike.duration)}</div>}
+                                      {event.travelTimeWalk && <div className="travel-badge">🚶 {formatDuration(event.travelTimeWalk.duration)}</div>}
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            };
 
-                      return (
-                        <div key={key} className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''} `}
-                          style={{ cursor: 'pointer', ...passedStyle, ...(event.cancelled ? { opacity: 0.6, textDecoration: 'line-through' } : {}) }}
-                          onClick={(e) => { e.stopPropagation(); if (isAdmin) openEditModal(event); else setViewMapEvent(event); }}
-                        >
-                          <div className="card-header">
-                            <span className="time">
-                              {new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                            <span className="source-badge">{event.source || 'Familjen'}</span>
-                          </div>
+                            return (
+                              <div key={key} className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''} `}
+                                style={{
+                                  cursor: 'pointer',
+                                  background: 'rgba(255,255,255,0.9)',
+                                  color: '#333',
+                                  ...passedStyle,
+                                  ...(event.cancelled ? { opacity: 0.6, textDecoration: 'line-through' } : {})
+                                }}
+                                onClick={(e) => { e.stopPropagation(); if (isAdmin) openEditModal(event); else setViewMapEvent(event); }}
+                              >
+                                <div className="card-header">
+                                  <span className="time">
+                                    {new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                  <span className="source-badge">{event.source || 'Familjen'}</span>
+                                </div>
 
-                          <h3>{event.summary}</h3>
+                                <h3>{event.summary}</h3>
 
-                          {/* Clickable Location */}
-                          <p className="location"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!isChildUser && (!event.location || event.location === 'Okänd plats')) {
-                                openEditModal(event);
-                              } else {
-                                setViewMapEvent(event);
-                              }
-                            }}
-                            style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'inherit', textDecoration: event.coords ? 'underline' : 'none' }}
-                            title={!isChildUser && (!event.location || event.location === 'Okänd plats') ? "Klicka för att lägga till plats" : "Klicka för att se på karta"}>
-                            📍 {event.location || 'Hemma/Okänd plats'}
-                          </p>
+                                {/* Clickable Location */}
+                                <p className="location"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!isChildUser && (!event.location || event.location === 'Okänd plats')) {
+                                      openEditModal(event);
+                                    } else {
+                                      setViewMapEvent(event);
+                                    }
+                                  }}
+                                  style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'inherit', textDecoration: event.coords ? 'underline' : 'none' }}
+                                  title={!isChildUser && (!event.location || event.location === 'Okänd plats') ? "Klicka för att lägga till plats" : "Klicka för att se på karta"}>
+                                  📍 {event.location || 'Hemma/Okänd plats'}
+                                </p>
 
-                          {renderTravelInfoLocal()}
+                                {renderTravelInfoLocal()}
 
-                          <div className="actions" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
-                            {renderAssignmentControl(event, 'driver')}
-                            {renderAssignmentControl(event, 'packer')}
-                          </div>
-                        </div>
-                      );
-                    }
-                  });
+                                <div className="actions" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
+                                  {renderAssignmentControl(event, 'driver')}
+                                  {renderAssignmentControl(event, 'packer')}
+                                </div>
+                              </div>
+                            );
+                          }
+                        })}
+                      </div>
+                    </>
+                  );
                 })()}
               </div>
             </div>
@@ -2468,21 +2590,26 @@ function App() {
             <button
               onClick={() => setIsCreatingEvent(true)}
               style={{
-                width: '100%',
-                padding: '0.8rem',
+                width: isMobile ? 'calc(100% - 20px)' : '100%',
+                padding: '0.5rem',
                 background: 'rgba(255,255,255,0.1)',
-                border: '1px dashed rgba(255,255,255,0.6)',
+                border: '1px dashed rgba(255,255,255,0.4)',
                 color: 'white',
-                borderRadius: '12px',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                marginBottom: '1rem',
-                marginTop: '1rem',
-                fontSize: '0.95rem',
-                fontWeight: '500'
+                marginBottom: isMobile ? '0' : '1rem',
+                marginTop: isMobile ? '0' : '0.5rem',
+                fontSize: '0.8rem',
+                fontWeight: '400',
+                position: isMobile ? 'absolute' : 'relative',
+                bottom: isMobile ? '10px' : 'auto',
+                left: isMobile ? '10px' : 'auto',
+                zIndex: 10
               }}
             >
               + Lägg till kalenderhändelse
             </button>
+
           )}
         </div>
 
@@ -2764,9 +2891,10 @@ function App() {
                             return (
                               <div key={ev.uid}
                                 className={`calendar-event ${ev.date < new Date() ? 'done' : ''} ${sourceClass}`}
+                                style={{ textDecoration: ev.cancelled ? 'line-through' : 'none', opacity: ev.cancelled ? 0.6 : 1 }}
                                 title={ev.summary}
                                 onClick={(e) => { e.stopPropagation(); if (isAdmin) openEditModal(ev); else setViewMapEvent(ev); }}>
-                                {ev.summary}
+                                {ev.cancelled ? '🚫 ' : ''}{ev.summary}
                               </div>
                             )
                           })}
@@ -2819,7 +2947,10 @@ function App() {
                                   <div style={{ fontWeight: 'bold' }}>
                                     {new Date(ev.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                                   </div>
-                                  <div style={{ fontWeight: 600 }}>{ev.summary}</div>
+                                  <div style={{ fontWeight: 600, textDecoration: ev.cancelled ? 'line-through' : 'none' }}>
+                                    {ev.cancelled && <span style={{ color: '#ff4757', marginRight: '0.2rem' }}>🚫</span>}
+                                    {ev.summary}
+                                  </div>
 
                                   {ev.location && ev.location !== 'Okänd plats' && (
                                     <div style={{ fontSize: '0.7rem', color: '#666', overflow: 'hidden', lineHeight: '1.2' }}>
@@ -2874,7 +3005,10 @@ function App() {
                             </span>
                             <span className="source-badge">{event.source || 'Familjen'}</span>
                           </div>
-                          <h3>{event.summary}</h3>
+                          <h3 style={{ textDecoration: event.cancelled ? 'line-through' : 'none', color: event.cancelled ? '#7f8c8d' : 'inherit' }}>
+                            {event.cancelled && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}
+                            {event.summary}
+                          </h3>
                           <p className="location" onClick={(e) => { e.stopPropagation(); if (isAdmin && (!event.location || event.location === 'Okänd plats')) openEditModal(event); else setViewMapEvent(event); }}
                             style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'inherit', textDecoration: event.coords ? 'underline' : 'none' }}
                             title={event.coords ? "Se på karta" : "Ingen plats"}>
