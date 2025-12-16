@@ -620,8 +620,8 @@ app.get('/api/cache-status', (req, res) => {
 
 app.get('/api/events', async (req, res) => {
     try {
-        const assignments = readDb();
-        const localEvents = readLocalEvents();
+        const assignments = await readDb();
+        const localEvents = await readLocalEvents();
         const includeTrash = req.query.includeTrash === 'true';
 
         // Använd cachad data istället för att hämta varje gång
@@ -838,8 +838,8 @@ app.get('/api/feed.ics', async (req, res) => {
 
 app.get('/api/inbox', async (req, res) => {
     try {
-        const localEvents = readLocalEvents();
-        const ignoredEvents = readIgnoredEvents();
+        const localEvents = await readLocalEvents();
+        const ignoredEvents = await readIgnoredEvents();
 
         // Fetch fresh/cached calendars
         const allFetchedEvents = await fetchAndCacheCalendars();
@@ -875,17 +875,28 @@ app.get('/api/inbox', async (req, res) => {
     }
 });
 
-app.post('/api/ignore-event', (req, res) => {
-    const { uid } = req.body;
-    if (!uid) return res.status(400).json({ error: 'UID krävs' });
+app.post('/api/ignore-event', async (req, res) => {
+    try {
+        const { uid } = req.body;
+        if (!uid) return res.status(400).json({ error: 'UID krävs' });
 
-    const ignored = readIgnoredEvents();
-    if (!ignored.includes(uid)) {
-        ignored.push(uid);
-        writeIgnoredEvents(ignored);
+        const ignored = await readIgnoredEvents();
+        if (!ignored.includes(uid)) {
+            ignored.push(uid);
+
+            // Save to MongoDB if connected
+            if (isMongoConnected()) {
+                await addIgnoredEvent(uid);
+            }
+
+            writeIgnoredEvents(ignored);
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Ignore event error:', error);
+        res.status(500).json({ error: 'Kunde inte ignorera händelse' });
     }
-
-    res.json({ success: true });
 });
 
 app.get('/api/schedule', async (req, res) => {
