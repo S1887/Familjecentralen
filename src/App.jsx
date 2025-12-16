@@ -1621,7 +1621,7 @@ function App() {
                   }}>
                     <span>🔒</span>
                     <span style={{ color: 'white', fontSize: '0.85rem', flex: 1 }}>
-                      Extern källa: {editEventData.source?.split(' (')[0]}. Tid/datum kan ej ändras här.
+                      Extern källa: {editEventData.source?.split(' (')[0]}. Öppna Google Kalender för att ändra tid, plats eller ta bort händelsen.
                     </span>
                     {/* Only show Google Calendar link for Google sources */}
                     {(editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Privat')) && (
@@ -1905,30 +1905,7 @@ function App() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      {editEventData.isExternalSource ? (
-                        <a
-                          href="https://calendar.google.com/calendar/r"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            padding: '0.5rem 0.8rem',
-                            borderRadius: '8px',
-                            border: 'none',
-                            background: '#3498db',
-                            color: 'white',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                            whiteSpace: 'nowrap',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            textDecoration: 'none'
-                          }}
-                          title="Hanteras i Google Kalender"
-                        >
-                          <span>📅</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Öppna i Google Kalender-appen</span>
-                        </a>
-                      ) : (
+                      {!editEventData.isExternalSource && (
                         <button type="button" onClick={() => deleteEvent(editEventData)} style={{
                           padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ff4757', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
                         }} title="Ta bort event">
@@ -2270,11 +2247,13 @@ function App() {
       {/* END of dashboard-only block for header area */}
 
       {/* Schedule Tab Content - shown after header */}
-      {activeTab === 'schedule' && (
-        <div className="tab-content">
-          <ScheduleViewer events={scheduleEvents} />
-        </div>
-      )}
+      {
+        activeTab === 'schedule' && (
+          <div className="tab-content">
+            <ScheduleViewer events={scheduleEvents} />
+          </div>
+        )
+      }
 
       {/* Dashboard content continues here - Only visible activeTab === 'dashboard' */}
       <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
@@ -2441,7 +2420,7 @@ function App() {
 
                       return (
                         <div key={key} className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''} `}
-                          style={{ cursor: 'pointer', ...passedStyle }}
+                          style={{ cursor: 'pointer', ...passedStyle, ...(event.cancelled ? { opacity: 0.6, textDecoration: 'line-through' } : {}) }}
                           onClick={(e) => { e.stopPropagation(); if (isAdmin) openEditModal(event); else setViewMapEvent(event); }}
                         >
                           <div className="card-header">
