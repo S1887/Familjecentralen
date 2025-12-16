@@ -628,12 +628,13 @@ app.get('/api/events', async (req, res) => {
         const fetchedEvents = await fetchAndCacheCalendars();
 
         // Lägg till lokala events
-        const formattedLocalEvents = localEvents.map(ev => ({
-            ...ev,
-            source: ev.source || 'Familjen (Eget)',
-            start: new Date(ev.start), // Konvertera sträng till datum för jämförelse
-            end: new Date(ev.end)
-        }));
+        const formattedLocalEvents = localEvents.map(ev => {
+            const newEv = { ...ev };
+            if (!newEv.source) newEv.source = 'Familjen (Eget)';
+            if (newEv.start) newEv.start = new Date(newEv.start);
+            if (newEv.end) newEv.end = new Date(newEv.end);
+            return newEv;
+        });
 
         // Merge logic: Local events override fetched events with same UID
         const eventMap = new Map();
@@ -645,12 +646,13 @@ app.get('/api/events', async (req, res) => {
         let overrideCount = 0;
         formattedLocalEvents.forEach(ev => {
             if (eventMap.has(ev.uid)) {
-                // If the event in map is NOT deleted, but local IS deleted, we are effectively HIDING it (which is an override)
-                // If local is NOT deleted, we are modifying it
+                // Merge with original if exists (to keep fetched properties for partial local overrides)
+                const original = eventMap.get(ev.uid);
+                eventMap.set(ev.uid, { ...original, ...ev });
                 overrideCount++;
-                // console.log(`[Debug] Overriding event ${ev.uid} (deleted: ${ev.deleted})`);
+            } else {
+                eventMap.set(ev.uid, ev);
             }
-            eventMap.set(ev.uid, ev);
         });
 
         console.log(`[Debug] Events: Fetched=${fetchedEvents.length}, Local=${formattedLocalEvents.length} (Deleted=${formattedLocalEvents.filter(e => e.deleted).length}), Overrides=${overrideCount}`);
