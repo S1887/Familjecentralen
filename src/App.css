@@ -970,6 +970,7 @@ body.modal-open {
 
 /* Custom Background for Hero */
 .today-hero.has-custom-bg {
+  min-height: 250px;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
