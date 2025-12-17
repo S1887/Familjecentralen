@@ -58,6 +58,11 @@ const CALENDARS = [
         url: 'https://calendar.google.com/calendar/ical/sarah.ortendahl%40gmail.com/private-884acb7a4a2e50c22116cacd9a43eaa1/basic.ics'
     },
     {
+        id: 'family_group',
+        name: 'Familjen',
+        url: 'https://calendar.google.com/calendar/ical/family17438490542731545369%40group.calendar.google.com/private-a8ef35f1df9c3adeab2b260aa704f722/basic.ics'
+    },
+    {
         id: 'arsenal_fc',
         name: 'Arsenal FC',
         url: 'https://ics.fixtur.es/v2/arsenal.ics'
