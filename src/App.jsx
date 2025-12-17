@@ -855,12 +855,10 @@ function App() {
     // Only adults can edit
     if (!isAdmin) return;
 
-    // Check if this is an external event (synced from any external source)
-    // External sources = locked fields. Only own events (Eget/FamilyOps/Familjen) are fully editable
-    const isExternalSource = event.source &&
-      !event.source.includes('Eget') &&
-      !event.source.includes('FamilyOps') &&
-      event.source !== 'Familjen';
+    // Now that ALL events are created in Google Calendar (via redirect),
+    // ALL events should be treated as external (read-only for title/date/time)
+    // Only 'FamilyOps' source means it's a truly local event (old events before redirect change)
+    const isExternalSource = event.source && event.source !== 'FamilyOps';
 
     setEditEventData({
       ...event,
