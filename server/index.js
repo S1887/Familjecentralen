@@ -852,6 +852,26 @@ app.get('/api/feed.ics', async (req, res) => {
     }
 });
 
+// Admin endpoint to clear all local events (use once to clean up old data)
+app.post('/api/admin/clear-local-events', async (req, res) => {
+    try {
+        const backup = await readLocalEvents();
+        console.log(`[Admin] Clearing ${backup.length} local events`);
+
+        // Write empty array
+        await writeLocalEvents([]);
+
+        res.json({
+            success: true,
+            message: `Cleared ${backup.length} local events`,
+            backup: backup.length
+        });
+    } catch (error) {
+        console.error('Clear local events error:', error);
+        res.status(500).json({ error: 'Kunde inte rensa lokala händelser' });
+    }
+});
+
 app.get('/api/inbox', async (req, res) => {
     try {
         const localEvents = await readLocalEvents();
