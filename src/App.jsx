@@ -160,6 +160,8 @@ import InboxModal from './components/InboxModal';
 
 function App() {
   const [showInbox, setShowInbox] = useState(false);
+  const [inboxData, setInboxData] = useState([]); // Store actual items to track UIDs
+  const inboxCount = inboxData.length;
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('familyOpsDarkMode') === 'true');
 
   // Auth state - persisted in localStorage
@@ -299,6 +301,67 @@ function App() {
     return `today-hero ${isDay ? 'day' : 'night'}-${type}`;
   };
 
+
+  // Google Calendar Mapping
+  const GOOGLE_CALENDAR_EMAILS = {
+    'Svante (Privat)': 'svante.ortendahl@gmail.com',
+    'Sarah (Privat)': 'sarah.ortendahl@gmail.com',
+    'Familjen': 'family17438490542731545369@group.calendar.google.com'
+  };
+
+  const getGoogleCalendarLink = (event, forceSave = false) => {
+    if (!event) return 'https://calendar.google.com/calendar/r';
+
+    // SCENARIO 1: "Save to Calendar" (Add copy) - For external events
+    // or if explicitly requested via forceSave
+    if (forceSave || (!event.source?.includes('Privat') && !event.source?.includes('Familjen'))) {
+      const startStr = event.start ? new Date(event.start).toISOString().replace(/-|:|\.\d\d\d/g, "") : "";
+      const endStr = event.end ? new Date(event.end).toISOString().replace(/-|:|\.\d\d\d/g, "") : "";
+
+      let url = `https://www.google.com/calendar/render?action=TEMPLATE`;
+      url += `&text=${encodeURIComponent(event.summary || 'Event')}`;
+      if (startStr && endStr) {
+        url += `&dates=${startStr}/${endStr}`;
+      }
+      if (event.description) {
+        url += `&details=${encodeURIComponent(event.description)}`;
+      }
+      if (event.location && event.location !== 'Okänd plats') {
+        url += `&location=${encodeURIComponent(event.location)}`;
+      }
+
+      // Pre-select Family Calendar
+      const familyEmail = GOOGLE_CALENDAR_EMAILS['Familjen'];
+      if (familyEmail) {
+        url += `&src=${encodeURIComponent(familyEmail)}`;
+      }
+
+      return url;
+    }
+
+    // SCENARIO 2: "Edit/View" Private Event
+    // Try to construct deep link to SPECIFIC event
+    const sourceName = event.source?.split(' (')[0] + ' (Privat)'; // Attempt to normalize "Svante (Privat)"
+    const calendarId = GOOGLE_CALENDAR_EMAILS[event.source] || GOOGLE_CALENDAR_EMAILS[sourceName];
+
+    if (calendarId && event.uid && event.uid.includes('@google.com')) {
+      // Extract ID part (before @google.com)
+      const eventId = event.uid.split('@')[0];
+      // EID is base64(eventId + " " + calendarId)
+      try {
+        const eid = btoa(eventId + " " + calendarId);
+        return `https://www.google.com/calendar/event?eid=${eid}`;
+      } catch (e) {
+        console.error("Failed to construct EID", e);
+      }
+    }
+
+    // FALLBACK: Agenda View (Calendar Root)
+    // This is better than /r/day/DATE because mobile OS usually captures the root URL 
+    // to open the app, whereas specific paths might force browser.
+    return `https://calendar.google.com/calendar/r`;
+  };
+
   const getEventStatusStyle = (endStr) => {
     if (!endStr) return {};
     const end = new Date(endStr);
@@ -392,6 +455,48 @@ function App() {
     fetchTasks();
     fetchSchedule();
   }, []);
+
+  // Poll for inbox updates - Re-run if user changes to ensure correct "seen" filter
+  useEffect(() => {
+    fetchInbox();
+    const inboxTimer = setInterval(fetchInbox, 60000);
+    return () => clearInterval(inboxTimer);
+  }, [currentUser]); // Re-subscribe when user changes
+
+  const getSeenInboxIds = () => {
+    const user = currentUser?.name || 'default';
+    const key = `familyOps_seenInbox_${user}`;
+    try {
+      return JSON.parse(localStorage.getItem(key) || '[]');
+    } catch { return []; }
+  };
+
+  const markCurrentInboxAsSeen = () => {
+    if (inboxData.length === 0) return;
+
+    const user = currentUser?.name || 'default';
+    const key = `familyOps_seenInbox_${user}`;
+    const currentSeen = getSeenInboxIds();
+    const newIds = inboxData.map(i => i.uid);
+    const combined = [...new Set([...currentSeen, ...newIds])];
+
+    localStorage.setItem(key, JSON.stringify(combined));
+    setInboxData([]); // Clear badge immediately
+  };
+
+  const fetchInbox = () => {
+    fetch(getApiUrl('api/inbox'))
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const seenIds = new Set(getSeenInboxIds());
+          // Filter out seen items for the BADGE (they still show in modal)
+          const unseen = data.filter(item => !seenIds.has(item.uid));
+          setInboxData(unseen);
+        }
+      })
+      .catch(err => console.error("Error fetching inbox count:", err));
+  };
 
   const fetchSchedule = () => {
     fetch(getApiUrl('api/schedule'))
@@ -1313,10 +1418,18 @@ function App() {
                     {(() => {
                       const hasSvante = newEvent.assignees.includes('Svante');
                       const hasSarah = newEvent.assignees.includes('Sarah');
-                      // Only redirect to Google Calendar if exactly ONE of parents is selected (and no conflict)
-                      let googleTarget = null;
-                      if (hasSvante && !hasSarah) googleTarget = 'Svante';
-                      if (hasSarah && !hasSvante) googleTarget = 'Sarah';
+                      const hasChildren = newEvent.assignees.some(name => ['Algot', 'Tuva', 'Leon'].includes(name));
+                      const isFamily = newEvent.assignees.length === 0; // "Hela familjen"
+
+                      // Determine target label
+                      // LOGIC: Defaults to Family if children involved or mixed.
+                      // Only pure single-parent events go to private calendars.
+                      let googleTarget = 'Familjen';
+
+                      if (hasSvante && !hasSarah && !hasChildren && !isFamily) googleTarget = 'Svante';
+                      else if (hasSarah && !hasSvante && !hasChildren && !isFamily) googleTarget = 'Sarah';
+
+                      // If forced target by explicit assignee selection logic above fails, it remains 'Familjen'
 
                       if (googleTarget) {
                         const baseDate = (newEvent.date || '').replace(/-/g, '');
@@ -1328,30 +1441,50 @@ function App() {
                         const details = encodeURIComponent(`${newEvent.description || ''}\n\n(Skapad via Family-Ops)`);
                         const location = encodeURIComponent(newEvent.location || '');
 
-                        const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}`;
+                        // Add src parameter to pre-select calendar
+                        const targetEmail = GOOGLE_CALENDAR_EMAILS[googleTarget === 'Familjen' ? 'Familjen' : `${googleTarget} (Privat)`];
+                        let googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}`;
+                        if (targetEmail) {
+                          googleUrl += `&src=${encodeURIComponent(targetEmail)}`;
+                        }
 
                         return (
-                          <a
-                            href={googleUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => setIsCreatingEvent(false)}
-                            style={{
-                              padding: '0.75rem 1.5rem',
-                              borderRadius: '8px',
-                              border: 'none',
-                              background: '#2ed573',
-                              color: 'white',
-                              cursor: 'pointer',
-                              fontWeight: 'bold',
-                              textDecoration: 'none',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.5rem'
-                            }}
-                          >
-                            📅 Skapa i {googleTarget}s G-Kalender ↗
-                          </a>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                            <a
+                              href={googleUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => setIsCreatingEvent(false)}
+                              style={{
+                                padding: '0.75rem 1.5rem',
+                                borderRadius: '8px',
+                                border: 'none',
+                                background: '#2ed573',
+                                color: 'white',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                textDecoration: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                              }}
+                            >
+                              📅 {googleTarget === 'Familjen' ? 'Skapa i familjens Google-kalender' : `Skapa i ${googleTarget}s Google-kalender`} ↗
+                            </a>
+                            <button
+                              type="submit"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#888',
+                                fontSize: '0.8rem',
+                                cursor: 'pointer',
+                                textDecoration: 'underline'
+                              }}
+                            >
+                              eller spara bara lokalt
+                            </button>
+                          </div>
                         );
                       }
 
@@ -1413,9 +1546,9 @@ function App() {
                     {/* Only show Google Calendar link for Google sources */}
                     {(editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Privat')) && (
                       <a
-                        href={`https://calendar.google.com/calendar/r/day/${editEventData.date?.replace(/-/g, '/')}`}
+                        href={getGoogleCalendarLink(editEventData)}
                         target="_blank"
-                        rel="noopener noreferrer"
+                        rel="noopener noreferrer" // Security best practice
                         style={{
                           background: 'white',
                           color: '#4285f4',
@@ -1424,10 +1557,34 @@ function App() {
                           textDecoration: 'none',
                           fontWeight: '600',
                           fontSize: '0.85rem',
-                          whiteSpace: 'nowrap'
+                          whiteSpace: 'nowrap',
+                          display: 'inline-block'
                         }}
                       >
-                        Öppna Google Kalender →
+                        Öppna Google Kalender ↗️
+                      </a>
+                    )}
+
+                    {/* Show "Save to Calendar" for External non-private sources (e.g. Arsenal, Vklass) */}
+                    {!(editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Privat') || editEventData.source?.includes('Familjen')) && editEventData.isExternalSource && (
+                      <a
+                        href={getGoogleCalendarLink(editEventData, true)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          background: 'white',
+                          color: '#2ed573',
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '4px',
+                          textDecoration: 'none',
+                          fontWeight: '600',
+                          fontSize: '0.85rem',
+                          whiteSpace: 'nowrap',
+                          display: 'inline-block',
+                          marginTop: isMobile ? '0.5rem' : '0'
+                        }}
+                      >
+                        Spara till kalender 📅
                       </a>
                     )}
                   </div>
@@ -2067,10 +2224,31 @@ function App() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: isMobile ? '1.3rem' : '1.4rem'
+                  fontSize: isMobile ? '1.3rem' : '1.4rem',
+                  position: 'relative' // For badge positioning
                 }}
               >
                 ☰
+                {inboxCount > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-5px',
+                    right: '-5px',
+                    background: '#ff4757',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: '18px',
+                    height: '18px',
+                    fontSize: '0.7rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    border: '2px solid var(--card-bg)'
+                  }}>
+                    {inboxCount}
+                  </div>
+                )}
               </button>
 
               {/* Dropdown Menu */}
@@ -2089,7 +2267,13 @@ function App() {
                   overflow: 'hidden'
                 }}>
                   <button
-                    onClick={() => { setShowInbox(true); setShowMoreMenu(false); }}
+                    onClick={() => {
+                      markCurrentInboxAsSeen(); // Mark as seen BEFORE opening
+                      setShowInbox(true);
+                      setShowMoreMenu(false);
+                      // fetchInbox(); // No need to fetch immediately, we just cleared it. 
+                      // Modal will fetch its own data.
+                    }}
                     style={{
                       width: '100%',
                       padding: '0.8rem 1rem',
@@ -2103,10 +2287,25 @@ function App() {
                       alignItems: 'center',
                       gap: '0.5rem',
                       textAlign: 'left',
-                      whiteSpace: 'nowrap'
+                      whiteSpace: 'nowrap',
+                      justifyContent: 'space-between' // To push count to right
                     }}
                   >
-                    📥 Inkorg
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      📥 Inkorg
+                    </span>
+                    {inboxCount > 0 && (
+                      <span style={{
+                        background: '#ff4757',
+                        color: 'white',
+                        padding: '0.1rem 0.5rem',
+                        borderRadius: '10px',
+                        fontSize: '0.8rem',
+                        fontWeight: 'bold'
+                      }}>
+                        {inboxCount}
+                      </span>
+                    )}
                   </button>
                   {isAdmin && (
                     <button
@@ -3302,7 +3501,20 @@ function App() {
           </div>
         </div>
       </div>
-    </div >
+      {/* Inbox Modal */}
+      <InboxModal
+        isOpen={showInbox}
+        onClose={() => {
+          setShowInbox(false);
+          fetchInbox(); // Refresh to ensure sync (e.g. if new items arrived while open)
+        }}
+        onImport={(item) => {
+          // We rely on polling or close to update badge, but since badge is usually 0 when open, this is fine
+        }}
+        getGoogleLink={getGoogleCalendarLink}
+      />
+
+    </div>
   )
 }
 

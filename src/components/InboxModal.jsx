@@ -12,7 +12,7 @@ const getApiUrl = (endpoint) => {
     return './' + cleanEndpoint;
 };
 
-export default function InboxModal({ isOpen, onClose, onImport }) {
+export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink }) {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -57,6 +57,15 @@ export default function InboxModal({ isOpen, onClose, onImport }) {
     const handleImport = (item) => {
         setImportedUids(prev => new Set([...prev, item.uid]));
         onImport(item);
+    };
+
+    const handleSaveToGoogle = (item, e) => {
+        if (getGoogleLink) {
+            const url = getGoogleLink(item, true); // forceSave = true
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+        // Auto-ignore (hide) from inbox since we handled it
+        handleIgnore(item.uid, e);
     };
 
     const handleReturnToInbox = async (uid) => {
@@ -171,22 +180,32 @@ export default function InboxModal({ isOpen, onClose, onImport }) {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                                    <button
-                                        onClick={() => isImported ? handleReturnToInbox(item.uid) : handleImport(item)}
-                                        style={{
-                                            flex: 1,
-                                            padding: '0.6rem',
-                                            background: isImported ? '#ff9800' : (isPast ? '#95a5a6' : '#2ed573'),
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            fontWeight: 600
-                                        }}
-                                    >
-                                        {isImported ? '↩️ Flytta till inkorg' : `➕ ${isPast ? 'Lägg till (historik)' : 'Lägg till'}`}
-                                    </button>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                                    {/* Google Calendar Save Button */}
+                                    {!isImported && !isPast && (
+                                        <button
+                                            onClick={(e) => handleSaveToGoogle(item, e)}
+                                            style={{
+                                                flex: 1,
+                                                padding: '0.6rem',
+                                                background: '#4285F4', // Google Blue
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontWeight: 600,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                minWidth: '200px'
+                                            }}
+                                        >
+                                            📅 Spara till familjens Google-kalender
+                                        </button>
+                                    )}
+
+
                                     <button
                                         onClick={(e) => handleIgnore(item.uid, e)}
                                         style={{
