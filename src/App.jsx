@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Fragment } from 'react'
 import './App.css'
 import LoginPage from './components/LoginPage'
 import ScheduleViewer from './components/ScheduleViewer'
@@ -324,6 +324,7 @@ function App() {
   );
   const [filterCategory, setFilterCategory] = useState('Alla');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [showMatchModal, setShowMatchModal] = useState(false);
   const [showFamilyMenu, setShowFamilyMenu] = useState(false);
   const [selectedTodoWeek, setSelectedTodoWeek] = useState(getWeekNumber(new Date()));
   const [viewMode, setViewMode] = useState('week');
@@ -366,11 +367,7 @@ function App() {
   // Task Input State
 
 
-  // State för att visa karta för ett specifikt event
-  const [viewMapEvent, setViewMapEvent] = useState(null);
-  const [mapRoute, setMapRoute] = useState(null);
-  const [mapMode, setMapMode] = useState('car'); // car, bike, walk
-  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+
 
   // State for Editing an Event
   const [isEditingEvent, setIsEditingEvent] = useState(false);
@@ -378,14 +375,14 @@ function App() {
 
   // Lock body scroll when any modal is open
   useEffect(() => {
-    const isAnyModalOpen = isCreatingEvent || isEditingEvent || viewMapEvent;
+    const isAnyModalOpen = isCreatingEvent || isEditingEvent;
     if (isAnyModalOpen) {
       document.body.classList.add('modal-open');
     } else {
       document.body.classList.remove('modal-open');
     }
     return () => document.body.classList.remove('modal-open');
-  }, [isCreatingEvent, isEditingEvent, viewMapEvent]);
+  }, [isCreatingEvent, isEditingEvent]);
 
   const [scheduleEvents, setScheduleEvents] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'schedule'
@@ -517,33 +514,6 @@ function App() {
         fetchEvents();
       });
   };
-
-  useEffect(() => {
-    if (viewMapEvent) {
-      if (viewMapEvent.coords) {
-        // Fetch default route (car)
-        setMapMode('car');
-        fetchRoute(viewMapEvent.coords, 'car');
-        setIsSearchingLocation(false);
-      } else if (viewMapEvent.location && viewMapEvent.location !== 'Okänd plats') {
-        // Try to geocode on the fly if missing
-        setIsSearchingLocation(true);
-        getCoordinates(viewMapEvent.location).then(coords => {
-          setIsSearchingLocation(false);
-          if (coords) {
-            setViewMapEvent(prev => ({ ...prev, coords }));
-            // The effect will re-run due to setViewMapEvent update
-          }
-        });
-      } else {
-        setMapRoute(null);
-        setIsSearchingLocation(false);
-      }
-    } else {
-      setMapRoute(null);
-      setIsSearchingLocation(false);
-    }
-  }, [viewMapEvent]);
 
   const fetchRoute = async (toCoords, mode) => {
     setMapRoute(null); // Clear previous
@@ -852,9 +822,6 @@ function App() {
   };
 
   const openEditModal = (event) => {
-    // Only adults can edit
-    if (!isAdmin) return;
-
     // Now that ALL events are created in Google Calendar (via redirect),
     // ALL events should be treated as external (read-only for title/date/time)
     // Only 'FamilyOps' source means it's a truly local event (old events before redirect change)
@@ -1141,198 +1108,7 @@ function App() {
       {/* Header and modals - always visible */}
       <div>
 
-        {/* Modal för Karta (Specifikt Event) */}
-        {viewMapEvent && (
-          <div className="modal-overlay" onClick={() => setViewMapEvent(null)}>
-            <div className="modal" style={{ maxWidth: '600px', maxHeight: '80vh', padding: '1rem' }} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setViewMapEvent(null)} style={{
-                position: 'absolute', top: '10px', right: '10px', zIndex: 1001,
-                background: 'white', border: 'none', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', outline: 'none', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>✕</button>
 
-              <h2 style={{ marginTop: 0, marginBottom: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                {viewMapEvent.summary}
-                {(viewMapEvent.assignee || viewMapEvent.source) && (
-                  <span style={{ fontSize: '0.6em', background: '#eee', padding: '2px 8px', borderRadius: '12px', color: '#666', fontWeight: 'normal' }}>
-                    👤 {viewMapEvent.assignee || viewMapEvent.source.replace(' (Privat)', '').replace(' (Redigerad)', '').replace(' (Eget)', '')}
-                  </span>
-                )}
-              </h2>
-              <div style={{ marginBottom: '1rem', color: '#555', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>
-                    📅 {new Date(viewMapEvent.start).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    {' • '}
-                    ⏰ {new Date(viewMapEvent.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                    {viewMapEvent.end && ` - ${new Date(viewMapEvent.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}`}
-                  </span>
-                </div>
-                {viewMapEvent.location && viewMapEvent.location !== 'Okänd plats' && (
-                  <span>📍 {viewMapEvent.location}</span>
-                )}
-                {viewMapEvent.description && (
-                  <div style={{ marginTop: '0.5rem', fontStyle: 'italic', background: 'rgba(0,0,0,0.03)', padding: '0.5rem', borderRadius: '4px' }}>
-                    "{viewMapEvent.description}"
-                  </div>
-                )}
-
-                {/* Assignments Display */}
-                {(viewMapEvent.assignments && (viewMapEvent.assignments.driver || viewMapEvent.assignments.packer)) && (
-                  <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                    {viewMapEvent.assignments.driver && (
-                      <div style={{ background: '#e3f2fd', color: '#1565c0', padding: '0.3rem 0.8rem', borderRadius: '12px', fontSize: '0.9rem' }}>
-                        🚗 <strong>{viewMapEvent.assignments.driver}</strong> kör
-                      </div>
-                    )}
-                    {viewMapEvent.assignments.packer && (
-                      <div style={{ background: '#e8f5e9', color: '#2e7d32', padding: '0.3rem 0.8rem', borderRadius: '12px', fontSize: '0.9rem' }}>
-                        🎒 <strong>{viewMapEvent.assignments.packer}</strong> packar
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Todo List Display */}
-                {viewMapEvent.todoList && viewMapEvent.todoList.length > 0 && (
-                  <div style={{ marginTop: '0.5rem', borderTop: '1px solid #eee', paddingTop: '0.5rem' }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Att göra:</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                      {viewMapEvent.todoList.map((todo, idx) => (
-                        <div key={todo.id || idx}
-                          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: todo.done ? '#aaa' : '#333', cursor: 'pointer' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (todo.id) {
-                              // Optimistic update
-                              const newTodos = viewMapEvent.todoList.map(t => t.id === todo.id ? { ...t, done: !t.done } : t);
-                              setViewMapEvent({ ...viewMapEvent, todoList: newTodos });
-                              // Backend update
-                              toggleEventTask(viewMapEvent, todo.id);
-                            }
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={!!todo.done}
-                            readOnly
-                            style={{ cursor: 'pointer', width: '1.2rem', height: '1.2rem', accentColor: '#2ed573' }}
-                          />
-                          <span style={{ textDecoration: todo.done ? 'line-through' : 'none' }}>
-                            {todo.text || todo}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Travel Info in Modal */}
-              <div className="travel-controls" style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', background: '#f8f9fa', padding: '0.5rem', borderRadius: '8px' }}>
-                <button
-                  onClick={() => fetchRoute(viewMapEvent.coords, 'car')}
-                  style={{
-                    background: mapMode === 'car' ? '#4a90e2' : 'var(--button-bg)',
-                    color: mapMode === 'car' ? 'white' : 'var(--button-text)',
-                    border: '1px solid var(--border-color)', padding: '0.5rem 1rem', borderRadius: '20px', cursor: 'pointer', flex: 1
-                  }}
-                >
-                  🚗 {mapMode === 'car' && mapRoute ? `${formatDuration(mapRoute.duration)} (${formatDistance(mapRoute.distance)})` : 'Bil'}
-                </button>
-
-                {/* Show bike/walk if distance is reasonable (< 15km) or if we don't know yet */}
-                {(!mapRoute || mapRoute.distance < 15000) && (
-                  <>
-                    <button
-                      onClick={() => { setMapMode('bike'); fetchRoute(viewMapEvent.coords, 'bike'); }}
-                      style={{
-                        background: mapMode === 'bike' ? '#2ed573' : 'var(--button-bg)',
-                        color: mapMode === 'bike' ? 'white' : 'var(--button-text)',
-                        border: '1px solid var(--border-color)', padding: '0.5rem 1rem', borderRadius: '20px', cursor: 'pointer', flex: 1
-                      }}
-                    >
-                      🚲 {mapMode === 'bike' && mapRoute ? `${formatDuration(mapRoute.duration)} (${formatDistance(mapRoute.distance)})` : 'Cykel'}
-                    </button>
-                    <button
-                      onClick={() => { setMapMode('walk'); fetchRoute(viewMapEvent.coords, 'walk'); }}
-                      style={{
-                        background: mapMode === 'walk' ? '#ffa502' : 'var(--button-bg)',
-                        color: mapMode === 'walk' ? 'white' : 'var(--button-text)',
-                        border: '1px solid var(--border-color)', padding: '0.5rem 1rem', borderRadius: '20px', cursor: 'pointer', flex: 1
-                      }}
-                    >
-                      🚶 {mapMode === 'walk' && mapRoute ? `${formatDuration(mapRoute.duration)} (${formatDistance(mapRoute.distance)})` : 'Gå'}
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {viewMapEvent.coords ? (
-                <MapContainer
-                  key={`${viewMapEvent.uid}-${viewMapEvent.coords.lat}-${viewMapEvent.coords.lon}`}
-                  center={[viewMapEvent.coords.lat, viewMapEvent.coords.lon]}
-                  zoom={14}
-                  style={{ height: '400px', width: '100%', borderRadius: '8px' }}
-                >
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                  />
-                  <MapUpdater route={mapRoute} center={[viewMapEvent.coords.lat, viewMapEvent.coords.lon]} />
-
-                  {/* Destination Marker */}
-                  <Marker position={[viewMapEvent.coords.lat, viewMapEvent.coords.lon]}>
-                    <Popup>
-                      <strong>Destination</strong><br />
-                      {viewMapEvent.summary}<br />
-                      {viewMapEvent.location}
-                    </Popup>
-                  </Marker>
-
-                  {/* Home Marker */}
-                  {getHomeCoords() && (
-                    <Marker position={[getHomeCoords().lat, getHomeCoords().lon]}>
-                      <Popup>
-                        <strong>Hemma</strong><br />
-                        Cypressvägen 8
-                      </Popup>
-                    </Marker>
-                  )}
-
-                  {/* Route Line */}
-                  {mapRoute && mapRoute.coordinates && (
-                    <Polyline
-                      key={mapMode} // Force re-render on mode change
-                      positions={mapRoute.coordinates}
-                      color={mapMode === 'car' ? '#4a90e2' : mapMode === 'bike' ? '#2ed573' : '#ffa502'}
-                      weight={5}
-                      opacity={0.7}
-                    />
-                  )}
-                </MapContainer>
-              ) : (
-                <div style={{ height: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--button-bg)', borderRadius: '8px', color: 'var(--text-muted)', gap: '1rem' }}>
-                  {isSearchingLocation ? (
-                    <p>🔍 Söker efter platsen...</p>
-                  ) : (
-                    <>
-                      <p>Kunde inte hitta platsen på kartan.</p>
-                      {!isChildUser && (
-                        <button
-                          onClick={() => { setViewMapEvent(null); openEditModal(viewMapEvent); }}
-                          style={{ padding: '0.5rem 1rem', background: '#646cff', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                        >
-                          ✏️ Redigera / Lägg till plats
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )
-        }
 
         {/* Modal för att skapa event */}
         {/* Inbox Modal */}
@@ -1659,14 +1435,14 @@ function App() {
 
                 <form onSubmit={updateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div>
-                    <label>Vad händer? {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(extern källa)</span>}</label>
+                    <label>Vad händer? {(editEventData.isExternalSource || !isAdmin) && <span style={{ fontSize: '0.75rem', color: '#888' }}>{editEventData.isExternalSource ? '(extern källa)' : '(visa)'}</span>}</label>
                     <input
                       type="text"
                       required
                       value={editEventData.summary}
-                      onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, summary: e.target.value })}
-                      readOnly={editEventData.isExternalSource}
-                      style={editEventData.isExternalSource
+                      onChange={e => isAdmin && !editEventData.isExternalSource && setEditEventData({ ...editEventData, summary: e.target.value })}
+                      readOnly={editEventData.isExternalSource || !isAdmin}
+                      style={(editEventData.isExternalSource || !isAdmin)
                         ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
                         : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
                       }
@@ -1724,15 +1500,16 @@ function App() {
                       <LocationAutocomplete
                         placeholder="T.ex. Valhalla IP"
                         value={editEventData.location}
-                        onChange={val => setEditEventData({ ...editEventData, location: val })}
-                        onSelect={coords => setEditEventData({ ...editEventData, coords })}
+                        onChange={val => isAdmin && setEditEventData({ ...editEventData, location: val })}
+                        onSelect={coords => isAdmin && setEditEventData({ ...editEventData, coords })}
+                        disabled={!isAdmin}
                       />
                     </div>
                   </div>
 
                   {/* Who is this event for? */}
                   <div>
-                    <label>👥 Vem gäller det?</label>
+                    <label>👥 Vem gäller det? {!isAdmin && <span style={{ fontSize: '0.75rem', color: '#888' }}>(visa)</span>}</label>
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                       {['Hela Familjen', 'Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => {
                         const assignees = editEventData.assignees || [];
@@ -1744,6 +1521,7 @@ function App() {
                             key={name}
                             type="button"
                             onClick={() => {
+                              if (!isAdmin) return; // Prevent children from editing
                               let newAssignees;
                               let newSummary = editEventData.summary || '';
 
@@ -1764,6 +1542,7 @@ function App() {
                               newSummary = updateSummaryWithPrefix(newSummary, newAssignees);
                               setEditEventData({ ...editEventData, assignees: newAssignees, summary: newSummary });
                             }}
+                            disabled={!isAdmin}
                             style={{
                               padding: '0.4rem 0.8rem',
                               borderRadius: '15px',
@@ -1771,7 +1550,8 @@ function App() {
                               background: isSelected ? '#2ed573' : 'var(--input-bg)',
                               color: isSelected ? 'white' : 'var(--text-main)',
                               fontSize: '0.8rem',
-                              cursor: 'pointer',
+                              cursor: isAdmin ? 'pointer' : 'not-allowed',
+                              opacity: isAdmin ? 1 : 0.6,
                               transition: 'all 0.2s'
                             }}
                           >
@@ -1784,7 +1564,7 @@ function App() {
 
                   {/* Category selection */}
                   <div>
-                    <label>📂 Kategori</label>
+                    <label>📂 Kategori {!isAdmin && <span style={{ fontSize: '0.75rem', color: '#888' }}>(visa)</span>}</label>
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                       {['Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => {
                         const isSelected = editEventData.category === cat;
@@ -1792,7 +1572,8 @@ function App() {
                           <button
                             key={cat}
                             type="button"
-                            onClick={() => setEditEventData({ ...editEventData, category: cat })}
+                            onClick={() => isAdmin && setEditEventData({ ...editEventData, category: cat })}
+                            disabled={!isAdmin}
                             style={{
                               padding: '0.4rem 0.8rem',
                               borderRadius: '15px',
@@ -1800,7 +1581,8 @@ function App() {
                               background: isSelected ? '#646cff' : 'var(--input-bg)',
                               color: isSelected ? 'white' : 'var(--text-main)',
                               fontSize: '0.8rem',
-                              cursor: 'pointer',
+                              cursor: isAdmin ? 'pointer' : 'not-allowed',
+                              opacity: isAdmin ? 1 : 0.6,
                               transition: 'all 0.2s'
                             }}
                           >
@@ -1812,26 +1594,45 @@ function App() {
                   </div>
 
                   <div>
-                    <label>Beskrivning & Anteckningar</label>
+                    <label>Beskrivning & Anteckningar {!isAdmin && <span style={{ fontSize: '0.75rem', color: '#888' }}>(visa)</span>}</label>
                     <textarea
                       placeholder="Anteckningar..."
                       value={editEventData.description}
-                      onChange={e => setEditEventData({ ...editEventData, description: e.target.value })}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd', minHeight: '80px' }}
+                      onChange={e => isAdmin && setEditEventData({ ...editEventData, description: e.target.value })}
+                      readOnly={!isAdmin}
+                      style={{
+                        width: '100%',
+                        padding: '0.5rem',
+                        borderRadius: '4px',
+                        border: '1px solid #ddd',
+                        minHeight: '80px',
+                        background: isAdmin ? 'white' : '#f0f0f0',
+                        cursor: isAdmin ? 'text' : 'not-allowed',
+                        opacity: isAdmin ? 1 : 0.7
+                      }}
                     ></textarea>
                   </div>
 
-                  {/* Assignment Controls in Modal */}
+                  {/* Assignment Controls in Modal - Visible for all, editable only for admin */}
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
-                      <label>🚗 Vem kör?</label>
+                      <label>🚗 Vem kör? {!isAdmin && <span style={{ fontSize: '0.75rem', color: '#888' }}>(visa)</span>}</label>
                       <select
                         value={editEventData.assignments?.driver || ''}
                         onChange={e => setEditEventData({
                           ...editEventData,
                           assignments: { ...editEventData.assignments, driver: e.target.value || null }
                         })}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                        disabled={!isAdmin}
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          borderRadius: '4px',
+                          border: '1px solid #ddd',
+                          background: isAdmin ? 'white' : '#f0f0f0',
+                          cursor: isAdmin ? 'pointer' : 'not-allowed',
+                          opacity: isAdmin ? 1 : 0.7
+                        }}
                       >
                         <option value="">Välj...</option>
                         <option value="Svante">Svante</option>
@@ -1839,14 +1640,23 @@ function App() {
                       </select>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <label>🎒 Vem packar?</label>
+                      <label>🎒 Vem packar? {!isAdmin && <span style={{ fontSize: '0.75rem', color: '#888' }}>(visa)</span>}</label>
                       <select
                         value={editEventData.assignments?.packer || ''}
                         onChange={e => setEditEventData({
                           ...editEventData,
                           assignments: { ...editEventData.assignments, packer: e.target.value || null }
                         })}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                        disabled={!isAdmin}
+                        style={{
+                          width: '100%',
+                          padding: '0.5rem',
+                          borderRadius: '4px',
+                          border: '1px solid #ddd',
+                          background: isAdmin ? 'white' : '#f0f0f0',
+                          cursor: isAdmin ? 'pointer' : 'not-allowed',
+                          opacity: isAdmin ? 1 : 0.7
+                        }}
                       >
                         <option value="">Välj...</option>
                         <option value="Svante">Svante</option>
@@ -1871,9 +1681,13 @@ function App() {
                             e.preventDefault();
                             const text = e.target.value;
                             if (text) {
+                              // Auto-prefix child's name for non-admin users
+                              const finalText = !isAdmin && currentUser?.name
+                                ? `${currentUser.name} ${text}`
+                                : text;
                               setEditEventData({
                                 ...editEventData,
-                                todoList: [...(editEventData.todoList || []), { id: Date.now(), text, done: false }]
+                                todoList: [...(editEventData.todoList || []), { id: Date.now(), text: finalText, done: false }]
                               });
                               e.target.value = '';
                             }
@@ -1884,13 +1698,17 @@ function App() {
                         const input = document.getElementById('newTodoInput');
                         const text = input.value;
                         if (text) {
+                          // Auto-prefix child's name for non-admin users
+                          const finalText = !isAdmin && currentUser?.name
+                            ? `${currentUser.name} ${text}`
+                            : text;
                           setEditEventData({
                             ...editEventData,
-                            todoList: [...(editEventData.todoList || []), { id: Date.now(), text, done: false }]
+                            todoList: [...(editEventData.todoList || []), { id: Date.now(), text: finalText, done: false }]
                           });
                           input.value = '';
                         }
-                      }} style={{ padding: '0.5rem', cursor: 'pointer' }}>+</button>
+                      }} style={{ padding: '0.5rem 1rem', borderRadius: '4px', background: '#646cff', color: 'white', border: 'none', cursor: 'pointer' }}>+</button>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -1916,18 +1734,29 @@ function App() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      {!editEventData.isExternalSource && (
+                      {isAdmin && !editEventData.isExternalSource && (
                         <button type="button" onClick={() => deleteEvent(editEventData)} style={{
                           padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ff4757', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
                         }} title="Ta bort event">
                           <span>🗑️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ta bort</span>
                         </button>
                       )}
-                      {!editEventData.cancelled && (
+                      {isAdmin && !editEventData.cancelled && (
                         <button type="button" onClick={() => cancelEvent(editEventData)} style={{
                           padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ffa502', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
                         }} title="Ställ in">
                           <span>🚫</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ställ in</span>
+                        </button>
+                      )}
+                      {/* Directions button for all users */}
+                      {editEventData.coords && (
+                        <button type="button" onClick={() => {
+                          const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${editEventData.coords.lat},${editEventData.coords.lon}`;
+                          window.open(googleMapsUrl, '_blank');
+                        }} style={{
+                          padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#4285f4', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
+                        }} title="Vägbeskrivning">
+                          <span>🗺️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Väg</span>
                         </button>
                       )}
                     </div>
@@ -1935,10 +1764,12 @@ function App() {
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button type="button" onClick={() => setIsEditingEvent(false)} style={{
                         padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontSize: '0.9rem'
-                      }}>Avbryt</button>
-                      <button type="submit" style={{
-                        padding: '0.5rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(100, 108, 255, 0.3)'
-                      }}>Spara</button>
+                      }}>Stäng</button>
+                      {isAdmin && (
+                        <button type="submit" style={{
+                          padding: '0.5rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(100, 108, 255, 0.3)'
+                        }}>Spara</button>
+                      )}
                     </div>
                   </div>
                 </form>
@@ -2026,6 +1857,101 @@ function App() {
           )
         }
 
+        {/* Match Modal */}
+        {showMatchModal && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000
+          }} onClick={() => setShowMatchModal(false)}>
+            <div style={{
+              background: 'var(--modal-bg)', color: 'var(--text-main)', padding: '1.5rem', borderRadius: '16px',
+              width: '90%', maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0 }}>Kommande matcher ⚽</h3>
+                <button onClick={() => setShowMatchModal(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>✕</button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                {events
+                  .filter(e => {
+                    const isArsenal = e.source === 'Arsenal FC' || (e.summary || '').toLowerCase().includes('arsenal');
+                    const isOis = e.source === 'Örgryte IS' || (e.summary || '').toLowerCase().includes('örgryte');
+                    return (isArsenal || isOis) && new Date(e.start) > new Date();
+                  })
+                  .sort((a, b) => new Date(a.start) - new Date(b.start))
+                  .slice(0, 10)
+                  .map(match => {
+                    const isArsenal = match.source === 'Arsenal FC' || (match.summary || '').toLowerCase().includes('arsenal');
+                    const matchDate = new Date(match.start);
+
+                    // Arena Logic
+                    let arena = match.location;
+                    if (!arena || arena === 'Okänd plats') {
+                      const summary = match.summary || '';
+                      // Check for "HomeTeam - AwayTeam" pattern
+                      const parts = summary.split(' - ');
+                      if (parts.length >= 2) {
+                        const homeTeam = parts[0].trim();
+
+                        if (isArsenal) {
+                          if (homeTeam.toLowerCase().includes('arsenal')) {
+                            arena = 'Emirates Stadium';
+                          } else {
+                            arena = `Bortamatch (${homeTeam})`;
+                          }
+                        } else {
+                          // ÖIS
+                          if (homeTeam.toLowerCase().includes('ois') || homeTeam.toLowerCase().includes('örgryte') || homeTeam.toLowerCase().includes('orgryte')) {
+                            arena = 'Gamla Ullevi';
+                          } else {
+                            arena = `Bortamatch (${homeTeam})`;
+                          }
+                        }
+                      } else {
+                        arena = 'Okänd arena';
+                      }
+                    }
+
+                    return (
+                      <div key={match.uid} style={{
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--border-color)',
+                        padding: '1rem',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-muted)' }}>
+                            {matchDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' })} • {matchDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span style={{ fontSize: '1.2rem' }}>{isArsenal ? '🔴⚪' : '🔴🔵'}</span>
+                        </div>
+
+                        <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{match.summary}</div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                          <span>📍</span> {arena}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {events.filter(e => {
+                  const isArsenal = e.source === 'Arsenal FC' || (e.summary || '').toLowerCase().includes('arsenal');
+                  const isOis = e.source === 'Örgryte IS' || (e.summary || '').toLowerCase().includes('örgryte');
+                  return (isArsenal || isOis) && new Date(e.start) > new Date();
+                }).length === 0 && (
+                    <p style={{ textAlign: 'center', fontStyle: 'italic', color: 'var(--text-muted)' }}>Inga kommande matcher hittades.</p>
+                  )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
           <div style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: isMobile ? '0.3rem' : '0.5rem', flexWrap: 'nowrap' }}>
@@ -2090,14 +2016,11 @@ function App() {
               // Adjust time for Arsenal (UK time +1h for SE) if needed
               const displayDate = new Date(nextMatch.start);
               // if (isArsenal) {
-              //   displayDate.setTime(displayDate.getTime() + 3600000); // Add 1 hour
               // }
 
               return (
-                <a
-                  href="https://www.svenskafans.com/fotboll/lag/arsenal/spelschema"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <div
+                  onClick={() => setShowMatchModal(true)}
                   style={{
                     background: 'var(--card-bg)',
                     padding: '0.15rem 0.4rem',
@@ -2122,7 +2045,7 @@ function App() {
                     {' '}
                     {displayDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                   </span>
-                </a>
+                </div>
               );
             })()}
 
@@ -2254,7 +2177,7 @@ function App() {
 
 
         </header>
-      </div>
+      </div >
       {/* END of dashboard-only block for header area */}
 
       {/* Schedule Tab Content - shown after header */}
@@ -2536,7 +2459,7 @@ function App() {
                                   ...passedStyle,
                                   ...(event.cancelled ? { opacity: 0.6, textDecoration: 'line-through' } : {})
                                 }}
-                                onClick={(e) => { e.stopPropagation(); if (isAdmin) openEditModal(event); else setViewMapEvent(event); }}
+                                onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
                               >
                                 <div className="card-header">
                                   <span className="time">
@@ -2551,14 +2474,10 @@ function App() {
                                 <p className="location"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    if (!isChildUser && (!event.location || event.location === 'Okänd plats')) {
-                                      openEditModal(event);
-                                    } else {
-                                      setViewMapEvent(event);
-                                    }
+                                    openEditModal(event);
                                   }}
                                   style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'inherit', textDecoration: event.coords ? 'underline' : 'none' }}
-                                  title={!isChildUser && (!event.location || event.location === 'Okänd plats') ? "Klicka för att lägga till plats" : "Klicka för att se på karta"}>
+                                  title="Klicka för att se detaljer">
                                   📍 {event.location || 'Hemma/Okänd plats'}
                                 </p>
 
@@ -2787,7 +2706,6 @@ function App() {
               }}>
                 {[
                   { id: 'upcoming', label: 'Kommande' },
-                  { id: 'next3days', label: '3 Dagar' },
                   { id: 'week', label: `Vecka ${getWeekNumber(selectedDate)}` },
                   { id: 'month', label: selectedDate.toLocaleDateString('sv-SE', { month: 'long' }) },
                   { id: 'history', label: 'Historik' }
@@ -2831,7 +2749,7 @@ function App() {
                   </>
                 ) : (
                   <span>
-                    📅 {viewMode === 'next3days' ? 'Kommande 3 dagar' : 'Kommande händelser'}
+                    📅 Kommande händelser
                   </span>
                 )}
               </h2>
@@ -2888,7 +2806,7 @@ function App() {
                                 className={`calendar-event ${ev.date < new Date() ? 'done' : ''} ${sourceClass}`}
                                 style={{ textDecoration: ev.cancelled ? 'line-through' : 'none', opacity: ev.cancelled ? 0.6 : 1 }}
                                 title={ev.summary}
-                                onClick={(e) => { e.stopPropagation(); if (isAdmin) openEditModal(ev); else setViewMapEvent(ev); }}>
+                                onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}>
                                 {ev.cancelled ? '🚫 ' : ''}{ev.summary}
                               </div>
                             )
@@ -2937,7 +2855,7 @@ function App() {
                                 <div key={ev.uid}
                                   className={`card ${sourceClass} ${colorClass}`}
                                   style={{ padding: '0.3rem 0.4rem', fontSize: '0.75rem', minHeight: 'auto', marginBottom: '0.3rem', borderLeftWidth: '3px', display: 'flex', flexDirection: 'column', gap: '0.1rem', lineHeight: '1.2' }}
-                                  onClick={(e) => { e.stopPropagation(); if (isAdmin) openEditModal(ev); else setViewMapEvent(ev); }}
+                                  onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                                 >
                                   <div style={{ fontWeight: 'bold' }}>
                                     {new Date(ev.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
@@ -2978,47 +2896,101 @@ function App() {
 
               {/* DEFAULT LIST VIEW (Upcoming, History, Next 3 Days) */}
               {viewMode !== 'month' && viewMode !== 'week' && (
-                <>
-                  {otherEvents.length === 0 ? (
-                    <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Inga kommande händelser matchar filtret.</p>
-                  ) : (
-                    otherEvents.map(event => {
+                otherEvents.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Inga kommande händelser matchar filtret.</p>
+                ) : (
+                  (() => {
+                    let lastDate = null;
+                    let lastWeek = null;
+                    return otherEvents.map((event, index) => {
+                      const eventDate = new Date(event.start);
+                      const eventDateStr = eventDate.toLocaleDateString('sv-SE');
+                      const eventWeek = getWeekNumber(eventDate);
+
+                      // Check if new week
+                      const showWeekSeparator = lastWeek !== null && lastWeek !== eventWeek;
+                      // Check if new day (within same week or not)
+                      const showDaySeparator = lastDate !== eventDateStr;
+
+                      lastDate = eventDateStr;
+                      lastWeek = eventWeek;
+
                       let sourceClass = '';
                       if (event.source === 'Svante (Privat)') sourceClass = 'source-svante';
                       if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
                       const assignments = event.assignments || {};
                       const isFullyAssigned = assignments.driver && assignments.packer;
                       const colorClass = getAssignedColorClass(event);
+
                       return (
-                        <div key={event.uid} className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''}`}
-                          style={{ cursor: isAdmin ? 'pointer' : 'default' }}
-                          onClick={() => isAdmin && openEditModal(event)}
-                        >
-                          <div className="card-header">
-                            <span className="time">
-                              {new Date(event.start).toLocaleDateString('sv-SE', { weekday: 'short', month: 'short', day: 'numeric' })} {new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                            <span className="source-badge">{event.source || 'Familjen'}</span>
+                        <Fragment key={event.uid}>
+                          {/* Week separator */}
+                          {showWeekSeparator && (
+                            <div style={{
+                              margin: '1.5rem 0 1rem 0',
+                              padding: '0.4rem 1rem',
+                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                              borderRadius: '12px',
+                              color: 'white',
+                              fontWeight: 'bold',
+                              fontSize: '1rem',
+                              textAlign: 'center',
+                              boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'
+                            }}>
+                              📅 Vecka {eventWeek}
+                            </div>
+                          )}
+
+                          {/* Day separator */}
+                          {showDaySeparator && (
+                            <div style={{
+                              margin: '1rem 0 0.5rem 0',
+                              padding: '0.5rem 0.8rem',
+                              background: 'var(--card-bg)',
+                              borderLeft: '4px solid #2ed573',
+                              borderRadius: '6px',
+                              fontWeight: '600',
+                              fontSize: '0.95rem',
+                              color: 'var(--text-main)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem'
+                            }}>
+                              📆 {eventDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            </div>
+                          )}
+
+                          {/* Event card */}
+                          <div className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''}`}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => openEditModal(event)}
+                          >
+                            <div className="card-header">
+                              <span className="time">
+                                {new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <span className="source-badge">{event.source || 'Familjen'}</span>
+                            </div>
+                            <h3 style={{ textDecoration: event.cancelled ? 'line-through' : 'none', color: event.cancelled ? '#7f8c8d' : 'inherit' }}>
+                              {event.cancelled && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}
+                              {event.summary}
+                            </h3>
+                            <p className="location" onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
+                              style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'inherit', textDecoration: event.coords ? 'underline' : 'none' }}
+                              title={event.coords ? "Se på karta" : "Ingen plats"}>
+                              📍 {event.location || 'Hemma/Okänd plats'}
+                            </p>
+                            {renderTravelInfo(event)}
+                            <div className="actions" onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                              {isAdmin && renderAssignmentControl(event, 'driver')}
+                              {isAdmin && renderAssignmentControl(event, 'packer')}
+                            </div>
                           </div>
-                          <h3 style={{ textDecoration: event.cancelled ? 'line-through' : 'none', color: event.cancelled ? '#7f8c8d' : 'inherit' }}>
-                            {event.cancelled && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}
-                            {event.summary}
-                          </h3>
-                          <p className="location" onClick={(e) => { e.stopPropagation(); if (isAdmin && (!event.location || event.location === 'Okänd plats')) openEditModal(event); else setViewMapEvent(event); }}
-                            style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'inherit', textDecoration: event.coords ? 'underline' : 'none' }}
-                            title={event.coords ? "Se på karta" : "Ingen plats"}>
-                            📍 {event.location || 'Hemma/Okänd plats'}
-                          </p>
-                          {renderTravelInfo(event)}
-                          <div className="actions" onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                            {isAdmin && renderAssignmentControl(event, 'driver')}
-                            {isAdmin && renderAssignmentControl(event, 'packer')}
-                          </div>
-                        </div>
+                        </Fragment>
                       );
-                    })
-                  )}
-                </>
+                    });
+                  })()
+                )
               )}
             </div>
           </div >

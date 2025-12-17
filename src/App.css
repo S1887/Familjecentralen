@@ -126,6 +126,26 @@ body {
   overflow: hidden;
 }
 
+/* Brighten background image if one is set */
+.today-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.25);
+  /* White overlay to brighten */
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure content is above the brightness overlay */
+.today-hero>* {
+  position: relative;
+  z-index: 1;
+}
+
 /* DAY THEMES */
 .today-hero.day-clear {
   background: linear-gradient(135deg, #56CCF2 0%, #2F80ED 100%);

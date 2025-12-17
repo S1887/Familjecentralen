@@ -14,6 +14,24 @@ const ScheduleViewer = ({ events }) => {
 
     const studentColor = studentColors[selectedStudent] || '#646cff';
 
+    // Subject colors for lessons
+    const getSubjectColor = (summary) => {
+        const subjectLower = (summary || '').toLowerCase();
+
+        if (subjectLower.includes('svenska')) return '#f1c40f'; // Gult
+        if (subjectLower.includes('matematik') || subjectLower.includes('matte')) return '#3498db'; // Blått
+        if (subjectLower.includes('engelska')) return '#e74c3c'; // Rött
+        if (subjectLower.includes('samhällo') || subjectLower.includes('so')) return '#8b4513'; // Brun
+        if (subjectLower.includes('natur') || subjectLower.includes('no') || subjectLower.includes('biologi')) return '#27ae60'; // Grön
+        if (subjectLower.includes('idrott') || subjectLower.includes('gympa')) return '#ff69b4'; // Rosa
+        if (subjectLower.includes('slöjd') || subjectLower.includes('trä')) return '#ecf0f1'; // Vit/ljusgrå
+        if (subjectLower.includes('musik')) return '#e67e22'; // Orange
+        if (subjectLower.includes('bild') || subjectLower.includes('konst')) return '#9b59b6'; // Lila
+        if (subjectLower.includes('teknik')) return '#95a5a6'; // Grå
+
+        return '#444'; // Default grå
+    };
+
     // Filter events for the schedule
     const scheduleEvents = useMemo(() => {
         return events.filter(e => {
@@ -209,19 +227,20 @@ const ScheduleViewer = ({ events }) => {
                                             key={ev.uid}
                                             className="schedule-card"
                                             style={{
-                                                background: '#444',
+                                                background: getSubjectColor(ev.summary),
                                                 padding: isMobile ? '6px' : '8px',
                                                 borderRadius: '4px',
                                                 fontSize: isMobile ? '0.75em' : '0.9em',
-                                                borderLeft: `3px solid ${studentColor}`,
-                                                wordBreak: 'break-word'
+                                                borderLeft: `4px solid ${studentColor}`,
+                                                wordBreak: 'break-word',
+                                                color: getSubjectColor(ev.summary) === '#ecf0f1' ? '#333' : '#fff' // Dark text for white/light gray background
                                             }}
                                         >
-                                            <div className="time" style={{ fontSize: isMobile ? '0.7em' : '0.8em', color: '#aaa', marginBottom: '2px' }}>
+                                            <div className="time" style={{ fontSize: isMobile ? '0.7em' : '0.8em', color: getSubjectColor(ev.summary) === '#ecf0f1' ? '#666' : '#ddd', marginBottom: '2px' }}>
                                                 {formatTime(ev.start)}
                                             </div>
-                                            <div className="subject" style={{ fontWeight: 'bold', color: '#fff', fontSize: isMobile ? '0.85em' : '1em', lineHeight: '1.2' }}>{ev.summary}</div>
-                                            {!isMobile && <div className="location" style={{ fontSize: '0.75em', color: '#bbb', marginTop: '4px' }}>{ev.location}</div>}
+                                            <div className="subject" style={{ fontWeight: 'bold', color: getSubjectColor(ev.summary) === '#ecf0f1' ? '#333' : '#fff', fontSize: isMobile ? '0.85em' : '1em', lineHeight: '1.2' }}>{ev.summary}</div>
+                                            {!isMobile && <div className="location" style={{ fontSize: '0.75em', color: getSubjectColor(ev.summary) === '#ecf0f1' ? '#666' : '#bbb', marginTop: '4px' }}>{ev.location}</div>}
                                         </div>
                                     ))
                                 )}
