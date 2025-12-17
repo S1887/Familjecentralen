@@ -948,76 +948,73 @@ function App() {
   const createEvent = async (e) => {
     e.preventDefault();
 
-    // Handle redirect to Google Calendar for Svante/Sarah specific events
+    // Determine which Google Calendar to use based on assignees
     const hasSvante = newEvent.assignees && newEvent.assignees.includes('Svante');
     const hasSarah = newEvent.assignees && newEvent.assignees.includes('Sarah');
+    const hasChildren = newEvent.assignees && (
+      newEvent.assignees.includes('Algot') ||
+      newEvent.assignees.includes('Tuva') ||
+      newEvent.assignees.includes('Leon')
+    );
+    const isWholeFamily = newEvent.assignees && newEvent.assignees.includes('Hela familjen');
 
-    // Logic: If exactly one parent is selected (and no complex combo logic conflicting), redirect.
-    let googleTarget = null;
-    if (hasSvante && !hasSarah) googleTarget = 'Svante';
-    if (hasSarah && !hasSvante) googleTarget = 'Sarah';
+    // Calendar routing logic:
+    // - Only Svante → Svantes calendar
+    // - Only Sarah → Sarahs calendar
+    // - Children, whole family, or mixed → Family calendar
+    let calendarTarget = null;
+    let calendarEmail = null;
 
-    if (googleTarget) {
-      const baseDate = (newEvent.date || '').replace(/-/g, '');
-      const startTime = (newEvent.time || '12:00').replace(/:/g, '') + '00';
-      const endTime = (newEvent.endTime || newEvent.time || '13:00').replace(/:/g, '') + '00';
-      const dates = `${baseDate}T${startTime}/${baseDate}T${endTime}`;
-
-      const text = encodeURIComponent(newEvent.summary || 'Ny händelse');
-      const details = encodeURIComponent(`${newEvent.description || ''}\n\n(Skapad via Family-Ops)`);
-      const location = encodeURIComponent(newEvent.location || '');
-
-      const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}`;
-
-      window.open(googleUrl, '_blank');
-      setIsCreatingEvent(false);
-
-      // Reset form slightly just in case but keep date
-      setNewEvent(prev => ({ ...prev, summary: '', location: '', description: '', assignees: [] }));
-      return;
+    if (hasSvante && !hasSarah && !hasChildren && !isWholeFamily) {
+      calendarTarget = 'Svante';
+      calendarEmail = 'svante.ortendahl@gmail.com';
+    } else if (hasSarah && !hasSvante && !hasChildren && !isWholeFamily) {
+      calendarTarget = 'Sarah';
+      calendarEmail = 'sarah.ortendahl@gmail.com';
+    } else {
+      // Default: Family calendar (for children, whole family, or mixed assignees)
+      calendarTarget = 'Familjen';
+      calendarEmail = 'family17438490542731545369@group.calendar.google.com';
     }
 
-    // Bygg ihop datum och tid
-    const startDateTime = new Date(`${newEvent.date}T${newEvent.time}`);
-    const endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
+    // Build Google Calendar URL with pre-filled data
+    const baseDate = (newEvent.date || '').replace(/-/g, '');
+    const startTime = (newEvent.time || '12:00').replace(/:/g, '') + '00';
+    const endTime = (newEvent.endTime || newEvent.time || '13:00').replace(/:/g, '') + '00';
+    const dates = `${baseDate}T${startTime}/${baseDate}T${endTime}`;
 
-    try {
-      await fetch(getApiUrl('api/create-event'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          summary: newEvent.summary,
-          location: newEvent.location,
-          coords: newEvent.coords,
-          description: newEvent.description,
-          assignee: newEvent.assignees.join(', '),
-          assignees: newEvent.assignees,
-          category: newEvent.category,
-          start: startDateTime.toISOString(),
-          end: endDateTime.toISOString(),
-          createdBy: 'Admin'
-        })
-      });
+    const text = encodeURIComponent(newEvent.summary || 'Ny händelse');
+    const details = encodeURIComponent(
+      `${newEvent.description || ''}\n\n` +
+      `Vem: ${newEvent.assignees.join(', ')}\n` +
+      `Kategori: ${newEvent.category || 'Ingen'}\n\n` +
+      `(Skapad via Familjecentralen)`
+    );
+    const location = encodeURIComponent(newEvent.location || '');
 
-      // Google Calendar redirect removed - events now sync automatically via ICS feed!
+    // Add calendar-specific parameter (adds to specific calendar if user has access)
+    const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}&add=${encodeURIComponent(calendarEmail)}`;
 
-      setIsCreatingEvent(false);
-      setNewEvent({ // Återställ formulär
-        summary: '',
-        location: '',
-        description: '',
-        assignees: [],
-        category: null,
-        date: new Date().toISOString().split('T')[0],
-        time: '12:00',
-        endTime: '13:00'
-      });
-      fetchEvents(); // Ladda om
-    } catch (err) {
-      console.error("Kunde inte skapa event", err);
-      alert("Något gick fel när händelsen skulle sparas.");
-    }
+    // Open Google Calendar in new tab
+    window.open(googleUrl, '_blank');
+
+    // Close modal and reset form
+    setIsCreatingEvent(false);
+    setNewEvent({
+      summary: '',
+      location: '',
+      description: '',
+      assignees: [],
+      category: null,
+      date: new Date().toISOString().split('T')[0],
+      time: '12:00',
+      endTime: '13:00'
+    });
+
+    // Show confirmation message
+    alert(`Öppnar ${calendarTarget}s Google Calendar.\n\nKlicka "Spara" där för att skapa händelsen.\nDen dyker sedan automatiskt upp i Familjecentralen inom 5 minuter!`);
   };
+
 
   const children = ['Alla', 'Algot', 'Tuva', 'Leon', 'Sarah', 'Svante'];
 
