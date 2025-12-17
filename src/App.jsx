@@ -856,7 +856,7 @@ function App() {
     if (!isAdmin) return;
 
     // Check if this is an external event (synced from any external source)
-    // External sources = locked fields. Only own events (Eget/FamilyOps) are fully editable
+    // External sources = locked fields. Only own events (Eget/FamilyOps/Familjen) are fully editable
     const isExternalSource = event.source &&
       !event.source.includes('Eget') &&
       !event.source.includes('FamilyOps') &&

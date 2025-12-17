@@ -942,13 +942,22 @@ app.post('/api/import-from-inbox', async (req, res) => {
             return res.json({ success: true, message: 'Already imported' });
         }
 
-        // Create a minimal local event that marks this as imported (not inbox-only)
-        // This will override the inbox-only flag from the external calendar
+        // Find the original event from cached calendars
+        const cachedCalendars = await fetchAndCacheCalendars();
+        const originalEvent = cachedCalendars.find(e => e.uid === uid);
+
+        if (!originalEvent) {
+            return res.status(404).json({ error: 'Event not found in cache' });
+        }
+
+        // Create a local copy with all data from the original
+        // Keep the original source so it behaves exactly like training events (external source, locked fields)
         const importedEvent = {
-            uid: uid,
-            inboxOnly: false, // This is the key: we're marking it as NOT inbox-only
-            source: 'Familjen (Redigerad)', // Mark as edited/imported
-            createdAt: new Date().toISOString()
+            ...originalEvent, // Copy all fields from original (summary, start, end, location, source, etc.)
+            inboxOnly: false, // Mark as NOT inbox-only (this makes it appear in main calendar)
+            createdAt: new Date().toISOString(),
+            deleted: false,
+            cancelled: false
         };
 
         // Save to MongoDB if connected
@@ -960,7 +969,7 @@ app.post('/api/import-from-inbox', async (req, res) => {
         localEvents.push(importedEvent);
         await writeLocalEvents(localEvents);
 
-        res.json({ success: true });
+        res.json({ success: true, event: importedEvent });
     } catch (error) {
         console.error('Import error:', error);
         res.status(500).json({ error: 'Kunde inte importera händelse' });
