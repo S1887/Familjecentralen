@@ -2538,25 +2538,25 @@ function App() {
                           width: '100%',
                           cursor: 'pointer',
                           textAlign: 'center',
-                          padding: isMobile ? '0.3rem' : '0.6rem',
+                          padding: isMobile ? '0.2rem' : '0.6rem',
                           background: 'rgba(255,255,255,0.15)',
                           backdropFilter: 'blur(5px)',
                           color: 'white',
-                          maxWidth: isMobile ? '130px' : '220px',
+                          maxWidth: isMobile ? '110px' : '220px',
                           margin: isMobile ? '0' : '0 auto',
                           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                           textShadow: '0 1px 2px rgba(0,0,0,0.5)',
                           position: isMobile ? 'absolute' : 'relative',
-                          bottom: isMobile ? '10px' : 'auto',
+                          bottom: isMobile ? '2px' : 'auto',
                           left: isMobile ? '50%' : 'auto',
                           transform: isMobile ? 'translateX(-50%)' : 'none',
                           zIndex: 5
                         }}
                       >
-                        <h3 style={{ margin: '0 0 0.2rem 0', fontSize: isMobile ? '0.75rem' : '0.9rem' }}>
+                        <h3 style={{ margin: '0 0 0.1rem 0', fontSize: isMobile ? '0.65rem' : '0.9rem' }}>
                           Dagens händelser
                         </h3>
-                        <p style={{ margin: 0, fontSize: isMobile ? '0.7rem' : '0.8rem' }}>
+                        <p style={{ margin: 0, fontSize: isMobile ? '0.65rem' : '0.8rem' }}>
                           📅 {heroEvents.length}
                           {heroTasks.length > 0 && ` • ✅ ${heroTasks.length}`}
                         </p>
