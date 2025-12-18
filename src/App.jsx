@@ -2470,7 +2470,7 @@ function App() {
         <div className={`${getHeroClass()} has-custom-bg`} style={{ '--hero-bg': `url(${heroCustomImg})` }}>
           <div className="hero-header" style={{ width: '100%', marginBottom: '0.5rem' }}>
             {/* Date row */}
-            <h2 style={{ fontSize: isMobile ? '1.4rem' : '2.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem', marginTop: '1rem' }}>
+            <h2 style={{ fontSize: isMobile ? '1.4rem' : '2.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem', marginTop: '-0.3rem' }}>
               <button
                 onClick={() => changeDay(-1)}
                 style={{
