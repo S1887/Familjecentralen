@@ -2525,7 +2525,15 @@ function App() {
 
             {/* Clock + Weather row */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: '1.1' }}>
+              <div style={{
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
+                lineHeight: '1.1',
+                background: 'rgba(255,255,255,0.2)',
+                padding: isMobile ? '0.3rem 0.6rem' : '0.5rem 1rem',
+                borderRadius: '10px',
+                backdropFilter: 'blur(5px)'
+              }}>
                 {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
               </div>
               <div className="weather-widget"
