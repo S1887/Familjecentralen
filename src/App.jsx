@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, Fragment } from 'react'
+import { useState, useEffect, useMemo, useRef, Fragment } from 'react'
 import './App.css'
 import LoginPage from './components/LoginPage'
 import ScheduleViewer from './components/ScheduleViewer'
@@ -457,6 +457,38 @@ function App() {
     }
     return () => document.body.classList.remove('modal-open');
   }, [isEditingEvent]);
+
+  // Swipe Navigation Refs
+  const touchStart = useRef(null);
+  const touchEnd = useRef(null);
+
+  // Minimum swipe distance (in px) 
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    touchEnd.current = null;
+    touchStart.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e) => {
+    touchEnd.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart.current || !touchEnd.current) return;
+    const distance = touchStart.current - touchEnd.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      // Swipe Left -> Next Day
+      changeDay(1);
+    }
+    if (isRightSwipe) {
+      // Swipe Right -> Previous Day
+      changeDay(-1);
+    }
+  };
 
   const [scheduleEvents, setScheduleEvents] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'schedule'
@@ -2467,7 +2499,13 @@ function App() {
         </div>
 
         {/* Today Hero Section */}
-        <div className={`${getHeroClass()} has-custom-bg`} style={{ '--hero-bg': `url(${heroCustomImg})` }}>
+        <div
+          className={`${getHeroClass()} has-custom-bg`}
+          style={{ '--hero-bg': `url(${heroCustomImg})` }}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
           <div className="hero-header" style={{ width: '100%', marginBottom: '0.5rem' }}>
             {/* Date row */}
             <h2 style={{ fontSize: isMobile ? '1.4rem' : '2.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem', marginTop: '-0.3rem' }}>
@@ -2536,7 +2574,9 @@ function App() {
                 backdropFilter: 'blur(5px)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                flex: 1, /* Force equal width */
+                width: 0     /* necessary for flex 1 to work evenly */
               }}>
                 {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
               </div>
@@ -2549,8 +2589,10 @@ function App() {
                   display: 'flex',
                   flexDirection: 'row',
                   alignItems: 'center',
+                  justifyContent: 'center', /* Center content */
                   gap: '0.5rem',
-                  width: 'auto',
+                  flex: 1, /* Force equal width */
+                  width: 0, /* necessary for flex 1 to work evenly */
                   backdropFilter: 'blur(5px)',
                   zIndex: 10
                 }}
