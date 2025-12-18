@@ -2524,15 +2524,19 @@ function App() {
             })()}
 
             {/* Clock + Weather row */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+            {/* Clock + Weather row */}
+            <div style={{ display: 'flex', alignItems: 'stretch', justifyContent: 'space-between', gap: '1rem' }}>
               <div style={{
-                fontSize: '1.5rem',
+                fontSize: isMobile ? '1rem' : '2rem', /* Match Weather Temp */
                 fontWeight: 'bold',
-                lineHeight: '1.1',
+                lineHeight: '1',
                 background: 'rgba(255,255,255,0.2)',
                 padding: isMobile ? '0.3rem 0.6rem' : '0.5rem 1rem',
                 borderRadius: '10px',
-                backdropFilter: 'blur(5px)'
+                backdropFilter: 'blur(5px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}>
                 {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
               </div>
@@ -2541,7 +2545,7 @@ function App() {
                   cursor: 'pointer',
                   background: 'rgba(255,255,255,0.2)',
                   padding: isMobile ? '0.3rem 0.6rem' : '0.5rem 1rem',
-                  borderRadius: '8px',
+                  borderRadius: '10px', /* Match Clock */
                   display: 'flex',
                   flexDirection: 'row',
                   alignItems: 'center',
