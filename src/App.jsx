@@ -458,9 +458,11 @@ function App() {
     return () => document.body.classList.remove('modal-open');
   }, [isEditingEvent]);
 
-  // Swipe Navigation Refs
+  // Swipe Navigation Refs & State
   const touchStart = useRef(null);
   const touchEnd = useRef(null);
+  const [swipeDelta, setSwipeDelta] = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
 
   // Minimum swipe distance (in px) 
   const minSwipeDistance = 50;
@@ -468,15 +470,24 @@ function App() {
   const onTouchStart = (e) => {
     touchEnd.current = null;
     touchStart.current = e.targetTouches[0].clientX;
+    setIsSwiping(true);
+    setSwipeDelta(0);
   };
 
   const onTouchMove = (e) => {
     touchEnd.current = e.targetTouches[0].clientX;
+    if (touchStart.current !== null) {
+      setSwipeDelta(e.targetTouches[0].clientX - touchStart.current);
+    }
   };
 
   const onTouchEnd = () => {
-    if (!touchStart.current || !touchEnd.current) return;
-    const distance = touchStart.current - touchEnd.current;
+    setIsSwiping(false);
+    if (touchStart.current === null || touchEnd.current === null) {
+      setSwipeDelta(0);
+      return;
+    }
+    const distance = touchStart.current - touchEnd.current; // Positive = Left Swipe
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
@@ -488,6 +499,7 @@ function App() {
       // Swipe Right -> Previous Day
       changeDay(-1);
     }
+    setSwipeDelta(0);
   };
 
   const [scheduleEvents, setScheduleEvents] = useState([]);
@@ -2501,7 +2513,11 @@ function App() {
         {/* Today Hero Section */}
         <div
           className={`${getHeroClass()} has-custom-bg`}
-          style={{ '--hero-bg': `url(${heroCustomImg})` }}
+          style={{
+            '--hero-bg': `url(${heroCustomImg})`,
+            transform: `translateX(${swipeDelta}px)`,
+            transition: isSwiping ? 'none' : 'transform 0.3s ease-out'
+          }}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
@@ -2569,14 +2585,14 @@ function App() {
                 fontWeight: 'bold',
                 lineHeight: '1',
                 background: 'rgba(255,255,255,0.2)',
-                padding: isMobile ? '0.3rem 0.6rem' : '0.5rem 1rem',
+                padding: isMobile ? '0.2rem 0.4rem' : '0.5rem 1rem',
                 borderRadius: '10px',
                 backdropFilter: 'blur(5px)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flex: 1, /* Force equal width */
-                width: 0     /* necessary for flex 1 to work evenly */
+                width: isMobile ? '85px' : '130px', /* Fixed identical width */
+                minWidth: isMobile ? '85px' : '130px',
               }}>
                 {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
               </div>
@@ -2584,15 +2600,15 @@ function App() {
                 style={{
                   cursor: 'pointer',
                   background: 'rgba(255,255,255,0.2)',
-                  padding: isMobile ? '0.3rem 0.6rem' : '0.5rem 1rem',
+                  padding: isMobile ? '0.2rem 0.4rem' : '0.5rem 1rem',
                   borderRadius: '10px', /* Match Clock */
                   display: 'flex',
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'center', /* Center content */
+                  width: isMobile ? '85px' : '130px', /* Fixed identical width */
+                  minWidth: isMobile ? '85px' : '130px',
                   gap: '0.5rem',
-                  flex: 1, /* Force equal width */
-                  width: 0, /* necessary for flex 1 to work evenly */
                   backdropFilter: 'blur(5px)',
                   zIndex: 10
                 }}
@@ -2628,7 +2644,6 @@ function App() {
                       <>
                         <span style={{ fontSize: isMobile ? '1.2rem' : '2rem' }}>{getWeatherIcon(w.code, isDay)}</span>
                         <span style={{ fontSize: isMobile ? '1rem' : '2rem', fontWeight: 'bold' }}>{w.temp}°C</span>
-                        {!isMobile && <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>Lidköping</span>}
                       </>
                     );
                   }
