@@ -2457,14 +2457,14 @@ function App() {
               Hej {currentUser.name}!
             </p>
             {/* Date row */}
-            <h2 style={{ fontSize: isMobile ? '1.2rem' : '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem' }}>
+            <h2 style={{ fontSize: isMobile ? '1.5rem' : '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem', marginTop: '-1.5rem' }}>
               <button
                 onClick={() => changeDay(-1)}
                 style={{
                   background: 'transparent',
                   border: 'none',
                   color: 'white',
-                  fontSize: '2.5rem',
+                  fontSize: '3rem',
                   fontWeight: '300',
                   cursor: 'pointer',
                   opacity: 1,
@@ -2487,7 +2487,7 @@ function App() {
                   background: 'transparent',
                   border: 'none',
                   color: 'white',
-                  fontSize: '2.5rem',
+                  fontSize: '3rem',
                   fontWeight: '300',
                   cursor: 'pointer',
                   opacity: 1,
