@@ -1991,24 +1991,24 @@ function App() {
                   onClick={() => setShowMatchModal(true)}
                   style={{
                     background: 'var(--card-bg)',
-                    padding: '0.15rem 0.4rem',
+                    padding: '0.3rem 0.6rem',
                     borderRadius: '12px',
-                    fontSize: '0.6rem',
+                    fontSize: '0.75rem',
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    whiteSpace: 'nowrap',
+                    flexDirection: 'column',
+                    alignItems: 'center', /* Center alignment looks better stacked usually, checking user req "båda lagen syns och lägga tid och datum under". Center often looks cleaner in a header bar. */
+                    justifyContent: 'center',
+                    gap: '0',
                     border: '1px solid var(--border-color)',
                     color: 'var(--text-main)',
-                    maxWidth: isMobile ? '160px' : 'auto', // Increased slightly for time
-                    overflow: 'hidden',
+                    maxWidth: 'none', /* Ensure full width visibility */
                     textDecoration: 'none',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    lineHeight: 1.2
                   }}
                 >
-                  <span style={{ fontSize: '0.7rem', flexShrink: 0 }}>{isArsenal ? '🔴⚪' : '🔴🔵'}</span>
-                  <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>{nextMatch.summary}</span>
-                  <span style={{ opacity: 0.7, flexShrink: 0 }}>
+                  <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{nextMatch.summary}</span>
+                  <span style={{ opacity: 0.7, fontSize: '0.7rem' }}>
                     {displayDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric' })}
                     {' '}
                     {displayDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
