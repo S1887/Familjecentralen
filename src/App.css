@@ -991,7 +991,7 @@ body.modal-open {
 /* Custom Background for Hero */
 .today-hero.has-custom-bg {
   min-height: 250px;
-  background-color: #354a36;
+  background: #354a36 !important;
   position: relative;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
   border: none !important;
