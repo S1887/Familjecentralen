@@ -417,7 +417,7 @@ function App() {
   }, [viewMode, isMobile]);
 
   // State för att skapa nytt event
-  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+
   const [newEvent, setNewEvent] = useState({
     summary: '', date: '', time: '', endTime: '', location: '', description: '',
     assignments: { driver: null, packer: null },
@@ -438,14 +438,14 @@ function App() {
 
   // Lock body scroll when any modal is open
   useEffect(() => {
-    const isAnyModalOpen = isCreatingEvent || isEditingEvent;
+    const isAnyModalOpen = isEditingEvent;
     if (isAnyModalOpen) {
       document.body.classList.add('modal-open');
     } else {
       document.body.classList.remove('modal-open');
     }
     return () => document.body.classList.remove('modal-open');
-  }, [isCreatingEvent, isEditingEvent]);
+  }, [isEditingEvent]);
 
   const [scheduleEvents, setScheduleEvents] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'schedule'
@@ -1069,7 +1069,7 @@ function App() {
     window.open(googleUrl, '_blank');
 
     // Close modal and reset form
-    setIsCreatingEvent(false);
+    setActiveTab('dashboard');
     setNewEvent({
       summary: '',
       location: '',
@@ -1244,262 +1244,7 @@ function App() {
           }}
         />
 
-        {/* Create Event Modal */}
-        {
-          isCreatingEvent && (
-            <div className="modal-overlay">
-              <div className="modal" style={{ padding: '2rem', position: 'relative' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsCreatingEvent(false)}
-                  style={{
-                    position: 'absolute',
-                    top: '1rem',
-                    right: '1rem',
-                    background: 'transparent',
-                    border: 'none',
-                    fontSize: '1.5rem',
-                    cursor: 'pointer',
-                    color: 'var(--text-secondary)',
-                    padding: '0.25rem',
-                    lineHeight: 1
-                  }}
-                  aria-label="Stäng"
-                >×</button>
-                <h2>✨ Skapa ny händelse</h2>
-                <form onSubmit={createEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div>
-                    <label>Vad händer?</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="T.ex. Fotbollsmatch"
-                      value={newEvent.summary}
-                      onChange={e => setNewEvent({ ...newEvent, summary: e.target.value })}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
-                    />
-                  </div>
 
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ flex: 1 }}>
-                      <label>När?</label>
-                      <input
-                        type="date"
-                        required
-                        value={newEvent.date}
-                        onChange={e => setNewEvent({ ...newEvent, date: e.target.value })}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
-                      />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label>Tid start</label>
-                      <input
-                        type="time"
-                        required
-                        value={newEvent.time}
-                        onChange={e => setNewEvent({ ...newEvent, time: e.target.value })}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <div style={{ flex: 1 }}>
-                      <label>Tid slut</label>
-                      <input
-                        type="time"
-                        required
-                        value={newEvent.endTime}
-                        onChange={e => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
-                      />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label>Plats</label>
-                      <LocationAutocomplete
-                        placeholder="T.ex. Valhalla IP"
-                        value={newEvent.location}
-                        onChange={val => setNewEvent({ ...newEvent, location: val })}
-                        onSelect={coords => setNewEvent({ ...newEvent, coords })}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label>Vem gäller det?</label>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                      {['Hela familjen', 'Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => {
-                        const isSelected = name === 'Hela familjen'
-                          ? newEvent.assignees.length === 0
-                          : newEvent.assignees.includes(name);
-                        return (
-                          <button
-                            key={name}
-                            type="button"
-                            onClick={() => {
-                              let newAssignees;
-
-                              if (name === 'Hela familjen') {
-                                // If selecting "Hela familjen", clear specific assignees but keep text clean
-                                // actually, "Hela familjen" usually implies clearing specific assignees
-                                newAssignees = [];
-                              } else {
-                                const current = newEvent.assignees.filter(n => n !== 'Hela familjen');
-                                if (current.includes(name)) {
-                                  newAssignees = current.filter(n => n !== name);
-                                } else {
-                                  newAssignees = [...current, name];
-                                }
-                              }
-
-                              const newSummary = updateSummaryWithPrefix(newEvent.summary || '', newAssignees);
-                              setNewEvent({ ...newEvent, assignees: newAssignees, summary: newSummary });
-                            }}
-                            style={{
-                              padding: '0.4rem 0.8rem',
-                              borderRadius: '20px',
-                              border: '1px solid var(--border-color)',
-                              background: isSelected ? '#4a90e2' : 'var(--input-bg)',
-                              color: isSelected ? 'white' : 'var(--text-main)',
-                              cursor: 'pointer',
-                              fontSize: '0.9rem'
-                            }}
-                          >
-                            {isSelected ? '✓ ' : ''}{name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Category selection */}
-                  <div>
-                    <label>📂 Kategori</label>
-                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                      {['Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => {
-                        const isSelected = newEvent.category === cat;
-                        return (
-                          <button
-                            key={cat}
-                            type="button"
-                            onClick={() => setNewEvent({ ...newEvent, category: cat })}
-                            style={{
-                              padding: '0.4rem 0.8rem',
-                              borderRadius: '15px',
-                              border: '1px solid var(--border-color)',
-                              background: isSelected ? '#646cff' : 'var(--input-bg)',
-                              color: isSelected ? 'white' : 'var(--text-main)',
-                              fontSize: '0.8rem',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s'
-                            }}
-                          >
-                            {isSelected ? '✓ ' : ''}{cat}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label>Beskrivning</label>
-                    <textarea
-                      placeholder="Mer information om händelsen..."
-                      value={newEvent.description}
-                      onChange={e => setNewEvent({ ...newEvent, description: e.target.value })}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd', minHeight: '80px' }}
-                    ></textarea>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-                    <button type="button" onClick={() => setIsCreatingEvent(false)} style={{
-                      padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', cursor: 'pointer'
-                    }}>Avbryt</button>
-                    {(() => {
-                      const hasSvante = newEvent.assignees.includes('Svante');
-                      const hasSarah = newEvent.assignees.includes('Sarah');
-                      const hasChildren = newEvent.assignees.some(name => ['Algot', 'Tuva', 'Leon'].includes(name));
-                      const isFamily = newEvent.assignees.length === 0; // "Hela familjen"
-
-                      // Determine target label
-                      // LOGIC: Defaults to Family if children involved or mixed.
-                      // Only pure single-parent events go to private calendars.
-                      let googleTarget = 'Familjen';
-
-                      if (hasSvante && !hasSarah && !hasChildren && !isFamily) googleTarget = 'Svante';
-                      else if (hasSarah && !hasSvante && !hasChildren && !isFamily) googleTarget = 'Sarah';
-
-                      // If forced target by explicit assignee selection logic above fails, it remains 'Familjen'
-
-                      if (googleTarget) {
-                        const baseDate = (newEvent.date || '').replace(/-/g, '');
-                        const startTime = (newEvent.time || '12:00').replace(/:/g, '') + '00';
-                        const endTime = (newEvent.endTime || newEvent.time || '13:00').replace(/:/g, '') + '00';
-                        const dates = `${baseDate}T${startTime}/${baseDate}T${endTime}`;
-
-                        const text = encodeURIComponent(newEvent.summary || 'Ny händelse');
-                        const details = encodeURIComponent(`${newEvent.description || ''}\n\n(Skapad via Family-Ops)`);
-                        const location = encodeURIComponent(newEvent.location || '');
-
-                        // Add src parameter to pre-select calendar
-                        const targetEmail = GOOGLE_CALENDAR_EMAILS[googleTarget === 'Familjen' ? 'Familjen' : `${googleTarget} (Privat)`];
-                        let googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}`;
-                        if (targetEmail) {
-                          googleUrl += `&src=${encodeURIComponent(targetEmail)}`;
-                        }
-
-                        return (
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                            <a
-                              href={googleUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={() => setIsCreatingEvent(false)}
-                              style={{
-                                padding: '0.75rem 1.5rem',
-                                borderRadius: '8px',
-                                border: 'none',
-                                background: '#2ed573',
-                                color: 'white',
-                                cursor: 'pointer',
-                                fontWeight: 'bold',
-                                textDecoration: 'none',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem'
-                              }}
-                            >
-                              📅 {googleTarget === 'Familjen' ? 'Skapa i familjens Google-kalender' : `Skapa i ${googleTarget}s Google-kalender`} ↗
-                            </a>
-                            <button
-                              type="submit"
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#888',
-                                fontSize: '0.8rem',
-                                cursor: 'pointer',
-                                textDecoration: 'underline'
-                              }}
-                            >
-                              eller spara bara lokalt
-                            </button>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <button type="submit" style={{
-                          padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer', fontWeight: 'bold'
-                        }}>Skapa händelse</button>
-                      );
-                    })()}
-                  </div>
-                </form>
-              </div>
-            </div>
-          )
-        }
 
         {/* Modal för att redigera event */}
         {
@@ -2152,6 +1897,24 @@ function App() {
             >
               📅
             </button>
+            <button
+              onClick={() => setActiveTab('create-event')}
+              title="Ny händelse"
+              style={{
+                background: activeTab === 'create-event' ? '#646cff' : 'transparent',
+                color: activeTab === 'create-event' ? 'white' : 'var(--text-main)',
+                border: activeTab === 'create-event' ? 'none' : '1px solid var(--border-color)',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                padding: isMobile ? '0.4rem' : '0.5rem',
+                fontSize: isMobile ? '1.3rem' : '1.4rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ➕
+            </button>
 
 
 
@@ -2384,6 +2147,263 @@ function App() {
         activeTab === 'schedule' && (
           <div className="tab-content">
             <ScheduleViewer events={scheduleEvents} />
+          </div>
+        )
+      }
+
+      {/* CREATE EVENT VIEW */}
+      {
+        activeTab === 'create-event' && (
+          <div className="create-event-view" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', paddingBottom: '80px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h2>✨ Skapa ny händelse</h2>
+              {/* Close button that goes back to dashboard */}
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: 'var(--text-secondary)',
+                  padding: '0.25rem',
+                  lineHeight: 1
+                }}
+                aria-label="Stäng"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={createEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label>Vad händer?</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="T.ex. Fotbollsmatch"
+                  value={newEvent.summary}
+                  onChange={e => setNewEvent({ ...newEvent, summary: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label>När?</label>
+                  <input
+                    type="date"
+                    required
+                    value={newEvent.date}
+                    onChange={e => setNewEvent({ ...newEvent, date: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label>Tid start</label>
+                  <input
+                    type="time"
+                    required
+                    value={newEvent.time}
+                    onChange={e => setNewEvent({ ...newEvent, time: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label>Tid slut</label>
+                  <input
+                    type="time"
+                    required
+                    value={newEvent.endTime}
+                    onChange={e => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label>Plats</label>
+                  <LocationAutocomplete
+                    placeholder="T.ex. Valhalla IP"
+                    value={newEvent.location}
+                    onChange={val => setNewEvent({ ...newEvent, location: val })}
+                    onSelect={coords => setNewEvent({ ...newEvent, coords })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label>Vem gäller det?</label>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  {['Hela familjen', 'Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => {
+                    const isSelected = name === 'Hela familjen'
+                      ? newEvent.assignees.length === 0
+                      : newEvent.assignees.includes(name);
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => {
+                          let newAssignees;
+
+                          if (name === 'Hela familjen') {
+                            // If selecting "Hela familjen", clear specific assignees but keep text clean
+                            // actually, "Hela familjen" usually implies clearing specific assignees
+                            newAssignees = [];
+                          } else {
+                            const current = newEvent.assignees.filter(n => n !== 'Hela familjen');
+                            if (current.includes(name)) {
+                              newAssignees = current.filter(n => n !== name);
+                            } else {
+                              newAssignees = [...current, name];
+                            }
+                          }
+
+                          const newSummary = updateSummaryWithPrefix(newEvent.summary || '', newAssignees);
+                          setNewEvent({ ...newEvent, assignees: newAssignees, summary: newSummary });
+                        }}
+                        style={{
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '20px',
+                          border: '1px solid var(--border-color)',
+                          background: isSelected ? '#4a90e2' : 'var(--input-bg)',
+                          color: isSelected ? 'white' : 'var(--text-main)',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        {isSelected ? '✓ ' : ''}{name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Category selection */}
+              <div>
+                <label>📂 Kategori</label>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  {['Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => {
+                    const isSelected = newEvent.category === cat;
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setNewEvent({ ...newEvent, category: cat })}
+                        style={{
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '15px',
+                          border: '1px solid var(--border-color)',
+                          background: isSelected ? '#646cff' : 'var(--input-bg)',
+                          color: isSelected ? 'white' : 'var(--text-main)',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {isSelected ? '✓ ' : ''}{cat}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label>Beskrivning</label>
+                <textarea
+                  placeholder="Mer information om händelsen..."
+                  value={newEvent.description}
+                  onChange={e => setNewEvent({ ...newEvent, description: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd', minHeight: '80px' }}
+                ></textarea>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setActiveTab('dashboard')} style={{
+                  padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', cursor: 'pointer'
+                }}>Avbryt</button>
+                {(() => {
+                  const hasSvante = newEvent.assignees.includes('Svante');
+                  const hasSarah = newEvent.assignees.includes('Sarah');
+                  const hasChildren = newEvent.assignees.some(name => ['Algot', 'Tuva', 'Leon'].includes(name));
+                  const isFamily = newEvent.assignees.length === 0; // "Hela familjen"
+
+                  // Determine target label
+                  // LOGIC: Defaults to Family if children involved or mixed.
+                  // Only pure single-parent events go to private calendars.
+                  let googleTarget = 'Familjen';
+
+                  if (hasSvante && !hasSarah && !hasChildren && !isFamily) googleTarget = 'Svante';
+                  else if (hasSarah && !hasSvante && !hasChildren && !isFamily) googleTarget = 'Sarah';
+
+                  // If forced target by explicit assignee selection logic above fails, it remains 'Familjen'
+
+                  if (googleTarget) {
+                    const baseDate = (newEvent.date || '').replace(/-/g, '');
+                    const startTime = (newEvent.time || '12:00').replace(/:/g, '') + '00';
+                    const endTime = (newEvent.endTime || newEvent.time || '13:00').replace(/:/g, '') + '00';
+                    const dates = `${baseDate}T${startTime}/${baseDate}T${endTime}`;
+
+                    const text = encodeURIComponent(newEvent.summary || 'Ny händelse');
+                    const details = encodeURIComponent(`${newEvent.description || ''}\n\n(Skapad via Family-Ops)`);
+                    const location = encodeURIComponent(newEvent.location || '');
+
+                    // Add src parameter to pre-select calendar
+                    const targetEmail = GOOGLE_CALENDAR_EMAILS[googleTarget === 'Familjen' ? 'Familjen' : `${googleTarget} (Privat)`];
+                    let googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}`;
+                    if (targetEmail) {
+                      googleUrl += `&src=${encodeURIComponent(targetEmail)}`;
+                    }
+
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                        <a
+                          href={googleUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setActiveTab('dashboard')}
+                          style={{
+                            padding: '0.75rem 1.5rem',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: '#2ed573',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                          }}
+                        >
+                          📅 {googleTarget === 'Familjen' ? 'Skapa i familjens Google-kalender' : `Skapa i ${googleTarget}s Google-kalender`} ↗
+                        </a>
+                        <button
+                          type="submit"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#888',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          eller spara bara lokalt
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <button type="submit" style={{
+                      padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer', fontWeight: 'bold'
+                    }}>Skapa händelse</button>
+                  );
+                })()}
+              </div>
+            </form>
           </div>
         )
       }
@@ -2698,36 +2718,7 @@ function App() {
             </div>
           )}
 
-          {/* Add Calendar Event Button (Dashboard) */}
-          {isAdmin && (
-            <button
-              onClick={() => setIsCreatingEvent(true)}
-              style={{
-                width: isMobile ? 'auto' : 'fit-content',
-                margin: isMobile ? '0' : '0 auto',
-                padding: '0.5rem 1.5rem',
-                background: 'rgba(0, 0, 0, 0.3)',
-                border: '1px solid rgba(255,255,255,0.3)',
-                color: 'white',
-                borderRadius: '20px',
-                cursor: 'pointer',
-                marginBottom: isMobile ? '0' : '1rem',
-                marginTop: isMobile ? '0' : '0.5rem',
-                fontSize: '0.85rem',
-                fontWeight: '500',
-                position: isMobile ? 'absolute' : 'relative',
-                bottom: isMobile ? '10px' : 'auto',
-                left: isMobile ? '50%' : 'auto',
-                transform: isMobile ? 'translateX(-50%)' : 'none',
-                zIndex: 10,
-                whiteSpace: 'nowrap',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-              }}
-            >
-              + Lägg till kalenderhändelse
-            </button>
 
-          )}
         </div>
 
         {/* Combined Filter Button */}
@@ -3149,17 +3140,19 @@ function App() {
                           {/* Day separator */}
                           {showDaySeparator && (
                             <div style={{
-                              margin: '1rem 0 0.5rem 0',
-                              padding: '0.5rem 0.8rem',
-                              background: 'var(--card-bg)',
-                              borderLeft: '4px solid #2ed573',
-                              borderRadius: '6px',
-                              fontWeight: '600',
-                              fontSize: '0.95rem',
-                              color: 'var(--text-main)',
+                              margin: '2.5rem 0 0.5rem 0',
+                              padding: '0.6rem 1rem',
+                              background: '#e9ecef',
+                              borderLeft: '5px solid #2ed573',
+                              borderRadius: '8px',
+                              fontWeight: '700',
+                              fontSize: '1rem',
+                              color: '#2c3e50',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.5rem'
+                              gap: '0.6rem',
+                              textTransform: 'capitalize',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                             }}>
                               📆 {eventDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
                             </div>
