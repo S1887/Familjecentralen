@@ -1584,7 +1584,7 @@ function App() {
                           marginTop: isMobile ? '0.5rem' : '0'
                         }}
                       >
-                        Spara till kalender 📅
+                        Redigera i Google-kalendern
                       </a>
                     )}
                   </div>
@@ -2392,7 +2392,7 @@ function App() {
       <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
 
         {/* Today Hero Section */}
-        <div className={`${getHeroClass()} has-custom-bg`} style={{ backgroundImage: `url(${heroCustomImg})` }}>
+        <div className={`${getHeroClass()} has-custom-bg`} style={{ '--hero-bg': `url(${heroCustomImg})` }}>
           <div className="hero-header" style={{ width: '100%', marginBottom: '0.5rem' }}>
             {/* Greeting */}
             <p style={{ margin: 0, marginBottom: '0.2rem', fontSize: isMobile ? '1rem' : '1.1rem', opacity: 0.9 }}>
@@ -2443,7 +2443,7 @@ function App() {
             </h2>
             {/* Clock + Weather row */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold', lineHeight: '1.1' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: '1.1' }}>
                 {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
               </div>
               <div className="weather-widget"
@@ -2527,7 +2527,7 @@ function App() {
                           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                           textShadow: '0 1px 2px rgba(0,0,0,0.5)',
                           position: isMobile ? 'absolute' : 'relative',
-                          bottom: isMobile ? '50px' : 'auto',
+                          bottom: isMobile ? '35px' : 'auto',
                           left: isMobile ? '0.5rem' : 'auto',
                           zIndex: 5
                         }}
@@ -2703,21 +2703,25 @@ function App() {
             <button
               onClick={() => setIsCreatingEvent(true)}
               style={{
-                width: isMobile ? 'calc(100% - 20px)' : '100%',
-                padding: '0.5rem',
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px dashed rgba(255,255,255,0.4)',
+                width: isMobile ? 'auto' : 'fit-content',
+                margin: isMobile ? '0' : '0 auto',
+                padding: '0.5rem 1.5rem',
+                background: 'rgba(0, 0, 0, 0.3)',
+                border: '1px solid rgba(255,255,255,0.3)',
                 color: 'white',
-                borderRadius: '8px',
+                borderRadius: '20px',
                 cursor: 'pointer',
                 marginBottom: isMobile ? '0' : '1rem',
                 marginTop: isMobile ? '0' : '0.5rem',
-                fontSize: '0.8rem',
-                fontWeight: '400',
+                fontSize: '0.85rem',
+                fontWeight: '500',
                 position: isMobile ? 'absolute' : 'relative',
                 bottom: isMobile ? '10px' : 'auto',
-                left: isMobile ? '10px' : 'auto',
-                zIndex: 10
+                left: isMobile ? '50%' : 'auto',
+                transform: isMobile ? 'translateX(-50%)' : 'none',
+                zIndex: 10,
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
               }}
             >
               + Lägg till kalenderhändelse

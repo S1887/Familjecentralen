@@ -991,15 +991,30 @@ body.modal-open {
 /* Custom Background for Hero */
 .today-hero.has-custom-bg {
   min-height: 250px;
-  background-size: contain;
-  /* Show full original image */
-  background-repeat: no-repeat;
-  background-position: top center;
-  /* Align to top */
   background-color: #354a36;
   position: relative;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
   border: none !important;
+  /* Use ::after for the background image so we can filter it independently */
+  background-image: none !important;
+  overflow: hidden;
+}
+
+.today-hero.has-custom-bg::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: var(--hero-bg);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: top center;
+  filter: brightness(1.25);
+  /* Increase brightness */
+  z-index: 0;
+  pointer-events: none;
 }
 
 @media (max-width: 768px) {
