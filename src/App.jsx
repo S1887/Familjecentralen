@@ -2601,7 +2601,7 @@ function App() {
                           cursor: 'pointer',
                           textAlign: 'center',
                           padding: isMobile ? '0.2rem' : '0.6rem',
-                          background: 'rgba(255,255,255,0.15)',
+                          background: 'rgba(255,255,255,0.2)', /* Match weather widget */
                           backdropFilter: 'blur(5px)',
                           color: 'white',
                           maxWidth: isMobile ? '110px' : '220px',
@@ -2612,7 +2612,9 @@ function App() {
                           bottom: isMobile ? '2px' : 'auto',
                           left: isMobile ? '50%' : 'auto',
                           transform: isMobile ? 'translateX(-50%)' : 'none',
-                          zIndex: 5
+                          zIndex: 5,
+                          border: 'none', /* Remove grey strip from .card class */
+                          borderRadius: '10px' /* Match weather widget radius */
                         }}
                       >
                         <h3 style={{ margin: '0 0 0.1rem 0', fontSize: isMobile ? '0.65rem' : '0.9rem' }}>
