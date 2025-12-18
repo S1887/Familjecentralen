@@ -458,49 +458,7 @@ function App() {
     return () => document.body.classList.remove('modal-open');
   }, [isEditingEvent]);
 
-  // Swipe Navigation Refs & State
-  const touchStart = useRef(null);
-  const touchEnd = useRef(null);
-  const [swipeDelta, setSwipeDelta] = useState(0);
-  const [isSwiping, setIsSwiping] = useState(false);
-
-  // Minimum swipe distance (in px) 
-  const minSwipeDistance = 50;
-
-  const onTouchStart = (e) => {
-    touchEnd.current = null;
-    touchStart.current = e.targetTouches[0].clientX;
-    setIsSwiping(true);
-    setSwipeDelta(0);
-  };
-
-  const onTouchMove = (e) => {
-    touchEnd.current = e.targetTouches[0].clientX;
-    if (touchStart.current !== null) {
-      setSwipeDelta(e.targetTouches[0].clientX - touchStart.current);
-    }
-  };
-
-  const onTouchEnd = () => {
-    setIsSwiping(false);
-    if (touchStart.current === null || touchEnd.current === null) {
-      setSwipeDelta(0);
-      return;
-    }
-    const distance = touchStart.current - touchEnd.current; // Positive = Left Swipe
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe) {
-      // Swipe Left -> Next Day
-      changeDay(1);
-    }
-    if (isRightSwipe) {
-      // Swipe Right -> Previous Day
-      changeDay(-1);
-    }
-    setSwipeDelta(0);
-  };
+  // Swipe logic removed per user request
 
   const [scheduleEvents, setScheduleEvents] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'schedule'
@@ -2514,13 +2472,8 @@ function App() {
         <div
           className={`${getHeroClass()} has-custom-bg`}
           style={{
-            '--hero-bg': `url(${heroCustomImg})`,
-            transform: `translateX(${swipeDelta}px)`,
-            transition: isSwiping ? 'none' : 'transform 0.3s ease-out'
+            '--hero-bg': `url(${heroCustomImg})`
           }}
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
         >
           <div className="hero-header" style={{ width: '100%', marginBottom: '0.5rem' }}>
             {/* Date row */}
@@ -2531,11 +2484,11 @@ function App() {
                   background: 'transparent',
                   border: 'none',
                   color: 'white',
-                  fontSize: '3rem',
+                  fontSize: isMobile ? '4rem' : '3rem', /* Larger on mobile for easier touch */
                   fontWeight: '300',
                   cursor: 'pointer',
-                  opacity: 1,
-                  padding: '0 0.5rem',
+                  opacity: 0.8,
+                  padding: '0 0.2rem',
                   textShadow: '0 2px 5px rgba(0,0,0,0.5)',
                   lineHeight: 1
                 }}
@@ -2554,11 +2507,11 @@ function App() {
                   background: 'transparent',
                   border: 'none',
                   color: 'white',
-                  fontSize: '3rem',
+                  fontSize: isMobile ? '4rem' : '3rem', /* Larger on mobile for easier touch */
                   fontWeight: '300',
                   cursor: 'pointer',
-                  opacity: 1,
-                  padding: '0 0.5rem',
+                  opacity: 0.8,
+                  padding: '0 0.2rem',
                   textShadow: '0 2px 5px rgba(0,0,0,0.5)',
                   lineHeight: 1
                 }}
@@ -2665,9 +2618,6 @@ function App() {
                       <div
                         className="card summary-card"
                         onClick={() => setShowHeroDetails(true)}
-                        onTouchStart={(e) => e.stopPropagation()}
-                        onTouchMove={(e) => e.stopPropagation()}
-                        onTouchEnd={(e) => e.stopPropagation()}
                         style={{
                           width: '100%',
                           cursor: 'pointer',
