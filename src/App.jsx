@@ -2665,6 +2665,9 @@ function App() {
                       <div
                         className="card summary-card"
                         onClick={() => setShowHeroDetails(true)}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        onTouchEnd={(e) => e.stopPropagation()}
                         style={{
                           width: '100%',
                           cursor: 'pointer',
