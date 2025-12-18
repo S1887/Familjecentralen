@@ -2554,8 +2554,8 @@ function App() {
                   backdropFilter: 'blur(5px)',
                   zIndex: 10
                 }}
-                onClick={() => window.open('https://www.smhi.se/vader/prognoser-och-varningar/vaderprognos/q/Lidk%C3%B6ping/2696329', '_blank')}
-                title="Se prognos hos SMHI"
+                onClick={() => window.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank')}
+                title="Se prognos hos YR"
               >
                 {(() => {
                   const w = getSelectedDayWeather();
