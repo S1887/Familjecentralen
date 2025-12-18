@@ -2460,13 +2460,9 @@ function App() {
       <div style={{ display: activeTab === 'dashboard' ? 'block' : 'none' }}>
 
         {/* Greeting Section - Above Hero */}
-        <div style={{ padding: '0.5rem 1rem', textAlign: 'left', marginTop: '0.5rem' }}>
-          <p style={{ margin: 0, fontSize: isMobile ? '1.2rem' : '1.4rem', fontWeight: 'bold' }}>
-            {(() => {
-              const name = currentUser.name;
-              const color = NAME_COLORS[name] || 'var(--text-main)';
-              return <span style={{ color: color }}>Hej {name}!</span>;
-            })()}
+        <div style={{ padding: '0.5rem 1rem 0.2rem', textAlign: 'left', marginTop: '0.5rem' }}>
+          <p style={{ margin: 0, fontSize: isMobile ? '1.2rem' : '1.4rem', fontWeight: 'bold', color: 'var(--text-main)' }}>
+            Hej {currentUser.name}!
           </p>
         </div>
 
@@ -2474,7 +2470,7 @@ function App() {
         <div className={`${getHeroClass()} has-custom-bg`} style={{ '--hero-bg': `url(${heroCustomImg})` }}>
           <div className="hero-header" style={{ width: '100%', marginBottom: '0.5rem' }}>
             {/* Date row */}
-            <h2 style={{ fontSize: isMobile ? '1.4rem' : '2.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem', marginTop: '-1.5rem' }}>
+            <h2 style={{ fontSize: isMobile ? '1.4rem' : '2.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem', marginTop: '1rem' }}>
               <button
                 onClick={() => changeDay(-1)}
                 style={{
