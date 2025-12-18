@@ -3037,7 +3037,9 @@ function App() {
                     }
 
                     return days.map(d => {
-                      const dayEvents = filteredEventsList.filter(e => isSameDay(e.start, d));
+                      const dayEvents = filteredEventsList
+                        .filter(e => isSameDay(e.start, d))
+                        .sort((a, b) => new Date(a.start) - new Date(b.start));
                       const isTodayHeader = isSameDay(d, new Date());
                       return (
                         <div
