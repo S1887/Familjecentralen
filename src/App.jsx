@@ -435,6 +435,7 @@ function App() {
   // State for Editing an Event
   const [isEditingEvent, setIsEditingEvent] = useState(false);
   const [editEventData, setEditEventData] = useState(null);
+  const [holidays, setHolidays] = useState([]); // Store fetched holidays
 
   // Lock body scroll when any modal is open
   useEffect(() => {
@@ -454,6 +455,7 @@ function App() {
     fetchEvents();
     fetchTasks();
     fetchSchedule();
+    fetchHolidays();
   }, []);
 
   // Poll for inbox updates - Re-run if user changes to ensure correct "seen" filter
@@ -538,6 +540,34 @@ function App() {
         enrichEventsWithGeo(processedData).then(enriched => setEvents(enriched));
       })
       .catch(err => console.error("Error fetching events:", err));
+  };
+
+  const fetchHolidays = () => {
+    const year = new Date().getFullYear();
+    // Fetch current year and next year to handle year transition
+    const urls = [
+      `https://sholiday.faboul.se/dagar/v2.1/${year}`,
+      `https://sholiday.faboul.se/dagar/v2.1/${year + 1}`
+    ];
+
+    Promise.all(urls.map(url => fetch(url).then(r => r.json())))
+      .then(results => {
+        const allDays = results.flatMap(data => data.dagar);
+        const redDays = allDays.filter(d => d.helgdag); // Only keep days with a holiday name
+
+        const holidayEvents = redDays.map(d => ({
+          id: `holiday-${d.datum}`,
+          summary: d.helgdag,
+          start: d.datum,
+          end: d.datum,
+          source: 'Helgdag',
+          category: 'Helgdag',
+          isRedDay: d.rod_dag === 'Ja',
+          allDay: true
+        }));
+        setHolidays(holidayEvents);
+      })
+      .catch(err => console.error("Error fetching holidays:", err));
   };
 
   const fetchTasks = () => {
@@ -792,11 +822,19 @@ function App() {
       }
     }
 
+    // Always show Holidays regardless of person filter (since they apply to everyone)
+    if (event.source === 'Helgdag' || event.category === 'Helgdag') return true;
+
     return isNameInSummary || isAssigned || isInAssigneeList || isSourceMatch;
   };
 
+  // Combine remote events and holidays
+  const allEvents = useMemo(() => {
+    return [...events, ...holidays];
+  }, [events, holidays]);
+
   // Main List: Filter based on viewMode AND common filters
-  const filteredEventsList = events.filter(event => {
+  const filteredEventsList = allEvents.filter(event => {
     const eventDate = new Date(event.start);
     const startOfSelected = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
 
@@ -833,7 +871,7 @@ function App() {
   });
 
   // Hero: Filter based on SELECTED DATE AND common filters (ignoring viewMode time limits)
-  const heroEvents = events.filter(event => {
+  const heroEvents = allEvents.filter(event => {
     if (!isSameDay(event.start, selectedDate)) return false;
     return checkCommonFilters(event);
   });
@@ -2461,6 +2499,17 @@ function App() {
                 ›
               </button>
             </h2>
+            {(() => {
+              const holidayToday = holidays.find(h => isSameDay(h.start, selectedDate));
+              if (holidayToday) {
+                return (
+                  <div style={{ textAlign: 'center', color: '#ff6b6b', fontWeight: 'bold', textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '1.1rem', marginTop: '-0.3rem', marginBottom: '0.5rem' }}>
+                    🎄 {holidayToday.summary} 🎄
+                  </div>
+                );
+              }
+            })()}
+
             {/* Clock + Weather row */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: '1.1' }}>
@@ -2991,7 +3040,12 @@ function App() {
                           className={`calendar-cell ${d.type !== 'current' ? 'different-month' : ''} ${isTodayCell ? 'today' : ''}`}
                           onClick={() => changeDay(Math.floor((d.date - selectedDate) / (1000 * 60 * 60 * 24)))} // Select this day
                         >
-                          <div style={{ textAlign: 'right', fontWeight: 'bold', marginBottom: '0.2rem' }}>{d.day}</div>
+                          {(() => {
+                            const isRed = holidays.some(h => isSameDay(h.start, d.date) && h.isRedDay);
+                            return (
+                              <div style={{ textAlign: 'right', fontWeight: 'bold', marginBottom: '0.2rem', color: isRed ? '#ff4757' : 'inherit' }}>{d.day}</div>
+                            );
+                          })()}
                           {dayEvents.slice(0, 4).map(ev => {
                             let sourceClass = '';
                             if (ev.source.includes('Svante')) sourceClass = 'source-svante';
@@ -3039,7 +3093,11 @@ function App() {
                           className="week-column"
                           id={isTodayHeader ? 'today-column' : undefined}
                         >
-                          <div className="week-column-header" style={isTodayHeader ? { background: '#2ed573', color: 'white' } : {}}>
+                          <div className="week-column-header" style={
+                            isTodayHeader
+                              ? { background: '#2ed573', color: 'white' }
+                              : (holidays.some(h => isSameDay(h.start, d) && h.isRedDay) ? { color: '#ff4757' } : {})
+                          }>
                             {d.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric' })}
                           </div>
                           <div className="week-column-body">
@@ -3155,7 +3213,9 @@ function App() {
                               textTransform: 'capitalize',
                               boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                             }}>
-                              📆 {eventDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
+                              <span style={{ color: holidays.some(h => isSameDay(h.start, eventDate) && h.isRedDay) ? '#ff4757' : 'inherit' }}>
+                                📆 {eventDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
+                              </span>
                             </div>
                           )}
 
@@ -3514,7 +3574,7 @@ function App() {
         getGoogleLink={getGoogleCalendarLink}
       />
 
-    </div>
+    </div >
   )
 }
 
