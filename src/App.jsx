@@ -2453,11 +2453,15 @@ function App() {
         <div className={`${getHeroClass()} has-custom-bg`} style={{ '--hero-bg': `url(${heroCustomImg})` }}>
           <div className="hero-header" style={{ width: '100%', marginBottom: '0.5rem' }}>
             {/* Greeting */}
-            <p style={{ margin: 0, marginBottom: '0.2rem', fontSize: isMobile ? '1rem' : '1.1rem', opacity: 0.9 }}>
-              Hej {currentUser.name}!
+            <p style={{ margin: 0, marginTop: '-0.5rem', marginBottom: '0.2rem', fontSize: isMobile ? '1rem' : '1.1rem', opacity: 0.9, position: 'relative', zIndex: 2 }}>
+              Hej {(() => {
+                const name = currentUser.name;
+                const color = NAME_COLORS[name] || 'white';
+                return <span style={{ color: color, fontWeight: 'bold' }}>{name}</span>;
+              })()}!
             </p>
             {/* Date row */}
-            <h2 style={{ fontSize: isMobile ? '1.5rem' : '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem', marginTop: '-1.5rem' }}>
+            <h2 style={{ fontSize: isMobile ? '1.4rem' : '2.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem', marginTop: '-1.5rem' }}>
               <button
                 onClick={() => changeDay(-1)}
                 style={{
