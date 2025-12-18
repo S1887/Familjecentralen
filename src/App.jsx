@@ -302,6 +302,16 @@ function App() {
   };
 
 
+
+  // Name colors for standardizing across the app
+  const NAME_COLORS = {
+    'Svante': '#ff4757',
+    'Sarah': '#5352ed',
+    'Algot': '#2ed573',
+    'Tuva': '#ff6b81',
+    'Leon': '#1e90ff'
+  };
+
   // Google Calendar Mapping
   const GOOGLE_CALENDAR_EMAILS = {
     'Svante (Privat)': 'svante.ortendahl@gmail.com',
