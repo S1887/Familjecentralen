@@ -1327,7 +1327,7 @@ function App() {
                       Extern källa: {editEventData.source?.split(' (')[0]}. Öppna Google Kalender för att ändra tid, plats eller ta bort händelsen.
                     </span>
                     {/* Only show Google Calendar link for Google sources */}
-                    {(editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Privat')) && (
+                    {(editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Privat') || editEventData.source?.includes('Familjen')) && (
                       <a
                         href={getGoogleCalendarLink(editEventData)}
                         target="_blank"
