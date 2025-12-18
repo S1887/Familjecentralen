@@ -2547,8 +2547,9 @@ function App() {
                           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                           textShadow: '0 1px 2px rgba(0,0,0,0.5)',
                           position: isMobile ? 'absolute' : 'relative',
-                          bottom: isMobile ? '35px' : 'auto',
-                          left: isMobile ? '0.5rem' : 'auto',
+                          bottom: isMobile ? '10px' : 'auto',
+                          left: isMobile ? '50%' : 'auto',
+                          transform: isMobile ? 'translateX(-50%)' : 'none',
                           zIndex: 5
                         }}
                       >
