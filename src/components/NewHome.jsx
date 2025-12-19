@@ -85,16 +85,27 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
             backgroundAttachment: 'fixed',
             color: theme.textMain,
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            padding: '2rem 1rem',
+            padding: '2rem 0.5rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '1.5rem'
+            alignItems: 'center',
+            gap: '1.5rem',
+            // Break out of parent container (full bleed)
+            width: '100vw',
+            position: 'relative',
+            left: '50%',
+            right: '50%',
+            marginLeft: '-50vw',
+            marginRight: '-50vw',
+            boxSizing: 'border-box'
         }}>
 
             <div style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '1.5rem'
+                gap: '1.5rem',
+                width: '100%',
+                maxWidth: '600px' // Match grid max-width for alignment
             }}
             >
 
@@ -158,11 +169,12 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 {/* Main Grid */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', // minmax(0, 1fr) prevents blowouts
                     gap: '1rem',
-                    maxWidth: '600px', // Mobile focused, but looks good on desktop too
-                    margin: '0 auto',
-                    width: '100%'
+                    maxWidth: '600px',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '0 0.5rem' // Small internal padding to prevent edge touching
                 }}>
 
                     {/* 1. Next Event - Spans Full Width */}
