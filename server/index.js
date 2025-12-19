@@ -49,28 +49,31 @@ app.use((req, res, next) => {
 const CALENDARS = [
     {
         id: 'svante_personal',
-        name: 'Svante (Privat)',
+        name: 'Svante',
         url: 'https://calendar.google.com/calendar/ical/svante.ortendahl%40gmail.com/private-96d4e54f3b8348303cec1fbc1ab90ccb/basic.ics'
     },
     {
         id: 'sarah_personal',
-        name: 'Sarah (Privat)',
+        name: 'Sarah',
         url: 'https://calendar.google.com/calendar/ical/sarah.ortendahl%40gmail.com/private-884acb7a4a2e50c22116cacd9a43eaa1/basic.ics'
     },
     {
         id: 'family_group',
-        name: 'Familjen',
+        name: 'Örtendahls familjekalender',
         url: 'https://calendar.google.com/calendar/ical/family17438490542731545369%40group.calendar.google.com/private-a8ef35f1df9c3adeab2b260aa704f722/basic.ics'
     },
+    // Subscription calendars - marked as inbox only, will not be primary sources
     {
         id: 'arsenal_fc',
         name: 'Arsenal FC',
-        url: 'https://ics.fixtur.es/v2/arsenal.ics'
+        url: 'https://ics.fixtur.es/v2/arsenal.ics',
+        inboxOnly: true
     },
     {
         id: 'ois_fotboll',
         name: 'Örgryte IS',
-        url: 'https://calendar.google.com/calendar/ical/nahppp38tiqn7nbsahk6l0qncno1rahs%40import.calendar.google.com/public/basic.ics'
+        url: 'https://calendar.google.com/calendar/ical/nahppp38tiqn7nbsahk6l0qncno1rahs%40import.calendar.google.com/public/basic.ics',
+        inboxOnly: true
     },
     {
         id: 'rada_bk_p2015',
@@ -299,7 +302,6 @@ async function fetchCalendarsFromGoogle() {
                     if (cal.id === 'villa_lidkoping_algot' && summary.toLowerCase().includes('träning')) {
                         console.log(`[Auto-Rule] Bypassing inbox for Algot (Bandy): ${summary}`);
                         isInbox = false;
-
                         summary = `Algot: ${summary}`;
                         assignees = ['Algot'];
                         category = 'Bandy';
@@ -357,6 +359,14 @@ async function fetchCalendarsFromGoogle() {
                         }
                     }
 
+                    // Determine correct event source
+                    let eventSource = cal.name;
+
+                    // Training events that bypass inbox should have family calendar as source
+                    if (!isInbox && cal.inboxOnly) {
+                        eventSource = 'Örtendahls familjekalender';
+                    }
+
                     freshEvents.push({
                         uid: ev.uid,
                         summary: summary,
@@ -364,7 +374,7 @@ async function fetchCalendarsFromGoogle() {
                         end: ev.end,
                         location: ev.location || 'Okänd plats',
                         description: ev.description || '',
-                        source: cal.name,
+                        source: eventSource,
                         inboxOnly: isInbox,
                         assignees: assignees,
                         category: category,
@@ -635,70 +645,24 @@ app.get('/api/cache-status', (req, res) => {
 app.get('/api/events', async (req, res) => {
     try {
         const assignments = await readDb();
-        const localEvents = await readLocalEvents();
         const includeTrash = req.query.includeTrash === 'true';
 
-        // Använd cachad data istället för att hämta varje gång
+        // Get events from Google Calendar cache
         const fetchedEvents = await fetchAndCacheCalendars();
 
-        // Lägg till lokala events
-        const formattedLocalEvents = localEvents.map(ev => {
-            const newEv = { ...ev };
-            if (!newEv.source) newEv.source = 'Familjen (Eget)';
-            if (newEv.start) newEv.start = new Date(newEv.start);
-            if (newEv.end) newEv.end = new Date(newEv.end);
-            return newEv;
-        });
+        console.log(`[Debug] Events: Fetched=${fetchedEvents.length} from Google Calendar`);
 
-        // Merge logic: Local events override fetched events with same UID
-        const eventMap = new Map();
-
-        // First add fetched events
-        fetchedEvents.forEach(ev => eventMap.set(ev.uid, ev));
-
-        // Then add/overwrite with local events
-        let overrideCount = 0;
-        formattedLocalEvents.forEach(ev => {
-            if (eventMap.has(ev.uid)) {
-                // Merge with original if exists (to keep fetched properties for partial local overrides)
-                const original = eventMap.get(ev.uid);
-                eventMap.set(ev.uid, { ...original, ...ev });
-                overrideCount++;
-            } else {
-                eventMap.set(ev.uid, ev);
-            }
-        });
-
-        console.log(`[Debug] Events: Fetched=${fetchedEvents.length}, Local=${formattedLocalEvents.length} (Deleted=${formattedLocalEvents.filter(e => e.deleted).length}), Overrides=${overrideCount}`);
-
-        let allEvents = Array.from(eventMap.values());
+        let allEvents = [...fetchedEvents];
 
         // Filtrera bort gamla events (före datumet vi satte)
         const FILTER_DATE = new Date('2025-11-01');
         allEvents = allEvents.filter(event => new Date(event.start) >= FILTER_DATE);
 
         // Filter out inboxOnly events from the MAIN feed
-        // They should only appear if they have been "imported" (which creates a local copy)
-        // Since we are iterating over `allEvents` which is a mix of Fetched and Local:
-        // 1. If it comes from Local (source != existing fetch source or explicitly overridden), keep it.
-        // 2. If it comes from Fetched AND is inboxOnly, HIDE it (unless it matched a local event, but the map logic above prioritizes local).
-        // Actually, the Map logic: `eventMap` overwrites fetched with local.
-        // So if an event exists in `fetchedEvents` as inboxOnly, AND we have a local copy, the local copy (which does NOT have inboxOnly set usually, or we ignore it) will be used.
-        // But if we only have the fetched version, we must check if `inboxOnly` is true.
-
+        // These should only appear in the inbox endpoint
         allEvents = allEvents.filter(e => {
-            // If it's a "raw" fetched event marked as inboxOnly, and NOT overridden by a local event (which wouldn't have inboxOnly flag usually, or we assume local events are valid)
-            // Wait, local events created from inbox might preserve properties? 
-            // When we import, we create a new object. We should ensure `inboxOnly` is FALSE on the local copy.
-            // Let's assume local events (source != 'FamilyOps') might need checking.
-            // Simplest: If `e.inboxOnly` is true, and it hasn't been "claimed" (which typically removes the flag or changes source), we hide it.
-            // But wait, the `eventMap` puts the local event ON TOP of the fetched one. 
-            // So if I have a local event, it enters the map. 
-            // If I have a fetched inbox event, it enters the map.
-            // If UIDs match, local wins. 
-            // So we just need to filter out any event that STILL has `inboxOnly: true`.
-            // (Assumes imported events won't have this flag or we explicitly remove it during import).
-            if (e.inboxOnly && e.source !== 'FamilyOps' && !e.createdBy) {
+            // If event is marked inboxOnly, hide it from main calendar
+            if (e.inboxOnly) {
                 return false;
             }
             return true;
@@ -765,10 +729,10 @@ app.get('/api/feed.ics', async (req, res) => {
         let icsContent = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
-            'PRODID:-//Familjecentralen//FamilyOps v1.0//SV',
-            'CALSCALE:GREGORIAN',
+            'PRODID:-//Familjecentralen//Calendar Export v2.0//SV',
+            'CAL SCALE:GREGORIAN',
             'METHOD:PUBLISH',
-            'X-WR-CALNAME:Familjens Aktiviteter (Ops)',
+            'X-WR-CALNAME:Örtendahls familjekalender (Export)',
             'X-WR-TIMEZONE:Europe/Stockholm',
         ];
 

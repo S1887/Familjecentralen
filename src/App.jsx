@@ -987,9 +987,8 @@ function App() {
   };
 
   const openEditModal = (event) => {
-    // Now that ALL events are created in Google Calendar (via redirect),
-    // ALL events should be treated as external (read-only for title/date/time)
-    // Only 'FamilyOps' source means it's a truly local event (old events before redirect change)
+    // Show banner for ALL Google Calendar events (to provide edit link)
+    // Only FamilyOps (old local events) don't need the banner
     const isExternalSource = event.source && event.source !== 'FamilyOps';
 
     setEditEventData({
@@ -1129,7 +1128,7 @@ function App() {
     window.open(googleUrl, '_blank');
 
     // Close modal and reset form
-    setActiveTab('dashboard');
+    setActiveTab('new-home');
     setNewEvent({
       summary: '',
       location: '',
@@ -1333,7 +1332,7 @@ function App() {
                 {/* Show info banner for external events */}
                 {editEventData.isExternalSource && (
                   <div style={{
-                    background: (editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Privat'))
+                    background: (editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Örtendahls familjekalender'))
                       ? 'linear-gradient(135deg, #4285f4, #34a853)'
                       : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                     padding: '0.75rem 1rem',
@@ -1346,29 +1345,59 @@ function App() {
                   }}>
                     <span>🔒</span>
                     <span style={{ color: 'white', fontSize: '0.85rem', flex: 1 }}>
-                      Extern källa: {editEventData.source?.split(' (')[0]}. Öppna Google Kalender för att ändra tid, plats eller ta bort händelsen.
+                      {(() => {
+                        const rawSource = editEventData.source || 'Familjen';
+                        let source = rawSource.split(' (')[0];
+                        if (source === 'Familjen') source = 'Örtendahls familjekalender';
+
+                        const isValidSource = source.includes('Svante') || source.includes('Sarah') || source.includes('Örtendahls familjekalender');
+                        const subscriptionSources = ['Villa Lidköping', 'HK Lidköping', 'Råda BK', 'Örgryte IS', 'Vklass', 'Arsenal'];
+                        const hasSubscriptionSource = subscriptionSources.some(sub => source.includes(sub));
+
+
+                        // Clean up source name - remove (Privat), (Redigerad), etc.
+                        let displaySource = source.split(' (')[0];
+
+                        // Replace "Familjen" with "Örtendahls familjekalender"
+                        if (displaySource === 'Familjen' || displaySource.includes('Familjen')) {
+                          displaySource = displaySource.replace('Familjen', 'Örtendahls familjekalender');
+                        }
+
+                        // Format message based on source type
+                        if (isValidSource) {
+                          return `Källa: ${source}. Öppna Google Kalender för att ändra tid, plats eller ta bort händelsen.`;
+                        } else if (hasSubscriptionSource) {
+                          return `Källa: ${source} genom Örtendahls familjekalender. Öppna Google Kalender för att ändra tid, plats eller ta bort händelsen.`;
+                        } else {
+                          return `Extern källa: ${source}. Öppna Google Kalender för att ändra tid, plats eller ta bort händelsen.`;
+                        }
+                      })()}
                     </span>
                     {/* Only show Google Calendar link for Google sources */}
-                    {(editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Privat') || editEventData.source?.includes('Familjen')) && (
-                      <a
-                        href={getGoogleCalendarLink(editEventData)}
-                        target="_blank"
-                        rel="noopener noreferrer" // Security best practice
-                        style={{
-                          background: 'white',
-                          color: '#4285f4',
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '4px',
-                          textDecoration: 'none',
-                          fontWeight: '600',
-                          fontSize: '0.85rem',
-                          whiteSpace: 'nowrap',
-                          display: 'inline-block'
-                        }}
-                      >
-                        Öppna Google Kalender ↗️
-                      </a>
-                    )}
+                    {(() => {
+                      const cleanSource = (editEventData.source || '').split(' (')[0];
+                      const finalSource = cleanSource === 'Familjen' ? 'Örtendahls familjekalender' : cleanSource;
+                      return finalSource.includes('Svante') || finalSource.includes('Sarah') || finalSource.includes('Örtendahls familjekalender');
+                    })() && (
+                        <a
+                          href={getGoogleCalendarLink(editEventData)}
+                          target="_blank"
+                          rel="noopener noreferrer" // Security best practice
+                          style={{
+                            background: 'white',
+                            color: '#4285f4',
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '4px',
+                            textDecoration: 'none',
+                            fontWeight: '600',
+                            fontSize: '0.85rem',
+                            whiteSpace: 'nowrap',
+                            display: 'inline-block'
+                          }}
+                        >
+                          Öppna Google Kalender ↗️
+                        </a>
+                      )}
 
                     {/* Show "Save to Calendar" for External non-private sources (e.g. Arsenal, Vklass) */}
                     {!(editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Privat') || editEventData.source?.includes('Familjen')) && editEventData.isExternalSource && (
@@ -1789,7 +1818,7 @@ function App() {
               }} onClick={e => e.stopPropagation()}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <h2>🗑️ Papperskorg</h2>
-                  <button onClick={() => setViewTrash(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+                  <button onClick={() => setActiveTab('new-home')} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
                 </div>
 
                 {trashItems.length === 0 ? (
@@ -2060,65 +2089,100 @@ function App() {
               </button>
 
               {showMoreMenu && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  marginTop: '0.5rem',
-                  background: 'var(--card-bg)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 12px var(--shadow-color)',
-                  zIndex: 1000,
-                  minWidth: '200px',
-                  overflow: 'hidden'
-                }}>
-                  {currentUser?.role !== 'child' && (
-                    <button
-                      onClick={() => {
-                        markCurrentInboxAsSeen(); // Mark as seen BEFORE opening
-                        setShowInbox(true);
-                        setShowMoreMenu(false);
-                        // fetchInbox(); // No need to fetch immediately, we just cleared it. 
-                        // Modal will fetch its own data.
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '0.8rem 1rem',
-                        background: 'transparent',
-                        border: 'none',
-                        borderBottom: '1px solid var(--border-color)',
-                        color: 'var(--text-main)',
-                        fontSize: '0.95rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        textAlign: 'left',
-                        whiteSpace: 'nowrap',
-                        justifyContent: 'space-between' // To push count to right
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        📥 Inkorg
-                      </span>
-                      {inboxCount > 0 && (
-                        <span style={{
-                          background: '#ff4757',
-                          color: 'white',
-                          padding: '0.1rem 0.5rem',
-                          borderRadius: '10px',
-                          fontSize: '0.8rem',
-                          fontWeight: 'bold'
-                        }}>
-                          {inboxCount}
+                <>
+                  {/* Backdrop to close menu when clicking outside */}
+                  <div
+                    onClick={() => setShowMoreMenu(false)}
+                    style={{
+                      position: 'fixed',
+                      top: 0,
+                      left: 0,
+                      width: '100vw',
+                      height: '100vh',
+                      zIndex: 999, // Just below the menu (which is 1000)
+                      cursor: 'default'
+                    }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: '0.5rem',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 12px var(--shadow-color)',
+                    zIndex: 1000,
+                    minWidth: '200px',
+                    overflow: 'hidden'
+                  }}>
+                    {currentUser?.role !== 'child' && (
+                      <button
+                        onClick={() => {
+                          markCurrentInboxAsSeen(); // Mark as seen BEFORE opening
+                          setShowInbox(true);
+                          setShowMoreMenu(false);
+                          // fetchInbox(); // No need to fetch immediately, we just cleared it. 
+                          // Modal will fetch its own data.
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '0.8rem 1rem',
+                          background: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid var(--border-color)',
+                          color: 'var(--text-main)',
+                          fontSize: '0.95rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          textAlign: 'left',
+                          whiteSpace: 'nowrap',
+                          justifyContent: 'space-between' // To push count to right
+                        }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          📥 Inkorg
                         </span>
-                      )}
-                    </button>
-                  )}
-                  {isAdmin && (
+                        {inboxCount > 0 && (
+                          <span style={{
+                            background: '#ff4757',
+                            color: 'white',
+                            padding: '0.1rem 0.5rem',
+                            borderRadius: '10px',
+                            fontSize: '0.8rem',
+                            fontWeight: 'bold'
+                          }}>
+                            {inboxCount}
+                          </span>
+                        )}
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button
+                        onClick={() => { fetchTrash(); setViewTrash(true); setShowMoreMenu(false); }}
+                        style={{
+                          width: '100%',
+                          padding: '0.8rem 1rem',
+                          background: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid var(--border-color)',
+                          color: 'var(--text-main)',
+                          fontSize: '0.95rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          textAlign: 'left',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        🗑️ Papperskorg
+                      </button>
+                    )}
                     <button
-                      onClick={() => { fetchTrash(); setViewTrash(true); setShowMoreMenu(false); }}
+                      onClick={() => { setDarkMode(!darkMode); setShowMoreMenu(false); }}
                       style={{
                         width: '100%',
                         padding: '0.8rem 1rem',
@@ -2135,39 +2199,38 @@ function App() {
                         whiteSpace: 'nowrap'
                       }}
                     >
-                      🗑️ Papperskorg
+                      {darkMode ? '☀️ Ljust läge' : '🌙 Mörkt läge'}
                     </button>
-                  )}
-                  <button
-                    onClick={() => { setDarkMode(!darkMode); setShowMoreMenu(false); }}
-                    style={{
-                      width: '100%',
-                      padding: '0.8rem 1rem',
-                      background: 'transparent',
-                      border: 'none',
-                      borderBottom: '1px solid var(--border-color)',
-                      color: 'var(--text-main)',
-                      fontSize: '0.95rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      textAlign: 'left',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {darkMode ? '☀️ Ljust läge' : '🌙 Mörkt läge'}
-                  </button>
-                  {currentUser && (currentUser.name === 'Svante' || currentUser.name === 'Sarah') && (
+                    {currentUser && (currentUser.name === 'Svante' || currentUser.name === 'Sarah') && (
+                      <button
+                        onClick={() => { setActiveTab('dashboard'); setShowMoreMenu(false); }}
+                        style={{
+                          width: '100%',
+                          padding: '0.8rem 1rem',
+                          background: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid var(--border-color)',
+                          color: 'var(--text-main)',
+                          fontSize: '0.95rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          textAlign: 'left',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        📊 Gamla Dashboarden
+                      </button>
+                    )}
                     <button
-                      onClick={() => { setActiveTab('dashboard'); setShowMoreMenu(false); }}
+                      onClick={() => { handleLogout(); setShowMoreMenu(false); }}
                       style={{
                         width: '100%',
                         padding: '0.8rem 1rem',
                         background: 'transparent',
                         border: 'none',
-                        borderBottom: '1px solid var(--border-color)',
-                        color: 'var(--text-main)',
+                        color: '#ff4757',
                         fontSize: '0.95rem',
                         cursor: 'pointer',
                         display: 'flex',
@@ -2177,29 +2240,10 @@ function App() {
                         whiteSpace: 'nowrap'
                       }}
                     >
-                      📊 Gamla Dashboarden
+                      🚪 Logga ut
                     </button>
-                  )}
-                  <button
-                    onClick={() => { handleLogout(); setShowMoreMenu(false); }}
-                    style={{
-                      width: '100%',
-                      padding: '0.8rem 1rem',
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#ff4757',
-                      fontSize: '0.95rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      textAlign: 'left',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    🚪 Logga ut
-                  </button>
-                </div>
+                  </div>
+                </>
               )}
             </div>
           </div >
@@ -2435,7 +2479,7 @@ function App() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setActiveTab('dashboard')} style={{
+                <button type="button" onClick={() => setActiveTab('new-home')} style={{
                   padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', cursor: 'pointer'
                 }}>Avbryt</button>
                 {(() => {
@@ -2477,7 +2521,7 @@ function App() {
                           href={googleUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={() => setActiveTab('dashboard')}
+                          onClick={() => setActiveTab('new-home')}
                           style={{
                             padding: '0.75rem 1.5rem',
                             borderRadius: '8px',
@@ -3179,12 +3223,12 @@ function App() {
         </div>
 
         {/* Main Content Grid (Timeline + Todo) - on mobile: Events first, then Todo */}
-        <div className="main-content-grid" style={{
+        <div className={`main-content-grid ${viewMode === 'week' ? 'week-view-active' : ''}`} style={isMobile ? {
           marginTop: '0',
           display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
+          flexDirection: 'column',
           gap: '1rem'
-        }}>
+        } : { marginTop: '0' }}>
           {/* Left: Timeline / Calendar View */}
           <div className="timeline-section" style={{
             display: (activeTab === 'dashboard' || activeTab === 'timeline') ? 'block' : 'none',
@@ -3334,7 +3378,7 @@ function App() {
 
               {/* WEEK VIEW */}
               {viewMode === 'week' && (
-                <div className="week-view-container" style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '1rem' }}>
+                <div className="week-view-container">
                   {(() => {
                     const days = [];
                     const current = new Date(selectedDate);
@@ -3382,6 +3426,21 @@ function App() {
                               if (ev.source.includes('Svante')) sourceClass = 'source-svante';
                               if (ev.source.includes('Sarah')) sourceClass = 'source-mamma';
                               const colorClass = getAssignedColorClass(ev);
+
+                              // Get border color based on assignee
+                              const getBorderColor = () => {
+                                const summary = (ev.summary || '').toLowerCase();
+                                const assignees = ev.assignees || [];
+                                const assigneesLower = assignees.map(a => a.toLowerCase()).join(' ');
+
+                                if (assigneesLower.includes('algot') || summary.includes('algot')) return '#3498db'; // Blue
+                                if (assigneesLower.includes('leon') || summary.includes('leon')) return '#2ed573'; // Green
+                                if (assigneesLower.includes('tuva') || summary.includes('tuva')) return '#9b59b6'; // Purple
+                                if (assigneesLower.includes('svante') || summary.includes('svante')) return '#ff7675'; // Red
+                                if (assigneesLower.includes('sarah') || summary.includes('sarah')) return '#f1c40f'; // Yellow
+                                return '#74b9ff'; // Default blue
+                              };
+
                               return (
                                 <div key={ev.uid}
                                   className={`card ${sourceClass} ${colorClass}`}
@@ -3392,7 +3451,7 @@ function App() {
                                     borderRadius: '16px',
                                     background: 'rgba(255,255,255,0.08)',
                                     border: 'none',
-                                    borderLeft: `4px solid ${ev.source && ev.source.includes('Svante') ? '#ff7675' : '#74b9ff'}`,
+                                    borderLeft: `4px solid ${getBorderColor()}`,
                                     display: 'flex',
                                     flexDirection: 'column',
                                     gap: '0.2rem',
@@ -3524,7 +3583,26 @@ function App() {
                               <span className="time" style={{ fontWeight: 'bold', color: 'rgba(255,255,255,0.9)' }}>
                                 {new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                               </span>
-                              <span className="source-badge" style={{ opacity: 0.7, fontSize: '0.8em' }}>{event.source || 'Familjen'}</span>
+                              <span className="source-badge" style={{ opacity: 0.7, fontSize: '0.8em' }}>
+                                {(() => {
+                                  const source = event.source || 'Familjen';
+                                  // If it's a subscription source that was auto-imported through the family calendar
+                                  const subscriptionSources = ['Villa Lidköping', 'HK Lidköping', 'Råda BK', 'Örgryte IS', 'Vklass', 'Arsenal'];
+                                  const hasSubscriptionSource = subscriptionSources.some(sub => source.includes(sub));
+
+                                  // Replace "Familjen" with "Örtendahls familjekalender"
+                                  if (source === 'Familjen' || source.includes('Familjen')) {
+                                    return source.replace('Familjen', 'Örtendahls familjekalender');
+                                  }
+
+                                  // If it's a subscription source, show "Source genom Örtendahls familjekalender"
+                                  if (hasSubscriptionSource) {
+                                    return `${source} genom Örtendahls familjekalender`;
+                                  }
+
+                                  return source;
+                                })()}
+                              </span>
                             </div>
                             <h3 style={{ textDecoration: event.cancelled ? 'line-through' : 'none', color: event.cancelled ? '#7f8c8d' : 'white', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.2rem 0' }}>
                               {event.cancelled && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}

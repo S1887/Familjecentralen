@@ -444,6 +444,15 @@ h3 {
     /* Desktop layout only for screens 13" and above */
     align-items: start;
   }
+
+  /* When week view is active, make timeline take full width */
+  .main-content-grid.week-view-active .timeline-section {
+    grid-column: 1 / -1;
+  }
+
+  .main-content-grid.week-view-active .todo-section {
+    display: none;
+  }
 }
 
 .todo-section {
@@ -617,13 +626,29 @@ h3 {
 
 .week-column {
   flex: 0 0 100px;
-  /* Fixed width for horizontal scroll - swipe to see more days */
+  /* Fixed width for horizontal scroll on mobile */
   min-width: 100px;
   background: var(--card-bg);
   border-radius: 8px;
   border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
+}
+
+/* Tablet and Desktop: Fit all columns without scrolling */
+@media (min-width: 1100px) {
+  .week-view-container {
+    overflow-x: visible;
+    gap: 0.5rem;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .week-column {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+  }
 }
 
 .week-column-header {
