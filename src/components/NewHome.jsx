@@ -249,13 +249,27 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                         {/* 2. Calendar Button */}
                         <Card onClick={() => setActiveTab('timeline')} style={{ aspectRatio: '1/1', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                            <div style={{ fontSize: '2.2rem', marginBottom: '0.5rem', color: '#a29bfe' }}>📅</div>
+                            <div style={{ marginBottom: '0.8rem', color: '#a29bfe' }}>
+                                {/* Calendar Icon */}
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                            </div>
                             <div style={{ fontSize: '1rem', fontWeight: '500' }}>Kalender</div>
                         </Card>
 
                         {/* 3. Tasks Button */}
                         <Card onClick={() => setActiveTab('todos')} style={{ aspectRatio: '1/1', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                            <div style={{ fontSize: '2.2rem', marginBottom: '0.5rem', color: theme.success }}>✅</div>
+                            <div style={{ marginBottom: '0.8rem', color: theme.success }}>
+                                {/* Check/Todo Icon */}
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                            </div>
                             <div style={{ fontSize: '1rem', fontWeight: '500' }}>Att göra</div>
                             {tasks.filter(t => !t.done).length > 0 && (
                                 <div style={{ marginTop: '0.2rem', fontSize: '0.8rem', color: theme.textMuted }}>
@@ -268,7 +282,13 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         {/* 4. School Schedule Button - Hide for Leon */}
                         {user.name !== 'Leon' && (
                             <Card onClick={() => setActiveTab('schedule')} style={{ aspectRatio: '1/1', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                                <div style={{ fontSize: '2.2rem', marginBottom: '0.5rem', color: '#ff9f43' }}>🏫</div>
+                                <div style={{ marginBottom: '0.8rem', color: '#ff9f43' }}>
+                                    {/* School/Book Icon */}
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                    </svg>
+                                </div>
                                 <div style={{ fontSize: '1rem', fontWeight: '500' }}>Skolschema</div>
                             </Card>
                         )}
@@ -333,7 +353,13 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                         {/* 5. Create New (Button) */}
                         <Card onClick={() => setActiveTab('create-event')} style={{ aspectRatio: '1/1', alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: '#2c3e50' }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '0.2rem', color: theme.textMain }}>+</div>
+                            <div style={{ marginBottom: '0.5rem', color: theme.textMain }}>
+                                {/* Plus Icon */}
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                            </div>
                             <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Ny händelse</div>
                         </Card>
 
