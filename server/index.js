@@ -307,6 +307,25 @@ async function fetchCalendarsFromGoogle() {
                         category = 'Bandy';
                     }
 
+                    // 6. Arsenal (Svante): ALL matches go directly to calendar
+                    if (cal.id === 'arsenal_fc') {
+                        console.log(`[Auto-Rule] Auto-importing Arsenal match for Svante: ${summary}`);
+                        isInbox = false;
+                        summary = `Svante: ${summary}`;
+                        assignees = ['Svante'];
+                        category = 'Sport';
+                    }
+
+                    // 7. Örgryte IS (ÖIS) (Svante): ALL matches go directly to calendar
+                    if (cal.id === 'orgryte_is') {
+                        console.log(`[Auto-Rule] Auto-importing ÖIS match for Svante: ${summary}`);
+                        isInbox = false;
+                        summary = `Svante: ${summary}`;
+                        assignees = ['Svante'];
+                        category = 'Sport';
+                    }
+
+
                     // 6. Vklass (Skola): Smart Tagging for Lessons
                     // Tag events with child name based on code (sth15=Algot, sth18=Tuva)
                     // Codes can be in Summary OR Description
