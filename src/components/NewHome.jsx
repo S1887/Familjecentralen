@@ -338,8 +338,9 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                     </div>
                 </div>
-            </>
-            );
+            </div>
+        </>
+    );
 };
 
-            export default NewHome;
+export default NewHome;
