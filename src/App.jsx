@@ -1917,11 +1917,12 @@ function App() {
         {/* Header */}
         <header className="header" style={{
           display: 'grid',
-          gridTemplateColumns: 'min-content auto min-content', /* Keep tight sides, flexible middle? No, user wants center. */
           gridTemplateColumns: '1fr auto 1fr', /* This ensures true centering of the middle element */
           alignItems: 'center',
           gap: '0.5rem',
-          padding: '0.5rem 1rem' /* Ensure padding is symmetric */
+          padding: '0.5rem 1rem', /* Ensure padding is symmetric */
+          position: 'relative', // Ensure header creates stacking context
+          zIndex: 100 // Sit above fixed backgrounds
         }}>
           {/* Left: Home + Title (Title hidden on mobile) */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
@@ -1933,12 +1934,12 @@ function App() {
             )}
 
             <button
-              onClick={() => setActiveTab('dashboard')}
-              title="Översikt"
+              onClick={() => setActiveTab('new-home')}
+              title="Hem"
               style={{
-                background: activeTab === 'dashboard' ? '#646cff' : 'transparent',
-                color: activeTab === 'dashboard' ? 'white' : 'var(--text-main)',
-                border: activeTab === 'dashboard' ? 'none' : '1px solid var(--border-color)',
+                background: activeTab === 'new-home' ? '#646cff' : 'transparent',
+                color: activeTab === 'new-home' ? 'white' : 'var(--text-main)',
+                border: activeTab === 'new-home' ? 'none' : '1px solid var(--border-color)',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 padding: isMobile ? '0.4rem' : '0.5rem',

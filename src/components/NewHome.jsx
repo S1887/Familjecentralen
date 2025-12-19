@@ -85,7 +85,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 left: 0,
                 width: '100%',
                 height: '100%',
-                zIndex: -1,
+                zIndex: 0, // Ensure it's above body background but behind content
                 background: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), url('/bg-family.jpg')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
@@ -103,7 +103,8 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 alignItems: 'center',
                 gap: '1.5rem',
                 width: '100%',
-                position: 'relative', // Just relative to flow
+                position: 'relative',
+                zIndex: 1, // Ensure content sits on top of fixed background
                 boxSizing: 'border-box'
             }}>
 
