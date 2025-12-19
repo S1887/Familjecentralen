@@ -90,8 +90,9 @@ const ScheduleViewer = ({ events, initialStudent }) => {
 
     return (
         <div className="schedule-viewer-container">
-            <div className="schedule-header" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '400', marginBottom: '1rem' }}>Skolschema</h3>
+            {/* Header: Flex Column to prevent overlap */}
+            <div className="schedule-header" style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                <h3 style={{ fontSize: '1.8rem', fontWeight: '400', margin: 0 }}>Skolschema</h3>
                 <div className="student-selector" style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
                     {['Algot', 'Tuva'].map(student => (
                         <button
