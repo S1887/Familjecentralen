@@ -2054,1046 +2054,230 @@ function App() {
                   </div>
                 )}
               </button>
-            </div>
 
-        </header>
-      </div >
-      {showMoreMenu && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          right: 0,
-          marginTop: '0.5rem',
-          background: 'var(--card-bg)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '12px',
-          boxShadow: '0 4px 12px var(--shadow-color)',
-          zIndex: 1000,
-          minWidth: '200px',
-          overflow: 'hidden'
-        }}>
-          {currentUser?.role !== 'child' && (
-            <button
-              onClick={() => {
-                markCurrentInboxAsSeen(); // Mark as seen BEFORE opening
-                setShowInbox(true);
-                setShowMoreMenu(false);
-                // fetchInbox(); // No need to fetch immediately, we just cleared it. 
-                // Modal will fetch its own data.
-              }}
-              style={{
-                width: '100%',
-                padding: '0.8rem 1rem',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: '1px solid var(--border-color)',
-                color: 'var(--text-main)',
-                fontSize: '0.95rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                textAlign: 'left',
-                whiteSpace: 'nowrap',
-                justifyContent: 'space-between' // To push count to right
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                📥 Inkorg
-              </span>
-              {inboxCount > 0 && (
-                <span style={{
-                  background: '#ff4757',
-                  color: 'white',
-                  padding: '0.1rem 0.5rem',
-                  borderRadius: '10px',
-                  fontSize: '0.8rem',
-                  fontWeight: 'bold'
+              {showMoreMenu && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '0.5rem',
+                  background: 'var(--card-bg)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 12px var(--shadow-color)',
+                  zIndex: 1000,
+                  minWidth: '200px',
+                  overflow: 'hidden'
                 }}>
-                  {inboxCount}
-                </span>
+                  {currentUser?.role !== 'child' && (
+                    <button
+                      onClick={() => {
+                        markCurrentInboxAsSeen(); // Mark as seen BEFORE opening
+                        setShowInbox(true);
+                        setShowMoreMenu(false);
+                        // fetchInbox(); // No need to fetch immediately, we just cleared it. 
+                        // Modal will fetch its own data.
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '0.8rem 1rem',
+                        background: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px solid var(--border-color)',
+                        color: 'var(--text-main)',
+                        fontSize: '0.95rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        textAlign: 'left',
+                        whiteSpace: 'nowrap',
+                        justifyContent: 'space-between' // To push count to right
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        📥 Inkorg
+                      </span>
+                      {inboxCount > 0 && (
+                        <span style={{
+                          background: '#ff4757',
+                          color: 'white',
+                          padding: '0.1rem 0.5rem',
+                          borderRadius: '10px',
+                          fontSize: '0.8rem',
+                          fontWeight: 'bold'
+                        }}>
+                          {inboxCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  {isAdmin && (
+                    <button
+                      onClick={() => { fetchTrash(); setViewTrash(true); setShowMoreMenu(false); }}
+                      style={{
+                        width: '100%',
+                        padding: '0.8rem 1rem',
+                        background: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px solid var(--border-color)',
+                        color: 'var(--text-main)',
+                        fontSize: '0.95rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        textAlign: 'left',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      🗑️ Papperskorg
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setDarkMode(!darkMode); setShowMoreMenu(false); }}
+                    style={{
+                      width: '100%',
+                      padding: '0.8rem 1rem',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid var(--border-color)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.95rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {darkMode ? '☀️ Ljust läge' : '🌙 Mörkt läge'}
+                  </button>
+                  {currentUser && (currentUser.name === 'Svante' || currentUser.name === 'Sarah') && (
+                    <button
+                      onClick={() => { setActiveTab('dashboard'); setShowMoreMenu(false); }}
+                      style={{
+                        width: '100%',
+                        padding: '0.8rem 1rem',
+                        background: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px solid var(--border-color)',
+                        color: 'var(--text-main)',
+                        fontSize: '0.95rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        textAlign: 'left',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      📊 Gamla Dashboarden
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { handleLogout(); setShowMoreMenu(false); }}
+                    style={{
+                      width: '100%',
+                      padding: '0.8rem 1rem',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ff4757',
+                      fontSize: '0.95rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    🚪 Logga ut
+                  </button>
+                </div>
               )}
-            </button>
-          )}
-          {isAdmin && (
-            <button
-              onClick={() => { fetchTrash(); setViewTrash(true); setShowMoreMenu(false); }}
-              style={{
-                width: '100%',
-                padding: '0.8rem 1rem',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: '1px solid var(--border-color)',
-                color: 'var(--text-main)',
-                fontSize: '0.95rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                textAlign: 'left',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              🗑️ Papperskorg
-            </button>
-          )}
-          <button
-            onClick={() => { setDarkMode(!darkMode); setShowMoreMenu(false); }}
-            style={{
-              width: '100%',
-              padding: '0.8rem 1rem',
-              background: 'transparent',
-              border: 'none',
-              borderBottom: '1px solid var(--border-color)',
-              color: 'var(--text-main)',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              textAlign: 'left',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {darkMode ? '☀️ Ljust läge' : '🌙 Mörkt läge'}
-          </button>
-          {currentUser && (currentUser.name === 'Svante' || currentUser.name === 'Sarah') && (
-            <button
-              onClick={() => { setActiveTab('dashboard'); setShowMoreMenu(false); }}
-              style={{
-                width: '100%',
-                padding: '0.8rem 1rem',
-                background: 'transparent',
-                border: 'none',
-                borderBottom: '1px solid var(--border-color)',
-                color: 'var(--text-main)',
-                fontSize: '0.95rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                textAlign: 'left',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              📊 Gamla Dashboarden
-            </button>
-          )}
-          <button
-            onClick={() => { handleLogout(); setShowMoreMenu(false); }}
-            style={{
-              width: '100%',
-              padding: '0.8rem 1rem',
-              background: 'transparent',
-              border: 'none',
-              color: '#ff4757',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              textAlign: 'left',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            🚪 Logga ut
-          </button>
-        </div>
-      )}
-    </div>
+            </div>
           </div >
 
 
 
         </header >
       </div >
-    {/* END of dashboard-only block for header area */ }
+      {/* END of dashboard-only block for header area */}
 
-  {/* Global Back Button for helper views */ }
-  {
-    activeTab !== 'new-home' && activeTab !== 'day-view' && activeTab !== 'create-event' && (
-      <div style={{ width: '100%', textAlign: 'left', paddingBottom: '0.5rem' }}>
-        <button
-          onClick={() => setActiveTab('new-home')}
-          style={{
-            background: 'transparent', border: 'none', fontSize: '1rem', cursor: 'pointer',
-            color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.4rem',
-            padding: '1rem 0', opacity: 0.8
-          }}
-        >
-          ‹ Tillbaka till start
-        </button>
-      </div>
-    )
-  }
-
-  {/* Schedule Tab Content - shown after header */ }
-  {
-    activeTab === 'schedule' && (
-      <div className="tab-content" style={{ padding: '1rem' }}>
-        <ScheduleViewer events={scheduleEvents} initialStudent={currentUser?.name} />
-      </div>
-    )
-  }
-
-  {/* NEW HOME TEST VIEW */ }
-  {
-    activeTab === 'new-home' && (
-      <NewHome
-        user={currentUser}
-        weather={weather}
-        events={(() => {
-          if (!currentUser || currentUser.role !== 'child') return events;
-          return events.filter(e => {
-            const assigned = e.assignees && e.assignees.includes(currentUser.name);
-            const isSource = e.source === currentUser.name;
-            const isDriver = e.assignments?.driver === currentUser.name;
-            const isPacker = e.assignments?.packer === currentUser.name;
-            return assigned || isSource || isDriver || isPacker;
-          });
-        })()}
-        tasks={(() => {
-          if (!currentUser || currentUser.role !== 'child') return tasks;
-          return tasks.filter(t => t.assignee === currentUser.name);
-        })()}
-        setActiveTab={setActiveTab}
-        onOpenModal={openEditModal}
-        setSelectedDate={setSelectedDate}
-        setViewMode={setViewMode}
-        holidays={holidays}
-      />
-    )
-  }
-
-  {/* CREATE EVENT VIEW */ }
-  {
-    activeTab === 'create-event' && (
-      <div className="create-event-view" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', paddingBottom: '80px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <h2>✨ Skapa ny händelse</h2>
-          {/* Close button that goes back to dashboard */}
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              fontSize: '1.5rem',
-              cursor: 'pointer',
-              color: 'var(--text-secondary)',
-              padding: '0.25rem',
-              lineHeight: 1
-            }}
-            aria-label="Stäng"
-          >
-            ✕
-          </button>
-        </div>
-
-        <form onSubmit={createEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div>
-            <label>Vad händer?</label>
-            <input
-              type="text"
-              required
-              placeholder="T.ex. Fotbollsmatch"
-              value={newEvent.summary}
-              onChange={e => setNewEvent({ ...newEvent, summary: e.target.value })}
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
-            />
+      {/* Global Back Button for helper views */}
+      {
+        activeTab !== 'new-home' && activeTab !== 'day-view' && activeTab !== 'create-event' && (
+          <div style={{ width: '100%', textAlign: 'left', paddingBottom: '0.5rem' }}>
+            <button
+              onClick={() => setActiveTab('new-home')}
+              style={{
+                background: 'transparent', border: 'none', fontSize: '1rem', cursor: 'pointer',
+                color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                padding: '1rem 0', opacity: 0.8
+              }}
+            >
+              ‹ Tillbaka till start
+            </button>
           </div>
+        )
+      }
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <div style={{ flex: 1 }}>
-              <label>När?</label>
-              <input
-                type="date"
-                required
-                value={newEvent.date}
-                onChange={e => setNewEvent({ ...newEvent, date: e.target.value })}
-                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label>Tid start</label>
-              <input
-                type="time"
-                required
-                value={newEvent.time}
-                onChange={e => setNewEvent({ ...newEvent, time: e.target.value })}
-                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
-              />
-            </div>
+      {/* Schedule Tab Content - shown after header */}
+      {
+        activeTab === 'schedule' && (
+          <div className="tab-content" style={{ padding: '1rem' }}>
+            <ScheduleViewer events={scheduleEvents} initialStudent={currentUser?.name} />
           </div>
+        )
+      }
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <div style={{ flex: 1 }}>
-              <label>Tid slut</label>
-              <input
-                type="time"
-                required
-                value={newEvent.endTime}
-                onChange={e => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label>Plats</label>
-              <LocationAutocomplete
-                placeholder="T.ex. Valhalla IP"
-                value={newEvent.location}
-                onChange={val => setNewEvent({ ...newEvent, location: val })}
-                onSelect={coords => setNewEvent({ ...newEvent, coords })}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label>Vem gäller det?</label>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-              {['Hela familjen', 'Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => {
-                const isSelected = name === 'Hela familjen'
-                  ? newEvent.assignees.length === 0
-                  : newEvent.assignees.includes(name);
-                return (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => {
-                      let newAssignees;
-
-                      if (name === 'Hela familjen') {
-                        // If selecting "Hela familjen", clear specific assignees but keep text clean
-                        // actually, "Hela familjen" usually implies clearing specific assignees
-                        newAssignees = [];
-                      } else {
-                        const current = newEvent.assignees.filter(n => n !== 'Hela familjen');
-                        if (current.includes(name)) {
-                          newAssignees = current.filter(n => n !== name);
-                        } else {
-                          newAssignees = [...current, name];
-                        }
-                      }
-
-                      const newSummary = updateSummaryWithPrefix(newEvent.summary || '', newAssignees);
-                      setNewEvent({ ...newEvent, assignees: newAssignees, summary: newSummary });
-                    }}
-                    style={{
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: '20px',
-                      border: '1px solid var(--border-color)',
-                      background: isSelected ? '#4a90e2' : 'var(--input-bg)',
-                      color: isSelected ? 'white' : 'var(--text-main)',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem'
-                    }}
-                  >
-                    {isSelected ? '✓ ' : ''}{name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Category selection */}
-          <div>
-            <label>📂 Kategori</label>
-            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-              {['Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => {
-                const isSelected = newEvent.category === cat;
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setNewEvent({ ...newEvent, category: cat })}
-                    style={{
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: '15px',
-                      border: '1px solid var(--border-color)',
-                      background: isSelected ? '#646cff' : 'var(--input-bg)',
-                      color: isSelected ? 'white' : 'var(--text-main)',
-                      fontSize: '0.8rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {isSelected ? '✓ ' : ''}{cat}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <label>Beskrivning</label>
-            <textarea
-              placeholder="Mer information om händelsen..."
-              value={newEvent.description}
-              onChange={e => setNewEvent({ ...newEvent, description: e.target.value })}
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd', minHeight: '80px' }}
-            ></textarea>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-            <button type="button" onClick={() => setActiveTab('dashboard')} style={{
-              padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', cursor: 'pointer'
-            }}>Avbryt</button>
-            {(() => {
-              const hasSvante = newEvent.assignees.includes('Svante');
-              const hasSarah = newEvent.assignees.includes('Sarah');
-              const hasChildren = newEvent.assignees.some(name => ['Algot', 'Tuva', 'Leon'].includes(name));
-              const isFamily = newEvent.assignees.length === 0; // "Hela familjen"
-
-              // Determine target label
-              // LOGIC: Defaults to Family if children involved or mixed.
-              // Only pure single-parent events go to private calendars.
-              let googleTarget = 'Familjen';
-
-              if (hasSvante && !hasSarah && !hasChildren && !isFamily) googleTarget = 'Svante';
-              else if (hasSarah && !hasSvante && !hasChildren && !isFamily) googleTarget = 'Sarah';
-
-              // If forced target by explicit assignee selection logic above fails, it remains 'Familjen'
-
-              if (googleTarget) {
-                const baseDate = (newEvent.date || '').replace(/-/g, '');
-                const startTime = (newEvent.time || '12:00').replace(/:/g, '') + '00';
-                const endTime = (newEvent.endTime || newEvent.time || '13:00').replace(/:/g, '') + '00';
-                const dates = `${baseDate}T${startTime}/${baseDate}T${endTime}`;
-
-                const text = encodeURIComponent(newEvent.summary || 'Ny händelse');
-                const details = encodeURIComponent(`${newEvent.description || ''}\n\n(Skapad via Family-Ops)`);
-                const location = encodeURIComponent(newEvent.location || '');
-
-                // Add src parameter to pre-select calendar
-                const targetEmail = GOOGLE_CALENDAR_EMAILS[googleTarget === 'Familjen' ? 'Familjen' : `${googleTarget} (Privat)`];
-                let googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}`;
-                if (targetEmail) {
-                  googleUrl += `&src=${encodeURIComponent(targetEmail)}`;
-                }
-
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                    <a
-                      href={googleUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setActiveTab('dashboard')}
-                      style={{
-                        padding: '0.75rem 1.5rem',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: '#2ed573',
-                        color: 'white',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                        textDecoration: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}
-                    >
-                      📅 {googleTarget === 'Familjen' ? 'Skapa i familjens Google-kalender' : `Skapa i ${googleTarget}s Google-kalender`} ↗
-                    </a>
-                    <button
-                      type="submit"
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#888',
-                        fontSize: '0.8rem',
-                        cursor: 'pointer',
-                        textDecoration: 'underline'
-                      }}
-                    >
-                      eller spara bara lokalt
-                    </button>
-                  </div>
-                );
-              }
-
-              return (
-                <button type="submit" style={{
-                  padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer', fontWeight: 'bold'
-                }}>Skapa händelse</button>
-              );
-            })()}
-          </div>
-        </form>
-      </div>
-    )
-  }
-
-  {/* DAY VIEW (Full Page) */ }
-  {
-    activeTab === 'day-view' && (
-      <div className="day-view-container" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', paddingBottom: '80px', minHeight: '100vh', background: 'var(--bg-color)' }}>
-
-        {/* Header with Navigation */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
-          <button
-            onClick={() => setActiveTab('new-home')}
-            style={{
-              background: 'transparent', border: 'none', fontSize: '1rem', cursor: 'pointer',
-              color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.4rem',
-              opacity: 0.8
-            }}
-          >
-            ‹ Tillbaka
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <button onClick={() => changeDay(-1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)', opacity: 0.7 }}>‹</button>
-            <div style={{ textAlign: 'center', lineHeight: '1.2' }}>
-              <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{capitalizeFirst(selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' }))}</div>
-              <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
-                {selectedDate.getDate()} {selectedDate.toLocaleDateString('sv-SE', { month: 'short' })}
-              </div>
-            </div>
-            <button onClick={() => changeDay(1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)', opacity: 0.7 }}>›</button>
-          </div>
-
-          <div style={{ width: '60px' }}></div> {/* Spacer for center alignment */}
-        </div>
-
-        {/* Content List */}
-        <div className="day-view-content" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {(() => {
-            const combined = [];
-            const now = new Date(); // Used for sorting past/future events if needed
-
-            // 1. Add Tasks
-            heroTasks.forEach(task => {
-              combined.push({ type: 'task', data: task });
-            });
-
-            // 2. Add Events
-            heroEvents.forEach(event => {
-              combined.push({ type: 'event', data: event });
-            });
-
-            if (combined.length === 0) {
-              return (
-                <div style={{ textAlign: 'center', padding: '4rem 1rem', opacity: 0.6, fontStyle: 'italic' }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>☕</div>
-                  Inga händelser eller uppgifter denna dag.
-                </div>
-              );
-            }
-
-            // 3. Sort Combined List
-            combined.sort((a, b) => {
-              const getCategory = (item) => {
-                if (item.type === 'task') {
-                  return item.data.done ? 0 : 3; // Done tasks first or last? Usually Done last if focusing on todo. User didn't specify, sticking to previous logic: Done (0), Future Evt (2), Undone Task (3). Wait, previous logic was weird.
-                  // Let's optimize: Undone Task (0), Future Event (1), Done Task (2), Past Event (3)?
-                  // User wants "Flow". Time based.
-                  return item.data.done ? 3 : 0;
-                } else {
-                  // Event
-                  return 1;
-                }
-              };
-
-              // Simple Sort by Time for events, tasks at top/bottom depending
-              if (a.type === 'event' && b.type === 'event') {
-                return new Date(a.data.start) - new Date(b.data.start);
-              }
-              if (a.type === 'task' && b.type === 'task') return 0;
-              if (a.type === 'event') return 1; // Events after tasks? Or time based?
-              return -1;
-            });
-
-            // RE-SORTING based on TIME for everything roughly?
-            // Let's stick to the previous grouping which seemed accepted:
-            // Tasks mixed in?
-            // Let's simply map them nicely.
-
-            return combined.map((item) => {
-              const key = item.type === 'task' ? `task-${item.data.id}` : `event-${item.data.uid}`;
-
-              if (item.type === 'task') {
-                const task = item.data;
-                return (
-                  <div key={key} className="card" style={{ padding: '0.8rem', background: 'var(--card-bg)', color: 'var(--text-main)', borderLeft: '4px solid #2ed573', opacity: task.done ? 0.6 : 1, borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '0.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 'bold', textDecoration: task.done ? 'line-through' : 'none', fontSize: '1rem' }}>{task.done ? '✅' : '⬜'} {task.text}</span>
-                      <span style={{ fontSize: '0.7rem', background: 'rgba(46, 213, 115, 0.2)', padding: '2px 6px', borderRadius: '4px', color: '#2ed573' }}>Uppgift</span>
-                    </div>
-                    {task.assignee && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>👤 {task.assignee}</div>}
-                  </div>
-                );
-              } else {
-                const event = item.data;
-                let sourceClass = '';
-                if (event.source === 'Svante (Privat)') sourceClass = 'source-svante';
-                if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
-
-                const assignments = event.assignments || {};
-                const isFullyAssigned = assignments.driver && assignments.packer;
-
-                return (
-                  <div key={key} className={`card ${sourceClass} ${isFullyAssigned ? 'assigned' : ''}`}
-                    style={{
-                      cursor: 'pointer',
-                      background: 'var(--card-bg)',
-                      color: 'var(--text-main)',
-                      padding: '0.8rem',
-                      borderRadius: '12px',
-                      border: '1px solid var(--border-color)',
-                      borderLeft: `4px solid ${event.source && event.source.includes('Svante') ? '#ff7675' : '#74b9ff'}`,
-                      marginBottom: '0.5rem',
-                      ...(event.cancelled ? { opacity: 0.6, textDecoration: 'line-through' } : {})
-                    }}
-                    onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', opacity: 0.8, fontSize: '0.8rem' }}>
-                      <span>
-                        {new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                        {' - '}
-                        {new Date(event.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <span style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 5px', borderRadius: '4px', fontSize: '0.7em' }}>{event.source || 'Familjen'}</span>
-                    </div>
-
-                    <h3 style={{ fontSize: '1.2rem', margin: '0 0 0.3rem 0', lineHeight: '1.3' }}>{event.summary}</h3>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                      <span>📍 {event.location || 'Plats ej angiven'}</span>
-                    </div>
-
-                    {event.travelTime && (
-                      <div style={{ marginTop: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.1)', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem' }}>
-                        <span>🚗</span>
-                        <span>{formatDuration(event.travelTime.duration)}</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-            })
-          }
-          )()}
-        </div>
-      </div>
-    )
-  }
-
-  {/* Dashboard content continues here - Only visible activeTab === 'dashboard' */ }
-  <div style={{ display: (activeTab === 'dashboard' || activeTab === 'timeline' || activeTab === 'todos') ? 'block' : 'none' }}>
-
-    {/* Greeting Section - Above Hero - ONLY DASHBOARD */}
-    <div style={{ padding: '0.5rem 1rem 0.2rem', textAlign: 'left', marginTop: '0.5rem', display: activeTab === 'dashboard' ? 'block' : 'none' }}>
-      <p style={{ margin: 0, fontSize: isMobile ? '1.2rem' : '1.4rem', fontWeight: 'bold', color: 'var(--text-main)' }}>
-        Hej {currentUser.name}!
-      </p>
-    </div>
-
-    {/* Today Hero Section - ONLY DASHBOARD */}
-    <div
-      className={`${getHeroClass()} has-custom-bg`}
-      style={{
-        '--hero-bg': `url(${heroCustomImg})`,
-        display: activeTab === 'dashboard' ? 'flex' : 'none'
-      }}
-    >
-      <div className="hero-header" style={{ width: '100%', marginBottom: '0.5rem' }}>
-        {/* Date row */}
-        <h2 style={{ fontSize: isMobile ? '1.4rem' : '2.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem', marginTop: '-0.3rem' }}>
-          <button
-            onClick={() => changeDay(-1)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'white',
-              fontSize: isMobile ? '4rem' : '3rem', /* Larger on mobile for easier touch */
-              fontWeight: '300',
-              cursor: 'pointer',
-              opacity: 0.8,
-              padding: '0 0.2rem',
-              textShadow: '0 2px 5px rgba(0,0,0,0.5)',
-              lineHeight: 1
-            }}
-          >
-            ‹
-          </button>
-          <span style={{ textAlign: 'center', flexGrow: 1, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-            {isToday(selectedDate)
-              ? `Idag, ${selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' })}, ${selectedDate.getDate()} ${selectedDate.toLocaleDateString('sv-SE', { month: 'long' })}`
-              : `${capitalizeFirst(selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' }))}, ${selectedDate.getDate()} ${selectedDate.toLocaleDateString('sv-SE', { month: 'long' })}`
-            }
-          </span>
-          <button
-            onClick={() => changeDay(1)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'white',
-              fontSize: isMobile ? '4rem' : '3rem', /* Larger on mobile for easier touch */
-              fontWeight: '300',
-              cursor: 'pointer',
-              opacity: 0.8,
-              padding: '0 0.2rem',
-              textShadow: '0 2px 5px rgba(0,0,0,0.5)',
-              lineHeight: 1
-            }}
-          >
-            ›
-          </button>
-        </h2>
-        {(() => {
-          const holidayToday = holidays.find(h => isSameDay(h.start, selectedDate));
-          if (holidayToday) {
-            return (
-              <div style={{ textAlign: 'center', color: '#ff6b6b', fontWeight: 'bold', textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '1.1rem', marginTop: '-0.3rem', marginBottom: '0.5rem' }}>
-                🎄 {holidayToday.summary} 🎄
-              </div>
-            );
-          }
-        })()}
-
-        {/* Clock + Weather row */}
-        {/* Clock + Weather row */}
-        <div style={{ display: 'flex', alignItems: 'stretch', justifyContent: 'space-between', gap: '1rem' }}>
-          <div style={{
-            fontSize: isMobile ? '1rem' : '2rem', /* Match Weather Temp */
-            fontWeight: 'bold',
-            lineHeight: '1',
-            background: 'rgba(255,255,255,0.2)',
-            padding: isMobile ? '0.2rem 0.4rem' : '0.5rem 1rem',
-            borderRadius: '10px',
-            backdropFilter: 'blur(5px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: isMobile ? '85px' : '130px', /* Fixed identical width */
-            minWidth: isMobile ? '85px' : '130px',
-          }}>
-            {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-          </div>
-          <div className="weather-widget"
-            style={{
-              cursor: 'pointer',
-              background: 'rgba(255,255,255,0.2)',
-              padding: isMobile ? '0.2rem 0.4rem' : '0.5rem 1rem',
-              borderRadius: '10px', /* Match Clock */
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center', /* Center content */
-              width: isMobile ? '85px' : '130px', /* Fixed identical width */
-              minWidth: isMobile ? '85px' : '130px',
-              gap: '0.5rem',
-              backdropFilter: 'blur(5px)',
-              zIndex: 10
-            }}
-            onClick={() => window.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank')}
-            title="Se prognos hos YR"
-          >
-            {(() => {
-              const w = getSelectedDayWeather();
-              if (w) {
-                // Determine Day/Night for Icon
-                let isDay = true;
-                if (weather && weather.daily && weather.daily.sunrise && weather.daily.sunset) {
-                  // If showing TODAY -> Use Current Time
-                  if (isToday(selectedDate)) {
-                    try {
-                      const sunrise = new Date(weather.daily.sunrise[0]);
-                      const sunset = new Date(weather.daily.sunset[0]);
-                      if (currentTime < sunrise || currentTime > sunset) isDay = false;
-                    } catch (e) { }
-                  } else {
-                    // Future dates -> Always Day icon (forecast usually implies day conditions unless specific)
-                    isDay = true;
-                  }
-                } else {
-                  // Fallback using hour
-                  if (isToday(selectedDate)) {
-                    const h = currentTime.getHours();
-                    if (h < 6 || h > 21) isDay = false;
-                  }
-                }
-
-                return (
-                  <>
-                    <span style={{ fontSize: isMobile ? '1.2rem' : '2rem' }}>{getWeatherIcon(w.code, isDay)}</span>
-                    <span style={{ fontSize: isMobile ? '1rem' : '2rem', fontWeight: 'bold' }}>{w.temp}°C</span>
-                  </>
-                );
-              }
-              return <span>..</span>;
-            })()}
-          </div>
-        </div>
-      </div>
-
-      {(heroEvents.length > 0 || heroTasks.length > 0) && (
-        <div className="today-events-list" style={{ marginTop: '0.5rem' }}>
-
-
-          <div className="hero-content-wrapper" style={{ display: 'flex', alignItems: 'center' }}>
-            {(() => {
-              // CONDITIONAL RENDER: Summary
-              if (!showHeroDetails) {
-                return (
-                  <div
-                    className="card summary-card"
-                    onClick={() => setShowHeroDetails(true)}
-                    style={{
-                      width: '100%',
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      padding: isMobile ? '0.2rem' : '0.6rem',
-                      background: 'rgba(255,255,255,0.2)', /* Match weather widget */
-                      backdropFilter: 'blur(5px)',
-                      color: 'white',
-                      maxWidth: isMobile ? '110px' : '220px',
-                      margin: isMobile ? '0' : '0 auto',
-                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                      textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                      position: isMobile ? 'absolute' : 'relative',
-                      bottom: isMobile ? '2px' : 'auto',
-                      left: isMobile ? '50%' : 'auto',
-                      transform: isMobile ? 'translateX(-50%)' : 'none',
-                      zIndex: 5,
-                      border: 'none', /* Remove grey strip from .card class */
-                      borderRadius: '10px' /* Match weather widget radius */
-                    }}
-                  >
-                    <h3 style={{ margin: '0 0 0.1rem 0', fontSize: isMobile ? '0.65rem' : '0.9rem' }}>
-                      Dagens händelser
-                    </h3>
-                    <p style={{ margin: 0, fontSize: isMobile ? '0.65rem' : '0.8rem' }}>
-                      📅 {heroEvents.length}
-                      {heroTasks.length > 0 && ` • ✅ ${heroTasks.length}`}
-                    </p>
-                    <div style={{ marginTop: '0.2rem', fontSize: '0.65rem', opacity: 0.8, fontStyle: 'italic', display: isMobile ? 'none' : 'block' }}>
-                      Klicka för detaljer
-                    </div>
-                  </div>
-                );
-              }
-
-              // DETAILS VIEW with BACK BUTTON
-              const combined = [];
-              const now = new Date();
-
-              // 1. Add Tasks
-              heroTasks.forEach(task => {
-                combined.push({ type: 'task', data: task });
+      {/* NEW HOME TEST VIEW */}
+      {
+        activeTab === 'new-home' && (
+          <NewHome
+            user={currentUser}
+            weather={weather}
+            events={(() => {
+              if (!currentUser || currentUser.role !== 'child') return events;
+              return events.filter(e => {
+                const assigned = e.assignees && e.assignees.includes(currentUser.name);
+                const isSource = e.source === currentUser.name;
+                const isDriver = e.assignments?.driver === currentUser.name;
+                const isPacker = e.assignments?.packer === currentUser.name;
+                return assigned || isSource || isDriver || isPacker;
               });
-
-              // 2. Add Events
-              heroEvents.forEach(event => {
-                combined.push({ type: 'event', data: event });
-              });
-
-              // 3. Sort Combined List
-              // Order: Done Tasks -> Past Events (Chronological) -> Future Events (Chronological) -> Undone Tasks
-              combined.sort((a, b) => {
-                const getCategory = (item) => {
-                  if (item.type === 'task') {
-                    return item.data.done ? 0 : 3;
-                  } else {
-                    // Event
-                    const endDate = new Date(item.data.end);
-                    return endDate < now ? 1 : 2;
-                  }
-                };
-
-                const catA = getCategory(a);
-                const catB = getCategory(b);
-                if (catA !== catB) return catA - catB;
-
-                if (a.type === 'event' && b.type === 'event') {
-                  return new Date(a.data.start) - new Date(b.data.start);
-                }
-                return 0;
-              });
-
-              // 4. Render
-              return (
-                <>
-                  <button
-                    onClick={() => setShowHeroDetails(false)}
-                    title="Tillbaka"
-                    style={{
-                      background: 'rgba(255,255,255,0.9)',
-                      color: '#333',
-                      border: 'none',
-                      borderRadius: '8px',
-                      width: '40px',
-                      height: '40px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      marginRight: '0.5rem',
-                      fontSize: '1.2rem',
-                      flexShrink: 0,
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                    }}
-                  >
-                    ‹
-                  </button>
-                  <div className="horizontal-scroll-container" style={{ flexGrow: 1, width: 'calc(100% - 60px)' }}>
-                    {combined.map((item) => {
-                      const key = item.type === 'task' ? `task-${item.data.id}` : `event-${item.data.uid}`;
-
-                      if (item.type === 'task') {
-                        const task = item.data;
-                        return (
-                          <div key={key} className="card" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.9)', color: '#333', borderLeft: '4px solid #2ed573', opacity: task.done ? 0.6 : 1 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontWeight: 'bold', textDecoration: task.done ? 'line-through' : 'none' }}>{task.done ? '✅' : '⬜'} {task.text}</span>
-                              <span style={{ fontSize: '0.8rem', background: '#e1f7e7', padding: '2px 6px', borderRadius: '4px', color: '#2ed573' }}>Dagens uppgift</span>
-                            </div>
-                            {task.assignee && <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.2rem' }}>👤 {task.assignee}</div>}
-                          </div>
-                        );
-                      } else {
-                        const event = item.data;
-                        let sourceClass = '';
-                        if (event.source === 'Svante (Privat)') sourceClass = 'source-svante';
-                        if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
-
-                        const assignments = event.assignments || {};
-                        const isFullyAssigned = assignments.driver && assignments.packer;
-                        const passedStyle = getEventStatusStyle(event.end);
-                        const colorClass = getAssignedColorClass(event);
-
-                        const renderTravelInfoLocal = () => {
-                          if (!event.travelTime) return null;
-                          return (
-                            <div className="travel-info" style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}>
-                              <div className="travel-badge">🚗 {formatDuration(event.travelTime.duration)}</div>
-                              {event.travelTime.distance < 10000 && (
-                                <>
-                                  {event.travelTimeBike && <div className="travel-badge">🚲 {formatDuration(event.travelTimeBike.duration)}</div>}
-                                  {event.travelTimeWalk && <div className="travel-badge">🚶 {formatDuration(event.travelTimeWalk.duration)}</div>}
-                                </>
-                              )}
-                            </div>
-                          );
-                        };
-
-                        return (
-                          <div key={key} className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''} `}
-                            style={{
-                              cursor: 'pointer',
-                              background: 'rgba(255,255,255,0.9)',
-                              color: '#333',
-                              ...passedStyle,
-                              ...(event.cancelled ? { opacity: 0.6, textDecoration: 'line-through' } : {})
-                            }}
-                            onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
-                          >
-                            <div className="card-header">
-                              <span className="time">
-                                {new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                              <span className="source-badge">{event.source || 'Familjen'}</span>
-                            </div>
-
-                            <h3>{event.summary}</h3>
-
-                            {/* Clickable Location */}
-                            <p className="location"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditModal(event);
-                              }}
-                              style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'inherit', textDecoration: event.coords ? 'underline' : 'none' }}
-                              title="Klicka för att se detaljer">
-                              📍 {event.location || 'Hemma/Okänd plats'}
-                            </p>
-
-                            {renderTravelInfoLocal()}
-
-                            <div className="actions" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
-                              {renderAssignmentControl(event, 'driver')}
-                              {renderAssignmentControl(event, 'packer')}
-                            </div>
-                          </div>
-                        );
-                      }
-                    })}
-                  </div>
-                </>
-              );
             })()}
-          </div>
-        </div>
-      )}
+            tasks={(() => {
+              if (!currentUser || currentUser.role !== 'child') return tasks;
+              return tasks.filter(t => t.assignee === currentUser.name);
+            })()}
+            setActiveTab={setActiveTab}
+            onOpenModal={openEditModal}
+            setSelectedDate={setSelectedDate}
+            setViewMode={setViewMode}
+            holidays={holidays}
+          />
+        )
+      }
 
-
-    </div>
-
-    {/* Combined Filter Button */}
-    <div style={{ marginBottom: '0.5rem' }}>
-      <button
-        onClick={() => setShowFilterMenu(!showFilterMenu)}
-        style={{
-          width: '100%',
-          padding: '0.8rem 1rem',
-          background: 'var(--card-bg)',
-          border: '1px solid var(--border-color)',
-          borderRadius: '12px',
-          color: 'var(--text-main)',
-          fontSize: '0.9rem',
-          textAlign: 'left',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          cursor: 'pointer'
-        }}
-      >
-        <span>
-          🔍 Filter: <strong>{filterChild === 'Alla' ? 'Hela Familjen' : filterChild}</strong> • <strong>{filterCategory}</strong>
-        </span>
-        <span>{showFilterMenu ? '▲' : '▼'}</span>
-      </button>
-
-      {/* Filter Modal */}
-      {showFilterMenu && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 1000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem'
-          }}
-          onClick={() => setShowFilterMenu(false)}
-        >
-          <div
-            style={{
-              background: 'var(--card-bg)',
-              borderRadius: '16px',
-              padding: '1.5rem',
-              maxWidth: '400px',
-              width: '100%',
-              maxHeight: '80vh',
-              overflowY: 'auto'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Filtrera</h3>
+      {/* CREATE EVENT VIEW */}
+      {
+        activeTab === 'create-event' && (
+          <div className="create-event-view" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', paddingBottom: '80px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h2>✨ Skapa ny händelse</h2>
+              {/* Close button that goes back to dashboard */}
               <button
-                onClick={() => setShowFilterMenu(false)}
+                onClick={() => setActiveTab('dashboard')}
                 style={{
                   background: 'transparent',
                   border: 'none',
                   fontSize: '1.5rem',
                   cursor: 'pointer',
-                  color: 'var(--text-main)',
-                  padding: '0',
+                  color: 'var(--text-secondary)',
+                  padding: '0.25rem',
                   lineHeight: 1
                 }}
                 aria-label="Stäng"
@@ -3102,548 +2286,102 @@ function App() {
               </button>
             </div>
 
-            {/* Two-column layout for filters */}
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              {/* Family Filter Section */}
-              <div style={{ flex: 1 }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}>👨‍👩‍👧‍👦 Familj</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {children.map(child => (
-                    <button
-                      key={child}
-                      onClick={() => setFilterChild(child)}
-                      style={{
-                        padding: '0.8rem',
-                        background: filterChild === child ? '#2ed573' : 'transparent',
-                        color: filterChild === child ? 'white' : 'var(--text-main)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        fontWeight: filterChild === child ? 'bold' : 'normal'
-                      }}
-                    >
-                      {child === 'Alla' ? 'Hela Familjen' : child} {filterChild === child && '✓'}
-                    </button>
-                  ))}
+            <form onSubmit={createEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label>Vad händer?</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="T.ex. Fotbollsmatch"
+                  value={newEvent.summary}
+                  onChange={e => setNewEvent({ ...newEvent, summary: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label>När?</label>
+                  <input
+                    type="date"
+                    required
+                    value={newEvent.date}
+                    onChange={e => setNewEvent({ ...newEvent, date: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label>Tid start</label>
+                  <input
+                    type="time"
+                    required
+                    value={newEvent.time}
+                    onChange={e => setNewEvent({ ...newEvent, time: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                  />
                 </div>
               </div>
 
-              {/* Category Filter Section */}
-              <div style={{ flex: 1 }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}>📂 Kategori</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {['Alla', 'Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setFilterCategory(cat)}
-                      style={{
-                        padding: '0.8rem',
-                        background: filterCategory === cat ? '#2ed573' : 'transparent',
-                        color: filterCategory === cat ? 'white' : 'var(--text-main)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        fontWeight: filterCategory === cat ? 'bold' : 'normal'
-                      }}
-                    >
-                      {cat} {filterCategory === cat && '✓'}
-                    </button>
-                  ))}
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label>Tid slut</label>
+                  <input
+                    type="time"
+                    required
+                    value={newEvent.endTime}
+                    onChange={e => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label>Plats</label>
+                  <LocationAutocomplete
+                    placeholder="T.ex. Valhalla IP"
+                    value={newEvent.location}
+                    onChange={val => setNewEvent({ ...newEvent, location: val })}
+                    onSelect={coords => setNewEvent({ ...newEvent, coords })}
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* Close Button */}
-            <button
-              onClick={() => setShowFilterMenu(false)}
-              style={{
-                width: '100%',
-                marginTop: '1.5rem',
-                padding: '0.8rem',
-                background: 'var(--primary-color)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              Stäng
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-
-    {/* Main Content Grid (Timeline + Todo) - on mobile: Events first, then Todo */}
-    <div className="main-content-grid" style={{
-      marginTop: '0',
-      display: 'flex',
-      flexDirection: isMobile ? 'column' : 'row',
-      gap: '1rem'
-    }}>
-      {/* Left: Timeline / Calendar View */}
-      <div className="timeline-section" style={{
-        display: (activeTab === 'dashboard' || activeTab === 'timeline') ? 'block' : 'none',
-        flex: (activeTab === 'timeline') ? '1 1 100%' : '2' // Full width if standalone
-      }}>
-
-
-        {/* View Mode Selector - now inside timeline section to appear above calendar but below todo on mobile */}
-        <div className="view-mode-selector" style={{
-          display: 'flex',
-          justifyContent: 'center',
-          margin: '0 0 1rem 0',
-          padding: '0'
-        }}>
-          <div style={{
-            background: 'var(--button-bg)',
-            borderRadius: '30px',
-            padding: '0.2rem',
-            display: 'flex',
-            gap: '0rem',
-            width: '100%',
-            maxWidth: '600px',
-            overflowX: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            justifyContent: 'space-between'
-          }}>
-            {[
-              { id: 'upcoming', label: 'Kommande' },
-              { id: 'week', label: `Vecka ${getWeekNumber(selectedDate)}` },
-              { id: 'month', label: selectedDate.toLocaleDateString('sv-SE', { month: 'long' }) },
-              { id: 'history', label: 'Historik' }
-            ].map(view => (
-              <button
-                key={view.id}
-                onClick={() => setViewMode(view.id)}
-                style={{
-                  background: viewMode === view.id ? 'var(--card-bg)' : 'transparent',
-                  color: viewMode === view.id ? 'white' : 'rgba(255,255,255,0.6)',
-                  border: 'none',
-                  borderRadius: '24px',
-                  padding: '0.6rem 1rem',
-                  fontSize: '0.9rem',
-                  cursor: 'pointer',
-                  fontWeight: viewMode === view.id ? '600' : '500',
-                  boxShadow: viewMode === view.id ? '0 4px 12px rgba(0,0,0,0.2)' : 'none',
-                  transition: 'all 0.2s ease',
-                  textTransform: 'capitalize',
-                  whiteSpace: 'nowrap',
-                  flex: 1,
-                  textAlign: 'center',
-                  opacity: viewMode === view.id ? 1 : 0.7
-                }}
-              >
-                {view.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="timeline">
-          <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            {(viewMode === 'week' || viewMode === 'month') ? (
-              <>
-                <button onClick={() => navigateView(-1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>◀</button>
-                <span>
-                  📅 {viewMode === 'week' ? `Vecka ${getWeekNumber(selectedDate)}` :
-                    viewMode === 'month' ? `${selectedDate.toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' })}` : ''}
-                </span>
-                <button onClick={() => navigateView(1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>▶</button>
-              </>
-            ) : (
-              <span>
-                📅 Kommande händelser
-              </span>
-            )}
-          </h2>
-
-          {/* MONTH VIEW */}
-          {viewMode === 'month' && (
-            <div className="calendar-grid-month">
-              {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map(d => (
-                <div key={d} className="calendar-day-header">{d}</div>
-              ))}
-              {(() => {
-                const days = [];
-                const year = selectedDate.getFullYear();
-                const month = selectedDate.getMonth();
-                const firstDayOfMonth = new Date(year, month, 1);
-                const lastDayOfMonth = new Date(year, month + 1, 0);
-
-                // Start from Monday (getDay: Sun=0, Mon=1...Sat=6) -> Convert to Mon=0...Sun=6
-                let startDay = firstDayOfMonth.getDay() - 1;
-                if (startDay === -1) startDay = 6;
-
-                // Previous Month Padding
-                const prevMonthLastDate = new Date(year, month, 0).getDate();
-                for (let i = 0; i < startDay; i++) {
-                  days.push({ day: prevMonthLastDate - startDay + 1 + i, type: 'prev', date: new Date(year, month - 1, prevMonthLastDate - startDay + 1 + i) });
-                }
-
-                // Current Month
-                for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
-                  days.push({ day: i, type: 'current', date: new Date(year, month, i) });
-                }
-
-                // Next Month Padding (to 42 cells grid = 6 rows, or just fill row)
-                const remaining = 42 - days.length;
-                for (let i = 1; i <= remaining; i++) {
-                  days.push({ day: i, type: 'next', date: new Date(year, month + 1, i) });
-                }
-
-                return days.map((d, idx) => {
-                  const dayEvents = filteredEventsList.filter(e => isSameDay(e.start, d.date));
-                  const isTodayCell = isSameDay(d.date, new Date());
-                  return (
-                    <div key={idx}
-                      className={`calendar-cell ${d.type !== 'current' ? 'different-month' : ''} ${isTodayCell ? 'today' : ''}`}
-                      onClick={() => changeDay(Math.floor((d.date - selectedDate) / (1000 * 60 * 60 * 24)))} // Select this day
-                    >
-                      {(() => {
-                        const isRed = holidays.some(h => isSameDay(h.start, d.date) && h.isRedDay);
-                        return (
-                          <div style={{ textAlign: 'right', fontWeight: 'bold', marginBottom: '0.2rem', color: isRed ? '#ff4757' : 'inherit' }}>{d.day}</div>
-                        );
-                      })()}
-                      {dayEvents.slice(0, 4).map(ev => {
-                        let sourceClass = '';
-                        if (ev.source.includes('Svante')) sourceClass = 'source-svante';
-                        if (ev.source.includes('Sarah')) sourceClass = 'source-mamma';
-                        return (
-                          <div key={ev.uid}
-                            className={`calendar-event ${ev.date < new Date() ? 'done' : ''} ${sourceClass}`}
-                            style={{ textDecoration: ev.cancelled ? 'line-through' : 'none', opacity: ev.cancelled ? 0.6 : 1 }}
-                            title={ev.summary}
-                            onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}>
-                            {ev.cancelled ? '🚫 ' : ''}{ev.summary}
-                          </div>
-                        )
-                      })}
-                      {dayEvents.length > 4 && <div style={{ fontSize: '0.7rem', color: '#666', textAlign: 'center' }}>+ {dayEvents.length - 4} till</div>}
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-          )}
-
-          {/* WEEK VIEW */}
-          {viewMode === 'week' && (
-            <div className="week-view-container" style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '1rem' }}>
-              {(() => {
-                const days = [];
-                const current = new Date(selectedDate);
-                const dayOfWeek = current.getDay() || 7; // 1-7 (Mon-Sun)
-                current.setDate(current.getDate() - dayOfWeek + 1); // Go to Monday
-
-                for (let i = 0; i < 7; i++) {
-                  days.push(new Date(current));
-                  current.setDate(current.getDate() + 1);
-                }
-
-                return days.map(d => {
-                  const dayEvents = filteredEventsList
-                    .filter(e => isSameDay(e.start, d))
-                    .sort((a, b) => new Date(a.start) - new Date(b.start));
-                  const isTodayHeader = isSameDay(d, new Date());
-                  return (
-                    <div
-                      key={d.toISOString()}
-                      className="week-column"
-                      id={isTodayHeader ? 'today-column' : undefined}
-                      style={{
-                        flex: 1,
-                        background: '#1e2329',
-                        borderRadius: '24px',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column'
-                      }}
-                    >
-                      <div className="week-column-header" style={{
-                        padding: '1rem',
-                        textAlign: 'center',
-                        background: isTodayHeader ? '#2ed573' : 'rgba(255,255,255,0.03)',
-                        color: isTodayHeader ? 'white' : 'var(--text-main)',
-                        fontWeight: 'bold',
-                        borderBottom: '1px solid rgba(255,255,255,0.05)'
-                      }}>
-                        <div style={{ textTransform: 'capitalize', fontSize: '1.1rem' }}>{d.toLocaleDateString('sv-SE', { weekday: 'short' })}</div>
-                        <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>{d.getDate()}/{d.getMonth() + 1}</div>
-                      </div>
-                      <div className="week-column-body" style={{ padding: '0.5rem', flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {dayEvents.map(ev => {
-                          let sourceClass = '';
-                          if (ev.source.includes('Svante')) sourceClass = 'source-svante';
-                          if (ev.source.includes('Sarah')) sourceClass = 'source-mamma';
-                          const colorClass = getAssignedColorClass(ev);
-                          return (
-                            <div key={ev.uid}
-                              className={`card ${sourceClass} ${colorClass}`}
-                              style={{
-                                padding: '0.8rem',
-                                fontSize: '0.8rem',
-                                marginBottom: '0',
-                                borderRadius: '16px',
-                                background: 'rgba(255,255,255,0.08)',
-                                border: 'none',
-                                borderLeft: `4px solid ${ev.source && ev.source.includes('Svante') ? '#ff7675' : '#74b9ff'}`,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '0.2rem',
-                                lineHeight: '1.3'
-                              }}
-                              onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
-                            >
-                              <div style={{ fontWeight: 'bold', opacity: 0.9 }}>
-                                {new Date(ev.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                              </div>
-                              <div style={{ fontWeight: 600, fontSize: '0.9rem', textDecoration: ev.cancelled ? 'line-through' : 'none' }}>
-                                {ev.cancelled && <span style={{ color: '#ff4757', marginRight: '0.2rem' }}>🚫</span>}
-                                {ev.summary}
-                              </div>
-                              {ev.location && ev.location !== 'Okänd plats' && (
-                                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                                  📍 {ev.location}
-                                </div>
-                              )}
-
-                              <div style={{ transform: 'scale(0.9)', transformOrigin: 'top left', marginLeft: '-2px', marginTop: '0.2rem' }}>
-                                {renderTravelInfo(ev)}
-                              </div>
-
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginTop: '0.2rem' }}>
-                                {ev.assignments && (ev.assignments.driver || ev.assignments.packer) && (
-                                  <>
-                                    {ev.assignments.driver && <span style={{ fontSize: '0.7em', background: 'rgba(255,255,255,0.15)', padding: '2px 6px', borderRadius: '4px' }}>🚗 {ev.assignments.driver}</span>}
-                                    {ev.assignments.packer && <span style={{ fontSize: '0.7em', background: 'rgba(255,255,255,0.15)', padding: '2px 6px', borderRadius: '4px' }}>🎒 {ev.assignments.packer}</span>}
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-          )}
-
-          {/* DEFAULT LIST VIEW (Upcoming, History, Next 3 Days) */}
-          {viewMode !== 'month' && viewMode !== 'week' && (
-            otherEvents.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Inga kommande händelser matchar filtret.</p>
-            ) : (
-              (() => {
-                let lastDate = null;
-                let lastWeek = null;
-                return otherEvents.map((event, index) => {
-                  const eventDate = new Date(event.start);
-                  const eventDateStr = eventDate.toLocaleDateString('sv-SE');
-                  const eventWeek = getWeekNumber(eventDate);
-
-                  // Check if new week
-                  const showWeekSeparator = lastWeek !== null && lastWeek !== eventWeek;
-                  // Check if new day (within same week or not)
-                  const showDaySeparator = lastDate !== eventDateStr;
-
-                  lastDate = eventDateStr;
-                  lastWeek = eventWeek;
-
-                  let sourceClass = '';
-                  if (event.source === 'Svante (Privat)') sourceClass = 'source-svante';
-                  if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
-                  const assignments = event.assignments || {};
-                  const isFullyAssigned = assignments.driver && assignments.packer;
-                  const colorClass = getAssignedColorClass(event);
-
-                  return (
-                    <Fragment key={event.uid}>
-                      {/* Week separator */}
-                      {showWeekSeparator && (
-                        <div style={{
-                          margin: '1.5rem 0 1rem 0',
-                          padding: '0.4rem 1rem',
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          borderRadius: '12px',
-                          color: 'white',
-                          fontWeight: 'bold',
-                          fontSize: '1rem',
-                          textAlign: 'center',
-                          boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'
-                        }}>
-                          <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>📅</span> Vecka {eventWeek}
-                        </div>
-                      )}
-
-                      {/* Day separator */}
-                      {showDaySeparator && (
-                        <div style={{
-                          margin: '2rem 0 0.5rem 0',
-                          padding: '0.5rem 1rem',
-                          background: 'transparent',
-                          borderRadius: '8px',
-                          fontWeight: '600',
-                          fontSize: '0.9rem',
-                          color: 'rgba(255,255,255,0.5)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.6rem',
-                          textTransform: 'capitalize'
-                        }}>
-                          <span style={{ color: holidays.some(h => isSameDay(h.start, eventDate) && h.isRedDay) ? '#ff4757' : 'inherit' }}>
-                            {eventDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Event card */}
-                      <div className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''}`}
-                        style={{
-                          cursor: 'pointer',
-                          padding: '1rem',
-                          marginBottom: '0.8rem',
-                          borderRadius: '24px',
-                          background: 'rgba(255,255,255,0.08)',
-                          border: '1px solid rgba(255,255,255,0.05)',
-                          borderLeft: `4px solid ${event.source && event.source.includes('Svante') ? '#ff7675' : '#74b9ff'}`,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.2rem'
-                        }}
-                        onClick={() => openEditModal(event)}
-                      >
-                        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.85rem' }}>
-                          <span className="time" style={{ fontWeight: 'bold', color: 'rgba(255,255,255,0.9)' }}>
-                            {new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          <span className="source-badge" style={{ opacity: 0.7, fontSize: '0.8em' }}>{event.source || 'Familjen'}</span>
-                        </div>
-                        <h3 style={{ textDecoration: event.cancelled ? 'line-through' : 'none', color: event.cancelled ? '#7f8c8d' : 'white', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.2rem 0' }}>
-                          {event.cancelled && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}
-                          {event.summary}
-                        </h3>
-                        <p className="location" onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
-                          style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'rgba(255,255,255,0.6)', textDecoration: event.coords ? 'underline' : 'none', fontSize: '0.9rem', margin: '0' }}
-                          title={event.coords ? "Se på karta" : "Ingen plats"}>
-                          📍 {event.location || 'Hemma/Okänd plats'}
-                        </p>
-                        {renderTravelInfo(event)}
-                        <div className="actions" onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                          {isAdmin && renderAssignmentControl(event, 'driver')}
-                          {isAdmin && renderAssignmentControl(event, 'packer')}
-                        </div>
-                      </div>
-                    </Fragment>
-                  );
-                });
-              })()
-            )
-          )}
-        </div>
-      </div >
-
-      {/* Right: Todo */}
-      <div className="todo-section" style={{
-        display: (activeTab === 'dashboard' || activeTab === 'todos') ? 'block' : 'none',
-        flex: (activeTab === 'todos') ? '1 1 100%' : '1' // Full width if standalone
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderLeft: '4px solid #2ed573', paddingLeft: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <h2 style={{ margin: 0 }}>
-              ✅ Att göra
-            </h2>
-            {/* Navigation for specific views */}
-            {(activeTab === 'todos' || viewMode === 'week') && (
-              <div style={{ display: 'flex', alignItems: 'center', marginLeft: '0.5rem', background: 'var(--bg-secondary)', padding: '0.2rem', borderRadius: '8px' }}>
-                <button onClick={() => changeDay(-7)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-main)' }}>‹</button>
-                <span style={{ margin: '0 0.5rem', fontWeight: 'bold' }}>v.{getWeekNumber(selectedDate)}</span>
-                <button onClick={() => changeDay(7)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-main)' }}>›</button>
-              </div>
-            )}
-            {/* Fallback label for other modes */}
-            {!(activeTab === 'todos' || viewMode === 'week') && (
-              <span style={{ fontSize: '1.2rem', fontWeight: 'bold', marginLeft: '0.5rem' }}>
-                ({viewMode === 'month' ? selectedDate.toLocaleDateString('sv-SE', { month: 'long' }) :
-                  viewMode === 'upcoming' ? 'Kommande' :
-                    `v.${getWeekNumber(selectedDate)}`})
-              </span>
-            )}
-          </div>
-        </div>
-        {
-          showMobileTaskForm && (
-            <form onSubmit={(e) => {
-              addTask(e);
-              setShowMobileTaskForm(false);
-            }} style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', boxShadow: '0 2px 4px var(--shadow-color)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <input type="text" placeholder="Vad behöver göras?" value={taskInput.text} onChange={e => setTaskInput({ ...taskInput, text: e.target.value })} style={{ flex: '1 1 200px', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} />
-                {!taskInput.isRecurring && (
-                  <input type="number" placeholder="V" value={taskInput.week} onChange={e => setTaskInput({ ...taskInput, week: e.target.value })} style={{ flex: '0 0 60px', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} title="Vecka" />
-                )}
-              </div>
-
-              {/* Day Selector */}
-              <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
-                {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map((day, i) => (
-                  <button
-                    type="button"
-                    key={day}
-                    className={taskInput.days.includes(i) ? 'active' : ''}
-                    onClick={() => {
-                      const newDays = taskInput.days.includes(i) ? taskInput.days.filter(d => d !== i) : [...taskInput.days, i];
-                      setTaskInput({ ...taskInput, days: newDays });
-                    }}
-                    style={{ padding: '0.3rem 0.6rem', borderRadius: '15px', border: taskInput.days.includes(i) ? '2px solid #2ed573' : '1px solid var(--input-border)', background: taskInput.days.includes(i) ? 'rgba(46, 213, 115, 0.2)' : 'var(--input-bg)', color: 'var(--text-main)', fontSize: '0.8rem' }}
-                  >
-                    {day}
-                  </button>
-                ))}
-              </div>
-
-              {/* Multi-select Assignees - only shown for parents */}
-              {!isChildUser && (
-                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                  {['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => {
-                    const isSelected = Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name);
-
-                    let bg = isSelected ? '#2ed573' : 'var(--input-bg)'; // Default green for others/generic
-                    if (isSelected) {
-                      if (name === 'Svante') bg = '#ff4757';
-                      if (name === 'Sarah') bg = '#f1c40f';
-                      if (name === 'Algot') bg = '#3498db';
-                      if (name === 'Tuva') bg = '#9b59b6';
-                      if (name === 'Leon') bg = '#2ed573';
-                    }
-
+              <div>
+                <label>Vem gäller det?</label>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  {['Hela familjen', 'Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => {
+                    const isSelected = name === 'Hela familjen'
+                      ? newEvent.assignees.length === 0
+                      : newEvent.assignees.includes(name);
                     return (
                       <button
                         key={name}
                         type="button"
                         onClick={() => {
-                          const current = Array.isArray(taskInput.assignee) ? taskInput.assignee : [];
-                          const newAssignees = current.includes(name)
-                            ? current.filter(n => n !== name)
-                            : [...current, name];
-                          setTaskInput({ ...taskInput, assignee: newAssignees });
+                          let newAssignees;
+
+                          if (name === 'Hela familjen') {
+                            // If selecting "Hela familjen", clear specific assignees but keep text clean
+                            // actually, "Hela familjen" usually implies clearing specific assignees
+                            newAssignees = [];
+                          } else {
+                            const current = newEvent.assignees.filter(n => n !== 'Hela familjen');
+                            if (current.includes(name)) {
+                              newAssignees = current.filter(n => n !== name);
+                            } else {
+                              newAssignees = [...current, name];
+                            }
+                          }
+
+                          const newSummary = updateSummaryWithPrefix(newEvent.summary || '', newAssignees);
+                          setNewEvent({ ...newEvent, assignees: newAssignees, summary: newSummary });
                         }}
                         style={{
                           padding: '0.4rem 0.8rem',
-                          borderRadius: '15px',
+                          borderRadius: '20px',
                           border: '1px solid var(--border-color)',
-                          background: bg,
+                          background: isSelected ? '#4a90e2' : 'var(--input-bg)',
                           color: isSelected ? 'white' : 'var(--text-main)',
-                          fontSize: '0.8rem',
                           cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          fontWeight: isSelected ? 'bold' : 'normal'
+                          fontSize: '0.9rem'
                         }}
                       >
                         {isSelected ? '✓ ' : ''}{name}
@@ -3651,242 +2389,1501 @@ function App() {
                     );
                   })}
                 </div>
-              )}
+              </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={taskInput.isRecurring} onChange={e => setTaskInput({ ...taskInput, isRecurring: e.target.checked })} />
-                  🔄 Återkommande
-                </label>
-
-                <div style={{ display: 'flex', gap: '0.5rem', flex: 1, minWidth: '200px' }}>
-                  <button type="submit" style={{ background: '#2ed573', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 1rem', cursor: 'pointer', flex: 1 }}>Lägg till</button>
-                  <button
-                    type="button"
-                    onClick={() => setShowMobileTaskForm(false)}
-                    style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '0.5rem 1rem', cursor: 'pointer' }}
-                  >
-                    Avbryt
-                  </button>
+              {/* Category selection */}
+              <div>
+                <label>📂 Kategori</label>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  {['Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => {
+                    const isSelected = newEvent.category === cat;
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setNewEvent({ ...newEvent, category: cat })}
+                        style={{
+                          padding: '0.4rem 0.8rem',
+                          borderRadius: '15px',
+                          border: '1px solid var(--border-color)',
+                          background: isSelected ? '#646cff' : 'var(--input-bg)',
+                          color: isSelected ? 'white' : 'var(--text-main)',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {isSelected ? '✓ ' : ''}{cat}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            </form>
-          )
-        }
-        {/* Add task button - shows for everyone */}
-        {(
-          <button
-            onClick={() => setShowMobileTaskForm(!showMobileTaskForm)}
-            style={{
-              background: 'transparent',
-              border: '1px dashed var(--border-color)',
-              borderRadius: '8px',
-              padding: '0.5rem',
-              cursor: 'pointer',
-              color: 'var(--text-muted)',
-              fontSize: '0.8rem',
-              width: '100%',
-              marginBottom: '0.5rem'
-            }}
-          >
-            {showMobileTaskForm ? '✕ Stäng formulär' : '+ Lägg till uppgift'}
-          </button>
-        )}
-        <div className="todo-list">
-          {(() => {
-            // 1. Filter Standard Tasks
-            const relevantTasks = tasks.filter(t => {
-              if (!checkCommonFilters(t)) return false;
-              // ... same logic as before ...
-              if (t.isRecurring) return true;
-              const currentWeek = getWeekNumber(new Date());
-              const viewWeek = getWeekNumber(selectedDate);
-              if (viewMode === 'upcoming') return parseInt(t.week) >= currentWeek;
-              if (viewMode === 'history') return parseInt(t.week) < currentWeek;
-              if (viewMode === 'month') {
-                const firstDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-                const lastDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
-                const startWeek = getWeekNumber(firstDayOfMonth);
-                const endWeek = getWeekNumber(lastDayOfMonth);
-                if (selectedDate.getMonth() === 11) return parseInt(t.week) >= startWeek || parseInt(t.week) === 1;
-                if (selectedDate.getMonth() === 0) return parseInt(t.week) <= endWeek || parseInt(t.week) >= 52;
-                return parseInt(t.week) >= startWeek && parseInt(t.week) <= endWeek;
-              }
-              return parseInt(t.week) === viewWeek;
-            });
 
-            // 2. Extract Event Todos from ALREADY filtered events
-            const eventTodos = filteredEventsList.flatMap(ev =>
-              (ev.todoList || []).map((todo, idx) => ({
-                id: `evt-${ev.uid}-${idx}`,
-                text: typeof todo === 'string' ? todo : todo.text,
-                done: typeof todo === 'string' ? false : todo.done,
-                isEventTodo: true,
-                event: ev, // Reference to full event
-                originalTodo: todo // Reference to original item
-              }))
-            );
+              <div>
+                <label>Beskrivning</label>
+                <textarea
+                  placeholder="Mer information om händelsen..."
+                  value={newEvent.description}
+                  onChange={e => setNewEvent({ ...newEvent, description: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd', minHeight: '80px' }}
+                ></textarea>
+              </div>
 
-            // 3. Render Combined List
-            return [...relevantTasks, ...eventTodos].map(task => {
-              const contextWeek = getWeekNumber(selectedDate);
-              const isDone = task.isEventTodo
-                ? task.done
-                : (task.isRecurring ? (task.completedWeeks || []).includes(contextWeek) : task.done);
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setActiveTab('dashboard')} style={{
+                  padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', cursor: 'pointer'
+                }}>Avbryt</button>
+                {(() => {
+                  const hasSvante = newEvent.assignees.includes('Svante');
+                  const hasSarah = newEvent.assignees.includes('Sarah');
+                  const hasChildren = newEvent.assignees.some(name => ['Algot', 'Tuva', 'Leon'].includes(name));
+                  const isFamily = newEvent.assignees.length === 0; // "Hela familjen"
 
-              // Handle Toggle for Event Todos
-              const handleToggle = () => {
-                if (task.isEventTodo) {
-                  // Toggle logic for Event Todo
-                  const ev = task.event;
-                  const newTodoList = (ev.todoList || []).map(t => {
-                    if (t === task.originalTodo) { // Reference match should work if from same object
-                      return { ...t, done: !t.done };
+                  // Determine target label
+                  // LOGIC: Defaults to Family if children involved or mixed.
+                  // Only pure single-parent events go to private calendars.
+                  let googleTarget = 'Familjen';
+
+                  if (hasSvante && !hasSarah && !hasChildren && !isFamily) googleTarget = 'Svante';
+                  else if (hasSarah && !hasSvante && !hasChildren && !isFamily) googleTarget = 'Sarah';
+
+                  // If forced target by explicit assignee selection logic above fails, it remains 'Familjen'
+
+                  if (googleTarget) {
+                    const baseDate = (newEvent.date || '').replace(/-/g, '');
+                    const startTime = (newEvent.time || '12:00').replace(/:/g, '') + '00';
+                    const endTime = (newEvent.endTime || newEvent.time || '13:00').replace(/:/g, '') + '00';
+                    const dates = `${baseDate}T${startTime}/${baseDate}T${endTime}`;
+
+                    const text = encodeURIComponent(newEvent.summary || 'Ny händelse');
+                    const details = encodeURIComponent(`${newEvent.description || ''}\n\n(Skapad via Family-Ops)`);
+                    const location = encodeURIComponent(newEvent.location || '');
+
+                    // Add src parameter to pre-select calendar
+                    const targetEmail = GOOGLE_CALENDAR_EMAILS[googleTarget === 'Familjen' ? 'Familjen' : `${googleTarget} (Privat)`];
+                    let googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}`;
+                    if (targetEmail) {
+                      googleUrl += `&src=${encodeURIComponent(targetEmail)}`;
                     }
-                    return t;
+
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                        <a
+                          href={googleUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setActiveTab('dashboard')}
+                          style={{
+                            padding: '0.75rem 1.5rem',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: '#2ed573',
+                            color: 'white',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                          }}
+                        >
+                          📅 {googleTarget === 'Familjen' ? 'Skapa i familjens Google-kalender' : `Skapa i ${googleTarget}s Google-kalender`} ↗
+                        </a>
+                        <button
+                          type="submit"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#888',
+                            fontSize: '0.8rem',
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          eller spara bara lokalt
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <button type="submit" style={{
+                      padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer', fontWeight: 'bold'
+                    }}>Skapa händelse</button>
+                  );
+                })()}
+              </div>
+            </form>
+          </div>
+        )
+      }
+
+      {/* DAY VIEW (Full Page) */}
+      {
+        activeTab === 'day-view' && (
+          <div className="day-view-container" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', paddingBottom: '80px', minHeight: '100vh', background: 'var(--bg-color)' }}>
+
+            {/* Header with Navigation */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
+              <button
+                onClick={() => setActiveTab('new-home')}
+                style={{
+                  background: 'transparent', border: 'none', fontSize: '1rem', cursor: 'pointer',
+                  color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                  opacity: 0.8
+                }}
+              >
+                ‹ Tillbaka
+              </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button onClick={() => changeDay(-1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)', opacity: 0.7 }}>‹</button>
+                <div style={{ textAlign: 'center', lineHeight: '1.2' }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{capitalizeFirst(selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' }))}</div>
+                  <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
+                    {selectedDate.getDate()} {selectedDate.toLocaleDateString('sv-SE', { month: 'short' })}
+                  </div>
+                </div>
+                <button onClick={() => changeDay(1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)', opacity: 0.7 }}>›</button>
+              </div>
+
+              <div style={{ width: '60px' }}></div> {/* Spacer for center alignment */}
+            </div>
+
+            {/* Content List */}
+            <div className="day-view-content" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {(() => {
+                const combined = [];
+                const now = new Date(); // Used for sorting past/future events if needed
+
+                // 1. Add Tasks
+                heroTasks.forEach(task => {
+                  combined.push({ type: 'task', data: task });
+                });
+
+                // 2. Add Events
+                heroEvents.forEach(event => {
+                  combined.push({ type: 'event', data: event });
+                });
+
+                if (combined.length === 0) {
+                  return (
+                    <div style={{ textAlign: 'center', padding: '4rem 1rem', opacity: 0.6, fontStyle: 'italic' }}>
+                      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>☕</div>
+                      Inga händelser eller uppgifter denna dag.
+                    </div>
+                  );
+                }
+
+                // 3. Sort Combined List
+                combined.sort((a, b) => {
+                  const getCategory = (item) => {
+                    if (item.type === 'task') {
+                      return item.data.done ? 0 : 3; // Done tasks first or last? Usually Done last if focusing on todo. User didn't specify, sticking to previous logic: Done (0), Future Evt (2), Undone Task (3). Wait, previous logic was weird.
+                      // Let's optimize: Undone Task (0), Future Event (1), Done Task (2), Past Event (3)?
+                      // User wants "Flow". Time based.
+                      return item.data.done ? 3 : 0;
+                    } else {
+                      // Event
+                      return 1;
+                    }
+                  };
+
+                  // Simple Sort by Time for events, tasks at top/bottom depending
+                  if (a.type === 'event' && b.type === 'event') {
+                    return new Date(a.data.start) - new Date(b.data.start);
+                  }
+                  if (a.type === 'task' && b.type === 'task') return 0;
+                  if (a.type === 'event') return 1; // Events after tasks? Or time based?
+                  return -1;
+                });
+
+                // RE-SORTING based on TIME for everything roughly?
+                // Let's stick to the previous grouping which seemed accepted:
+                // Tasks mixed in?
+                // Let's simply map them nicely.
+
+                return combined.map((item) => {
+                  const key = item.type === 'task' ? `task-${item.data.id}` : `event-${item.data.uid}`;
+
+                  if (item.type === 'task') {
+                    const task = item.data;
+                    return (
+                      <div key={key} className="card" style={{ padding: '0.8rem', background: 'var(--card-bg)', color: 'var(--text-main)', borderLeft: '4px solid #2ed573', opacity: task.done ? 0.6 : 1, borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 'bold', textDecoration: task.done ? 'line-through' : 'none', fontSize: '1rem' }}>{task.done ? '✅' : '⬜'} {task.text}</span>
+                          <span style={{ fontSize: '0.7rem', background: 'rgba(46, 213, 115, 0.2)', padding: '2px 6px', borderRadius: '4px', color: '#2ed573' }}>Uppgift</span>
+                        </div>
+                        {task.assignee && <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>👤 {task.assignee}</div>}
+                      </div>
+                    );
+                  } else {
+                    const event = item.data;
+                    let sourceClass = '';
+                    if (event.source === 'Svante (Privat)') sourceClass = 'source-svante';
+                    if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
+
+                    const assignments = event.assignments || {};
+                    const isFullyAssigned = assignments.driver && assignments.packer;
+
+                    return (
+                      <div key={key} className={`card ${sourceClass} ${isFullyAssigned ? 'assigned' : ''}`}
+                        style={{
+                          cursor: 'pointer',
+                          background: 'var(--card-bg)',
+                          color: 'var(--text-main)',
+                          padding: '0.8rem',
+                          borderRadius: '12px',
+                          border: '1px solid var(--border-color)',
+                          borderLeft: `4px solid ${event.source && event.source.includes('Svante') ? '#ff7675' : '#74b9ff'}`,
+                          marginBottom: '0.5rem',
+                          ...(event.cancelled ? { opacity: 0.6, textDecoration: 'line-through' } : {})
+                        }}
+                        onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', opacity: 0.8, fontSize: '0.8rem' }}>
+                          <span>
+                            {new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                            {' - '}
+                            {new Date(event.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 5px', borderRadius: '4px', fontSize: '0.7em' }}>{event.source || 'Familjen'}</span>
+                        </div>
+
+                        <h3 style={{ fontSize: '1.2rem', margin: '0 0 0.3rem 0', lineHeight: '1.3' }}>{event.summary}</h3>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                          <span>📍 {event.location || 'Plats ej angiven'}</span>
+                        </div>
+
+                        {event.travelTime && (
+                          <div style={{ marginTop: '0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(255,255,255,0.1)', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem' }}>
+                            <span>🚗</span>
+                            <span>{formatDuration(event.travelTime.duration)}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                })
+              }
+              )()}
+            </div>
+          </div>
+        )
+      }
+
+      {/* Dashboard content continues here - Only visible activeTab === 'dashboard' */}
+      <div style={{ display: (activeTab === 'dashboard' || activeTab === 'timeline' || activeTab === 'todos') ? 'block' : 'none' }}>
+
+        {/* Greeting Section - Above Hero - ONLY DASHBOARD */}
+        <div style={{ padding: '0.5rem 1rem 0.2rem', textAlign: 'left', marginTop: '0.5rem', display: activeTab === 'dashboard' ? 'block' : 'none' }}>
+          <p style={{ margin: 0, fontSize: isMobile ? '1.2rem' : '1.4rem', fontWeight: 'bold', color: 'var(--text-main)' }}>
+            Hej {currentUser.name}!
+          </p>
+        </div>
+
+        {/* Today Hero Section - ONLY DASHBOARD */}
+        <div
+          className={`${getHeroClass()} has-custom-bg`}
+          style={{
+            '--hero-bg': `url(${heroCustomImg})`,
+            display: activeTab === 'dashboard' ? 'flex' : 'none'
+          }}
+        >
+          <div className="hero-header" style={{ width: '100%', marginBottom: '0.5rem' }}>
+            {/* Date row */}
+            <h2 style={{ fontSize: isMobile ? '1.4rem' : '2.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem', marginTop: '-0.3rem' }}>
+              <button
+                onClick={() => changeDay(-1)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: isMobile ? '4rem' : '3rem', /* Larger on mobile for easier touch */
+                  fontWeight: '300',
+                  cursor: 'pointer',
+                  opacity: 0.8,
+                  padding: '0 0.2rem',
+                  textShadow: '0 2px 5px rgba(0,0,0,0.5)',
+                  lineHeight: 1
+                }}
+              >
+                ‹
+              </button>
+              <span style={{ textAlign: 'center', flexGrow: 1, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                {isToday(selectedDate)
+                  ? `Idag, ${selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' })}, ${selectedDate.getDate()} ${selectedDate.toLocaleDateString('sv-SE', { month: 'long' })}`
+                  : `${capitalizeFirst(selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' }))}, ${selectedDate.getDate()} ${selectedDate.toLocaleDateString('sv-SE', { month: 'long' })}`
+                }
+              </span>
+              <button
+                onClick={() => changeDay(1)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: isMobile ? '4rem' : '3rem', /* Larger on mobile for easier touch */
+                  fontWeight: '300',
+                  cursor: 'pointer',
+                  opacity: 0.8,
+                  padding: '0 0.2rem',
+                  textShadow: '0 2px 5px rgba(0,0,0,0.5)',
+                  lineHeight: 1
+                }}
+              >
+                ›
+              </button>
+            </h2>
+            {(() => {
+              const holidayToday = holidays.find(h => isSameDay(h.start, selectedDate));
+              if (holidayToday) {
+                return (
+                  <div style={{ textAlign: 'center', color: '#ff6b6b', fontWeight: 'bold', textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '1.1rem', marginTop: '-0.3rem', marginBottom: '0.5rem' }}>
+                    🎄 {holidayToday.summary} 🎄
+                  </div>
+                );
+              }
+            })()}
+
+            {/* Clock + Weather row */}
+            {/* Clock + Weather row */}
+            <div style={{ display: 'flex', alignItems: 'stretch', justifyContent: 'space-between', gap: '1rem' }}>
+              <div style={{
+                fontSize: isMobile ? '1rem' : '2rem', /* Match Weather Temp */
+                fontWeight: 'bold',
+                lineHeight: '1',
+                background: 'rgba(255,255,255,0.2)',
+                padding: isMobile ? '0.2rem 0.4rem' : '0.5rem 1rem',
+                borderRadius: '10px',
+                backdropFilter: 'blur(5px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: isMobile ? '85px' : '130px', /* Fixed identical width */
+                minWidth: isMobile ? '85px' : '130px',
+              }}>
+                {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+              <div className="weather-widget"
+                style={{
+                  cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.2)',
+                  padding: isMobile ? '0.2rem 0.4rem' : '0.5rem 1rem',
+                  borderRadius: '10px', /* Match Clock */
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center', /* Center content */
+                  width: isMobile ? '85px' : '130px', /* Fixed identical width */
+                  minWidth: isMobile ? '85px' : '130px',
+                  gap: '0.5rem',
+                  backdropFilter: 'blur(5px)',
+                  zIndex: 10
+                }}
+                onClick={() => window.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank')}
+                title="Se prognos hos YR"
+              >
+                {(() => {
+                  const w = getSelectedDayWeather();
+                  if (w) {
+                    // Determine Day/Night for Icon
+                    let isDay = true;
+                    if (weather && weather.daily && weather.daily.sunrise && weather.daily.sunset) {
+                      // If showing TODAY -> Use Current Time
+                      if (isToday(selectedDate)) {
+                        try {
+                          const sunrise = new Date(weather.daily.sunrise[0]);
+                          const sunset = new Date(weather.daily.sunset[0]);
+                          if (currentTime < sunrise || currentTime > sunset) isDay = false;
+                        } catch (e) { }
+                      } else {
+                        // Future dates -> Always Day icon (forecast usually implies day conditions unless specific)
+                        isDay = true;
+                      }
+                    } else {
+                      // Fallback using hour
+                      if (isToday(selectedDate)) {
+                        const h = currentTime.getHours();
+                        if (h < 6 || h > 21) isDay = false;
+                      }
+                    }
+
+                    return (
+                      <>
+                        <span style={{ fontSize: isMobile ? '1.2rem' : '2rem' }}>{getWeatherIcon(w.code, isDay)}</span>
+                        <span style={{ fontSize: isMobile ? '1rem' : '2rem', fontWeight: 'bold' }}>{w.temp}°C</span>
+                      </>
+                    );
+                  }
+                  return <span>..</span>;
+                })()}
+              </div>
+            </div>
+          </div>
+
+          {(heroEvents.length > 0 || heroTasks.length > 0) && (
+            <div className="today-events-list" style={{ marginTop: '0.5rem' }}>
+
+
+              <div className="hero-content-wrapper" style={{ display: 'flex', alignItems: 'center' }}>
+                {(() => {
+                  // CONDITIONAL RENDER: Summary
+                  if (!showHeroDetails) {
+                    return (
+                      <div
+                        className="card summary-card"
+                        onClick={() => setShowHeroDetails(true)}
+                        style={{
+                          width: '100%',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          padding: isMobile ? '0.2rem' : '0.6rem',
+                          background: 'rgba(255,255,255,0.2)', /* Match weather widget */
+                          backdropFilter: 'blur(5px)',
+                          color: 'white',
+                          maxWidth: isMobile ? '110px' : '220px',
+                          margin: isMobile ? '0' : '0 auto',
+                          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                          textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                          position: isMobile ? 'absolute' : 'relative',
+                          bottom: isMobile ? '2px' : 'auto',
+                          left: isMobile ? '50%' : 'auto',
+                          transform: isMobile ? 'translateX(-50%)' : 'none',
+                          zIndex: 5,
+                          border: 'none', /* Remove grey strip from .card class */
+                          borderRadius: '10px' /* Match weather widget radius */
+                        }}
+                      >
+                        <h3 style={{ margin: '0 0 0.1rem 0', fontSize: isMobile ? '0.65rem' : '0.9rem' }}>
+                          Dagens händelser
+                        </h3>
+                        <p style={{ margin: 0, fontSize: isMobile ? '0.65rem' : '0.8rem' }}>
+                          📅 {heroEvents.length}
+                          {heroTasks.length > 0 && ` • ✅ ${heroTasks.length}`}
+                        </p>
+                        <div style={{ marginTop: '0.2rem', fontSize: '0.65rem', opacity: 0.8, fontStyle: 'italic', display: isMobile ? 'none' : 'block' }}>
+                          Klicka för detaljer
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // DETAILS VIEW with BACK BUTTON
+                  const combined = [];
+                  const now = new Date();
+
+                  // 1. Add Tasks
+                  heroTasks.forEach(task => {
+                    combined.push({ type: 'task', data: task });
                   });
 
-                  // Optimistic Update (optional, but good for UI)
-                  // ... complex to update UI state deep in events list without re-fetch
-                  // For now, let's just push to backend and re-fetch.
-                  fetch(getApiUrl('api/update-event'), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...ev, todoList: newTodoList })
-                  }).then(() => fetchEvents());
+                  // 2. Add Events
+                  heroEvents.forEach(event => {
+                    combined.push({ type: 'event', data: event });
+                  });
 
-                } else {
-                  toggleTask(task, contextWeek);
-                }
-              };
+                  // 3. Sort Combined List
+                  // Order: Done Tasks -> Past Events (Chronological) -> Future Events (Chronological) -> Undone Tasks
+                  combined.sort((a, b) => {
+                    const getCategory = (item) => {
+                      if (item.type === 'task') {
+                        return item.data.done ? 0 : 3;
+                      } else {
+                        // Event
+                        const endDate = new Date(item.data.end);
+                        return endDate < now ? 1 : 2;
+                      }
+                    };
 
-              // Get color for task based on assignee
-              const getTaskColor = () => {
-                if (isDone) return '#ccc';
-                if (task.isEventTodo) {
-                  // For event todos, use the event's color logic
-                  const summary = (task.event.summary || '').toLowerCase();
-                  if (summary.includes('algot')) return '#3498db';
-                  if (summary.includes('leon')) return '#2ed573';
-                  if (summary.includes('tuva')) return '#9b59b6';
-                  if (summary.includes('svante')) return '#ff4757';
-                  if (summary.includes('sarah')) return '#f1c40f';
-                  return '#ff6b81'; // default for event todos
-                }
-                // For regular tasks, check assignee
-                const assignee = (task.assignee || '').toLowerCase();
-                if (assignee.includes('algot')) return '#3498db';
-                if (assignee.includes('leon')) return '#2ed573';
-                if (assignee.includes('tuva')) return '#9b59b6';
-                if (assignee.includes('svante')) return '#ff4757';
-                if (assignee.includes('sarah')) return '#f1c40f';
-                return '#2ed573'; // default green
-              };
+                    const catA = getCategory(a);
+                    const catB = getCategory(b);
+                    if (catA !== catB) return catA - catB;
 
-              return (
-                <div
-                  key={task.id}
-                  className="card"
-                  onClick={handleToggle}
-                  style={{
-                    padding: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem', // Increased gap
-                    opacity: isDone ? 0.6 : 1,
-                    borderLeftColor: getTaskColor(),
-                    cursor: 'pointer', // Indicate clickable
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={isDone}
-                    onChange={() => { }} // Handled by parent onClick
-                    style={{
-                      width: '24px',
-                      height: '24px',
-                      cursor: 'pointer',
-                      transform: 'scale(1.2)', // Make visual target larger
-                      marginRight: '0.5rem',
-                      pointerEvents: 'none' // Let parent handle click
-                    }}
-                  />
-                  <div style={{ flex: 1, textAlign: 'left', textDecoration: isDone ? 'line-through' : 'none' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <span style={{ fontWeight: 'bold', fontSize: '1rem', lineHeight: '1.4' }}>{task.text}</span>
-                      {task.isEventTodo && <span style={{ fontSize: '0.7rem', background: '#ff6b81', color: 'white', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem', whiteSpace: 'nowrap' }}>Event</span>}
-                    </div>
-                    <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.2rem' }}>
-                      {task.isEventTodo ? `Kopplad till: ${task.event.summary}` : (task.assignee ? `👤 ${task.assignee}` : 'Ej tilldelad')}
-                    </div>
-                  </div>
-                  {!task.isEventTodo && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteTask(task.id);
-                      }}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '1.4rem', // Larger icon
-                        color: '#ff6b6b',
-                        padding: '0.8rem', // Touchable area padding
-                        margin: '-0.8rem', // Counteract padding for layout
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      🗑️
-                    </button>
-                  )}
-                  {task.isEventTodo && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteEventTask(task.event, task.originalTodo);
-                      }}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '1.4rem',
-                        color: '#ff6b6b',
-                        padding: '0.8rem',
-                        margin: '-0.8rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      🗑️
-                    </button>
-                  )}
-                </div>
-              );
-            });
-          })()}
+                    if (a.type === 'event' && b.type === 'event') {
+                      return new Date(a.data.start) - new Date(b.data.start);
+                    }
+                    return 0;
+                  });
+
+                  // 4. Render
+                  return (
+                    <>
+                      <button
+                        onClick={() => setShowHeroDetails(false)}
+                        title="Tillbaka"
+                        style={{
+                          background: 'rgba(255,255,255,0.9)',
+                          color: '#333',
+                          border: 'none',
+                          borderRadius: '8px',
+                          width: '40px',
+                          height: '40px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          marginRight: '0.5rem',
+                          fontSize: '1.2rem',
+                          flexShrink: 0,
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }}
+                      >
+                        ‹
+                      </button>
+                      <div className="horizontal-scroll-container" style={{ flexGrow: 1, width: 'calc(100% - 60px)' }}>
+                        {combined.map((item) => {
+                          const key = item.type === 'task' ? `task-${item.data.id}` : `event-${item.data.uid}`;
+
+                          if (item.type === 'task') {
+                            const task = item.data;
+                            return (
+                              <div key={key} className="card" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.9)', color: '#333', borderLeft: '4px solid #2ed573', opacity: task.done ? 0.6 : 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontWeight: 'bold', textDecoration: task.done ? 'line-through' : 'none' }}>{task.done ? '✅' : '⬜'} {task.text}</span>
+                                  <span style={{ fontSize: '0.8rem', background: '#e1f7e7', padding: '2px 6px', borderRadius: '4px', color: '#2ed573' }}>Dagens uppgift</span>
+                                </div>
+                                {task.assignee && <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.2rem' }}>👤 {task.assignee}</div>}
+                              </div>
+                            );
+                          } else {
+                            const event = item.data;
+                            let sourceClass = '';
+                            if (event.source === 'Svante (Privat)') sourceClass = 'source-svante';
+                            if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
+
+                            const assignments = event.assignments || {};
+                            const isFullyAssigned = assignments.driver && assignments.packer;
+                            const passedStyle = getEventStatusStyle(event.end);
+                            const colorClass = getAssignedColorClass(event);
+
+                            const renderTravelInfoLocal = () => {
+                              if (!event.travelTime) return null;
+                              return (
+                                <div className="travel-info" style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}>
+                                  <div className="travel-badge">🚗 {formatDuration(event.travelTime.duration)}</div>
+                                  {event.travelTime.distance < 10000 && (
+                                    <>
+                                      {event.travelTimeBike && <div className="travel-badge">🚲 {formatDuration(event.travelTimeBike.duration)}</div>}
+                                      {event.travelTimeWalk && <div className="travel-badge">🚶 {formatDuration(event.travelTimeWalk.duration)}</div>}
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            };
+
+                            return (
+                              <div key={key} className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''} `}
+                                style={{
+                                  cursor: 'pointer',
+                                  background: 'rgba(255,255,255,0.9)',
+                                  color: '#333',
+                                  ...passedStyle,
+                                  ...(event.cancelled ? { opacity: 0.6, textDecoration: 'line-through' } : {})
+                                }}
+                                onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
+                              >
+                                <div className="card-header">
+                                  <span className="time">
+                                    {new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                  <span className="source-badge">{event.source || 'Familjen'}</span>
+                                </div>
+
+                                <h3>{event.summary}</h3>
+
+                                {/* Clickable Location */}
+                                <p className="location"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEditModal(event);
+                                  }}
+                                  style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'inherit', textDecoration: event.coords ? 'underline' : 'none' }}
+                                  title="Klicka för att se detaljer">
+                                  📍 {event.location || 'Hemma/Okänd plats'}
+                                </p>
+
+                                {renderTravelInfoLocal()}
+
+                                <div className="actions" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
+                                  {renderAssignmentControl(event, 'driver')}
+                                  {renderAssignmentControl(event, 'packer')}
+                                </div>
+                              </div>
+                            );
+                          }
+                        })}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
 
 
         </div>
+
+        {/* Combined Filter Button */}
+        <div style={{ marginBottom: '0.5rem' }}>
+          <button
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
+            style={{
+              width: '100%',
+              padding: '0.8rem 1rem',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '12px',
+              color: 'var(--text-main)',
+              fontSize: '0.9rem',
+              textAlign: 'left',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            <span>
+              🔍 Filter: <strong>{filterChild === 'Alla' ? 'Hela Familjen' : filterChild}</strong> • <strong>{filterCategory}</strong>
+            </span>
+            <span>{showFilterMenu ? '▲' : '▼'}</span>
+          </button>
+
+          {/* Filter Modal */}
+          {showFilterMenu && (
+            <div
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(0,0,0,0.5)',
+                zIndex: 1000,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '1rem'
+              }}
+              onClick={() => setShowFilterMenu(false)}
+            >
+              <div
+                style={{
+                  background: 'var(--card-bg)',
+                  borderRadius: '16px',
+                  padding: '1.5rem',
+                  maxWidth: '400px',
+                  width: '100%',
+                  maxHeight: '80vh',
+                  overflowY: 'auto'
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Filtrera</h3>
+                  <button
+                    onClick={() => setShowFilterMenu(false)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      fontSize: '1.5rem',
+                      cursor: 'pointer',
+                      color: 'var(--text-main)',
+                      padding: '0',
+                      lineHeight: 1
+                    }}
+                    aria-label="Stäng"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Two-column layout for filters */}
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  {/* Family Filter Section */}
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}>👨‍👩‍👧‍👦 Familj</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {children.map(child => (
+                        <button
+                          key={child}
+                          onClick={() => setFilterChild(child)}
+                          style={{
+                            padding: '0.8rem',
+                            background: filterChild === child ? '#2ed573' : 'transparent',
+                            color: filterChild === child ? 'white' : 'var(--text-main)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            fontWeight: filterChild === child ? 'bold' : 'normal'
+                          }}
+                        >
+                          {child === 'Alla' ? 'Hela Familjen' : child} {filterChild === child && '✓'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Category Filter Section */}
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}>📂 Kategori</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {['Alla', 'Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => setFilterCategory(cat)}
+                          style={{
+                            padding: '0.8rem',
+                            background: filterCategory === cat ? '#2ed573' : 'transparent',
+                            color: filterCategory === cat ? 'white' : 'var(--text-main)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            fontWeight: filterCategory === cat ? 'bold' : 'normal'
+                          }}
+                        >
+                          {cat} {filterCategory === cat && '✓'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowFilterMenu(false)}
+                  style={{
+                    width: '100%',
+                    marginTop: '1.5rem',
+                    padding: '0.8rem',
+                    background: 'var(--primary-color)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Stäng
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Main Content Grid (Timeline + Todo) - on mobile: Events first, then Todo */}
+        <div className="main-content-grid" style={{
+          marginTop: '0',
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: '1rem'
+        }}>
+          {/* Left: Timeline / Calendar View */}
+          <div className="timeline-section" style={{
+            display: (activeTab === 'dashboard' || activeTab === 'timeline') ? 'block' : 'none',
+            flex: (activeTab === 'timeline') ? '1 1 100%' : '2' // Full width if standalone
+          }}>
+
+
+            {/* View Mode Selector - now inside timeline section to appear above calendar but below todo on mobile */}
+            <div className="view-mode-selector" style={{
+              display: 'flex',
+              justifyContent: 'center',
+              margin: '0 0 1rem 0',
+              padding: '0'
+            }}>
+              <div style={{
+                background: 'var(--button-bg)',
+                borderRadius: '30px',
+                padding: '0.2rem',
+                display: 'flex',
+                gap: '0rem',
+                width: '100%',
+                maxWidth: '600px',
+                overflowX: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                justifyContent: 'space-between'
+              }}>
+                {[
+                  { id: 'upcoming', label: 'Kommande' },
+                  { id: 'week', label: `Vecka ${getWeekNumber(selectedDate)}` },
+                  { id: 'month', label: selectedDate.toLocaleDateString('sv-SE', { month: 'long' }) },
+                  { id: 'history', label: 'Historik' }
+                ].map(view => (
+                  <button
+                    key={view.id}
+                    onClick={() => setViewMode(view.id)}
+                    style={{
+                      background: viewMode === view.id ? 'var(--card-bg)' : 'transparent',
+                      color: viewMode === view.id ? 'white' : 'rgba(255,255,255,0.6)',
+                      border: 'none',
+                      borderRadius: '24px',
+                      padding: '0.6rem 1rem',
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      fontWeight: viewMode === view.id ? '600' : '500',
+                      boxShadow: viewMode === view.id ? '0 4px 12px rgba(0,0,0,0.2)' : 'none',
+                      transition: 'all 0.2s ease',
+                      textTransform: 'capitalize',
+                      whiteSpace: 'nowrap',
+                      flex: 1,
+                      textAlign: 'center',
+                      opacity: viewMode === view.id ? 1 : 0.7
+                    }}
+                  >
+                    {view.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="timeline">
+              <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {(viewMode === 'week' || viewMode === 'month') ? (
+                  <>
+                    <button onClick={() => navigateView(-1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>◀</button>
+                    <span>
+                      📅 {viewMode === 'week' ? `Vecka ${getWeekNumber(selectedDate)}` :
+                        viewMode === 'month' ? `${selectedDate.toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' })}` : ''}
+                    </span>
+                    <button onClick={() => navigateView(1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>▶</button>
+                  </>
+                ) : (
+                  <span>
+                    📅 Kommande händelser
+                  </span>
+                )}
+              </h2>
+
+              {/* MONTH VIEW */}
+              {viewMode === 'month' && (
+                <div className="calendar-grid-month">
+                  {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map(d => (
+                    <div key={d} className="calendar-day-header">{d}</div>
+                  ))}
+                  {(() => {
+                    const days = [];
+                    const year = selectedDate.getFullYear();
+                    const month = selectedDate.getMonth();
+                    const firstDayOfMonth = new Date(year, month, 1);
+                    const lastDayOfMonth = new Date(year, month + 1, 0);
+
+                    // Start from Monday (getDay: Sun=0, Mon=1...Sat=6) -> Convert to Mon=0...Sun=6
+                    let startDay = firstDayOfMonth.getDay() - 1;
+                    if (startDay === -1) startDay = 6;
+
+                    // Previous Month Padding
+                    const prevMonthLastDate = new Date(year, month, 0).getDate();
+                    for (let i = 0; i < startDay; i++) {
+                      days.push({ day: prevMonthLastDate - startDay + 1 + i, type: 'prev', date: new Date(year, month - 1, prevMonthLastDate - startDay + 1 + i) });
+                    }
+
+                    // Current Month
+                    for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
+                      days.push({ day: i, type: 'current', date: new Date(year, month, i) });
+                    }
+
+                    // Next Month Padding (to 42 cells grid = 6 rows, or just fill row)
+                    const remaining = 42 - days.length;
+                    for (let i = 1; i <= remaining; i++) {
+                      days.push({ day: i, type: 'next', date: new Date(year, month + 1, i) });
+                    }
+
+                    return days.map((d, idx) => {
+                      const dayEvents = filteredEventsList.filter(e => isSameDay(e.start, d.date));
+                      const isTodayCell = isSameDay(d.date, new Date());
+                      return (
+                        <div key={idx}
+                          className={`calendar-cell ${d.type !== 'current' ? 'different-month' : ''} ${isTodayCell ? 'today' : ''}`}
+                          onClick={() => changeDay(Math.floor((d.date - selectedDate) / (1000 * 60 * 60 * 24)))} // Select this day
+                        >
+                          {(() => {
+                            const isRed = holidays.some(h => isSameDay(h.start, d.date) && h.isRedDay);
+                            return (
+                              <div style={{ textAlign: 'right', fontWeight: 'bold', marginBottom: '0.2rem', color: isRed ? '#ff4757' : 'inherit' }}>{d.day}</div>
+                            );
+                          })()}
+                          {dayEvents.slice(0, 4).map(ev => {
+                            let sourceClass = '';
+                            if (ev.source.includes('Svante')) sourceClass = 'source-svante';
+                            if (ev.source.includes('Sarah')) sourceClass = 'source-mamma';
+                            return (
+                              <div key={ev.uid}
+                                className={`calendar-event ${ev.date < new Date() ? 'done' : ''} ${sourceClass}`}
+                                style={{ textDecoration: ev.cancelled ? 'line-through' : 'none', opacity: ev.cancelled ? 0.6 : 1 }}
+                                title={ev.summary}
+                                onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}>
+                                {ev.cancelled ? '🚫 ' : ''}{ev.summary}
+                              </div>
+                            )
+                          })}
+                          {dayEvents.length > 4 && <div style={{ fontSize: '0.7rem', color: '#666', textAlign: 'center' }}>+ {dayEvents.length - 4} till</div>}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
+
+              {/* WEEK VIEW */}
+              {viewMode === 'week' && (
+                <div className="week-view-container" style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '1rem' }}>
+                  {(() => {
+                    const days = [];
+                    const current = new Date(selectedDate);
+                    const dayOfWeek = current.getDay() || 7; // 1-7 (Mon-Sun)
+                    current.setDate(current.getDate() - dayOfWeek + 1); // Go to Monday
+
+                    for (let i = 0; i < 7; i++) {
+                      days.push(new Date(current));
+                      current.setDate(current.getDate() + 1);
+                    }
+
+                    return days.map(d => {
+                      const dayEvents = filteredEventsList
+                        .filter(e => isSameDay(e.start, d))
+                        .sort((a, b) => new Date(a.start) - new Date(b.start));
+                      const isTodayHeader = isSameDay(d, new Date());
+                      return (
+                        <div
+                          key={d.toISOString()}
+                          className="week-column"
+                          id={isTodayHeader ? 'today-column' : undefined}
+                          style={{
+                            flex: 1,
+                            background: '#1e2329',
+                            borderRadius: '24px',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            flexDirection: 'column'
+                          }}
+                        >
+                          <div className="week-column-header" style={{
+                            padding: '1rem',
+                            textAlign: 'center',
+                            background: isTodayHeader ? '#2ed573' : 'rgba(255,255,255,0.03)',
+                            color: isTodayHeader ? 'white' : 'var(--text-main)',
+                            fontWeight: 'bold',
+                            borderBottom: '1px solid rgba(255,255,255,0.05)'
+                          }}>
+                            <div style={{ textTransform: 'capitalize', fontSize: '1.1rem' }}>{d.toLocaleDateString('sv-SE', { weekday: 'short' })}</div>
+                            <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>{d.getDate()}/{d.getMonth() + 1}</div>
+                          </div>
+                          <div className="week-column-body" style={{ padding: '0.5rem', flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {dayEvents.map(ev => {
+                              let sourceClass = '';
+                              if (ev.source.includes('Svante')) sourceClass = 'source-svante';
+                              if (ev.source.includes('Sarah')) sourceClass = 'source-mamma';
+                              const colorClass = getAssignedColorClass(ev);
+                              return (
+                                <div key={ev.uid}
+                                  className={`card ${sourceClass} ${colorClass}`}
+                                  style={{
+                                    padding: '0.8rem',
+                                    fontSize: '0.8rem',
+                                    marginBottom: '0',
+                                    borderRadius: '16px',
+                                    background: 'rgba(255,255,255,0.08)',
+                                    border: 'none',
+                                    borderLeft: `4px solid ${ev.source && ev.source.includes('Svante') ? '#ff7675' : '#74b9ff'}`,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '0.2rem',
+                                    lineHeight: '1.3'
+                                  }}
+                                  onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
+                                >
+                                  <div style={{ fontWeight: 'bold', opacity: 0.9 }}>
+                                    {new Date(ev.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                  </div>
+                                  <div style={{ fontWeight: 600, fontSize: '0.9rem', textDecoration: ev.cancelled ? 'line-through' : 'none' }}>
+                                    {ev.cancelled && <span style={{ color: '#ff4757', marginRight: '0.2rem' }}>🚫</span>}
+                                    {ev.summary}
+                                  </div>
+                                  {ev.location && ev.location !== 'Okänd plats' && (
+                                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                                      📍 {ev.location}
+                                    </div>
+                                  )}
+
+                                  <div style={{ transform: 'scale(0.9)', transformOrigin: 'top left', marginLeft: '-2px', marginTop: '0.2rem' }}>
+                                    {renderTravelInfo(ev)}
+                                  </div>
+
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginTop: '0.2rem' }}>
+                                    {ev.assignments && (ev.assignments.driver || ev.assignments.packer) && (
+                                      <>
+                                        {ev.assignments.driver && <span style={{ fontSize: '0.7em', background: 'rgba(255,255,255,0.15)', padding: '2px 6px', borderRadius: '4px' }}>🚗 {ev.assignments.driver}</span>}
+                                        {ev.assignments.packer && <span style={{ fontSize: '0.7em', background: 'rgba(255,255,255,0.15)', padding: '2px 6px', borderRadius: '4px' }}>🎒 {ev.assignments.packer}</span>}
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
+
+              {/* DEFAULT LIST VIEW (Upcoming, History, Next 3 Days) */}
+              {viewMode !== 'month' && viewMode !== 'week' && (
+                otherEvents.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Inga kommande händelser matchar filtret.</p>
+                ) : (
+                  (() => {
+                    let lastDate = null;
+                    let lastWeek = null;
+                    return otherEvents.map((event, index) => {
+                      const eventDate = new Date(event.start);
+                      const eventDateStr = eventDate.toLocaleDateString('sv-SE');
+                      const eventWeek = getWeekNumber(eventDate);
+
+                      // Check if new week
+                      const showWeekSeparator = lastWeek !== null && lastWeek !== eventWeek;
+                      // Check if new day (within same week or not)
+                      const showDaySeparator = lastDate !== eventDateStr;
+
+                      lastDate = eventDateStr;
+                      lastWeek = eventWeek;
+
+                      let sourceClass = '';
+                      if (event.source === 'Svante (Privat)') sourceClass = 'source-svante';
+                      if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
+                      const assignments = event.assignments || {};
+                      const isFullyAssigned = assignments.driver && assignments.packer;
+                      const colorClass = getAssignedColorClass(event);
+
+                      return (
+                        <Fragment key={event.uid}>
+                          {/* Week separator */}
+                          {showWeekSeparator && (
+                            <div style={{
+                              margin: '1.5rem 0 1rem 0',
+                              padding: '0.4rem 1rem',
+                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                              borderRadius: '12px',
+                              color: 'white',
+                              fontWeight: 'bold',
+                              fontSize: '1rem',
+                              textAlign: 'center',
+                              boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'
+                            }}>
+                              <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>📅</span> Vecka {eventWeek}
+                            </div>
+                          )}
+
+                          {/* Day separator */}
+                          {showDaySeparator && (
+                            <div style={{
+                              margin: '2rem 0 0.5rem 0',
+                              padding: '0.5rem 1rem',
+                              background: 'transparent',
+                              borderRadius: '8px',
+                              fontWeight: '600',
+                              fontSize: '0.9rem',
+                              color: 'rgba(255,255,255,0.5)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.6rem',
+                              textTransform: 'capitalize'
+                            }}>
+                              <span style={{ color: holidays.some(h => isSameDay(h.start, eventDate) && h.isRedDay) ? '#ff4757' : 'inherit' }}>
+                                {eventDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Event card */}
+                          <div className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''}`}
+                            style={{
+                              cursor: 'pointer',
+                              padding: '1rem',
+                              marginBottom: '0.8rem',
+                              borderRadius: '24px',
+                              background: 'rgba(255,255,255,0.08)',
+                              border: '1px solid rgba(255,255,255,0.05)',
+                              borderLeft: `4px solid ${event.source && event.source.includes('Svante') ? '#ff7675' : '#74b9ff'}`,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.2rem'
+                            }}
+                            onClick={() => openEditModal(event)}
+                          >
+                            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.85rem' }}>
+                              <span className="time" style={{ fontWeight: 'bold', color: 'rgba(255,255,255,0.9)' }}>
+                                {new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <span className="source-badge" style={{ opacity: 0.7, fontSize: '0.8em' }}>{event.source || 'Familjen'}</span>
+                            </div>
+                            <h3 style={{ textDecoration: event.cancelled ? 'line-through' : 'none', color: event.cancelled ? '#7f8c8d' : 'white', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.2rem 0' }}>
+                              {event.cancelled && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}
+                              {event.summary}
+                            </h3>
+                            <p className="location" onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
+                              style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'rgba(255,255,255,0.6)', textDecoration: event.coords ? 'underline' : 'none', fontSize: '0.9rem', margin: '0' }}
+                              title={event.coords ? "Se på karta" : "Ingen plats"}>
+                              📍 {event.location || 'Hemma/Okänd plats'}
+                            </p>
+                            {renderTravelInfo(event)}
+                            <div className="actions" onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                              {isAdmin && renderAssignmentControl(event, 'driver')}
+                              {isAdmin && renderAssignmentControl(event, 'packer')}
+                            </div>
+                          </div>
+                        </Fragment>
+                      );
+                    });
+                  })()
+                )
+              )}
+            </div>
+          </div >
+
+          {/* Right: Todo */}
+          <div className="todo-section" style={{
+            display: (activeTab === 'dashboard' || activeTab === 'todos') ? 'block' : 'none',
+            flex: (activeTab === 'todos') ? '1 1 100%' : '1' // Full width if standalone
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderLeft: '4px solid #2ed573', paddingLeft: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h2 style={{ margin: 0 }}>
+                  ✅ Att göra
+                </h2>
+                {/* Navigation for specific views */}
+                {(activeTab === 'todos' || viewMode === 'week') && (
+                  <div style={{ display: 'flex', alignItems: 'center', marginLeft: '0.5rem', background: 'var(--bg-secondary)', padding: '0.2rem', borderRadius: '8px' }}>
+                    <button onClick={() => changeDay(-7)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-main)' }}>‹</button>
+                    <span style={{ margin: '0 0.5rem', fontWeight: 'bold' }}>v.{getWeekNumber(selectedDate)}</span>
+                    <button onClick={() => changeDay(7)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-main)' }}>›</button>
+                  </div>
+                )}
+                {/* Fallback label for other modes */}
+                {!(activeTab === 'todos' || viewMode === 'week') && (
+                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold', marginLeft: '0.5rem' }}>
+                    ({viewMode === 'month' ? selectedDate.toLocaleDateString('sv-SE', { month: 'long' }) :
+                      viewMode === 'upcoming' ? 'Kommande' :
+                        `v.${getWeekNumber(selectedDate)}`})
+                  </span>
+                )}
+              </div>
+            </div>
+            {
+              showMobileTaskForm && (
+                <form onSubmit={(e) => {
+                  addTask(e);
+                  setShowMobileTaskForm(false);
+                }} style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', boxShadow: '0 2px 4px var(--shadow-color)', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <input type="text" placeholder="Vad behöver göras?" value={taskInput.text} onChange={e => setTaskInput({ ...taskInput, text: e.target.value })} style={{ flex: '1 1 200px', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} />
+                    {!taskInput.isRecurring && (
+                      <input type="number" placeholder="V" value={taskInput.week} onChange={e => setTaskInput({ ...taskInput, week: e.target.value })} style={{ flex: '0 0 60px', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }} title="Vecka" />
+                    )}
+                  </div>
+
+                  {/* Day Selector */}
+                  <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                    {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map((day, i) => (
+                      <button
+                        type="button"
+                        key={day}
+                        className={taskInput.days.includes(i) ? 'active' : ''}
+                        onClick={() => {
+                          const newDays = taskInput.days.includes(i) ? taskInput.days.filter(d => d !== i) : [...taskInput.days, i];
+                          setTaskInput({ ...taskInput, days: newDays });
+                        }}
+                        style={{ padding: '0.3rem 0.6rem', borderRadius: '15px', border: taskInput.days.includes(i) ? '2px solid #2ed573' : '1px solid var(--input-border)', background: taskInput.days.includes(i) ? 'rgba(46, 213, 115, 0.2)' : 'var(--input-bg)', color: 'var(--text-main)', fontSize: '0.8rem' }}
+                      >
+                        {day}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Multi-select Assignees - only shown for parents */}
+                  {!isChildUser && (
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      {['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => {
+                        const isSelected = Array.isArray(taskInput.assignee) && taskInput.assignee.includes(name);
+
+                        let bg = isSelected ? '#2ed573' : 'var(--input-bg)'; // Default green for others/generic
+                        if (isSelected) {
+                          if (name === 'Svante') bg = '#ff4757';
+                          if (name === 'Sarah') bg = '#f1c40f';
+                          if (name === 'Algot') bg = '#3498db';
+                          if (name === 'Tuva') bg = '#9b59b6';
+                          if (name === 'Leon') bg = '#2ed573';
+                        }
+
+                        return (
+                          <button
+                            key={name}
+                            type="button"
+                            onClick={() => {
+                              const current = Array.isArray(taskInput.assignee) ? taskInput.assignee : [];
+                              const newAssignees = current.includes(name)
+                                ? current.filter(n => n !== name)
+                                : [...current, name];
+                              setTaskInput({ ...taskInput, assignee: newAssignees });
+                            }}
+                            style={{
+                              padding: '0.4rem 0.8rem',
+                              borderRadius: '15px',
+                              border: '1px solid var(--border-color)',
+                              background: bg,
+                              color: isSelected ? 'white' : 'var(--text-main)',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              fontWeight: isSelected ? 'bold' : 'normal'
+                            }}
+                          >
+                            {isSelected ? '✓ ' : ''}{name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={taskInput.isRecurring} onChange={e => setTaskInput({ ...taskInput, isRecurring: e.target.checked })} />
+                      🔄 Återkommande
+                    </label>
+
+                    <div style={{ display: 'flex', gap: '0.5rem', flex: 1, minWidth: '200px' }}>
+                      <button type="submit" style={{ background: '#2ed573', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 1rem', cursor: 'pointer', flex: 1 }}>Lägg till</button>
+                      <button
+                        type="button"
+                        onClick={() => setShowMobileTaskForm(false)}
+                        style={{ background: 'transparent', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '0.5rem 1rem', cursor: 'pointer' }}
+                      >
+                        Avbryt
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )
+            }
+            {/* Add task button - shows for everyone */}
+            {(
+              <button
+                onClick={() => setShowMobileTaskForm(!showMobileTaskForm)}
+                style={{
+                  background: 'transparent',
+                  border: '1px dashed var(--border-color)',
+                  borderRadius: '8px',
+                  padding: '0.5rem',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.8rem',
+                  width: '100%',
+                  marginBottom: '0.5rem'
+                }}
+              >
+                {showMobileTaskForm ? '✕ Stäng formulär' : '+ Lägg till uppgift'}
+              </button>
+            )}
+            <div className="todo-list">
+              {(() => {
+                // 1. Filter Standard Tasks
+                const relevantTasks = tasks.filter(t => {
+                  if (!checkCommonFilters(t)) return false;
+                  // ... same logic as before ...
+                  if (t.isRecurring) return true;
+                  const currentWeek = getWeekNumber(new Date());
+                  const viewWeek = getWeekNumber(selectedDate);
+                  if (viewMode === 'upcoming') return parseInt(t.week) >= currentWeek;
+                  if (viewMode === 'history') return parseInt(t.week) < currentWeek;
+                  if (viewMode === 'month') {
+                    const firstDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+                    const lastDayOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+                    const startWeek = getWeekNumber(firstDayOfMonth);
+                    const endWeek = getWeekNumber(lastDayOfMonth);
+                    if (selectedDate.getMonth() === 11) return parseInt(t.week) >= startWeek || parseInt(t.week) === 1;
+                    if (selectedDate.getMonth() === 0) return parseInt(t.week) <= endWeek || parseInt(t.week) >= 52;
+                    return parseInt(t.week) >= startWeek && parseInt(t.week) <= endWeek;
+                  }
+                  return parseInt(t.week) === viewWeek;
+                });
+
+                // 2. Extract Event Todos from ALREADY filtered events
+                const eventTodos = filteredEventsList.flatMap(ev =>
+                  (ev.todoList || []).map((todo, idx) => ({
+                    id: `evt-${ev.uid}-${idx}`,
+                    text: typeof todo === 'string' ? todo : todo.text,
+                    done: typeof todo === 'string' ? false : todo.done,
+                    isEventTodo: true,
+                    event: ev, // Reference to full event
+                    originalTodo: todo // Reference to original item
+                  }))
+                );
+
+                // 3. Render Combined List
+                return [...relevantTasks, ...eventTodos].map(task => {
+                  const contextWeek = getWeekNumber(selectedDate);
+                  const isDone = task.isEventTodo
+                    ? task.done
+                    : (task.isRecurring ? (task.completedWeeks || []).includes(contextWeek) : task.done);
+
+                  // Handle Toggle for Event Todos
+                  const handleToggle = () => {
+                    if (task.isEventTodo) {
+                      // Toggle logic for Event Todo
+                      const ev = task.event;
+                      const newTodoList = (ev.todoList || []).map(t => {
+                        if (t === task.originalTodo) { // Reference match should work if from same object
+                          return { ...t, done: !t.done };
+                        }
+                        return t;
+                      });
+
+                      // Optimistic Update (optional, but good for UI)
+                      // ... complex to update UI state deep in events list without re-fetch
+                      // For now, let's just push to backend and re-fetch.
+                      fetch(getApiUrl('api/update-event'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...ev, todoList: newTodoList })
+                      }).then(() => fetchEvents());
+
+                    } else {
+                      toggleTask(task, contextWeek);
+                    }
+                  };
+
+                  // Get color for task based on assignee
+                  const getTaskColor = () => {
+                    if (isDone) return '#ccc';
+                    if (task.isEventTodo) {
+                      // For event todos, use the event's color logic
+                      const summary = (task.event.summary || '').toLowerCase();
+                      if (summary.includes('algot')) return '#3498db';
+                      if (summary.includes('leon')) return '#2ed573';
+                      if (summary.includes('tuva')) return '#9b59b6';
+                      if (summary.includes('svante')) return '#ff4757';
+                      if (summary.includes('sarah')) return '#f1c40f';
+                      return '#ff6b81'; // default for event todos
+                    }
+                    // For regular tasks, check assignee
+                    const assignee = (task.assignee || '').toLowerCase();
+                    if (assignee.includes('algot')) return '#3498db';
+                    if (assignee.includes('leon')) return '#2ed573';
+                    if (assignee.includes('tuva')) return '#9b59b6';
+                    if (assignee.includes('svante')) return '#ff4757';
+                    if (assignee.includes('sarah')) return '#f1c40f';
+                    return '#2ed573'; // default green
+                  };
+
+                  return (
+                    <div
+                      key={task.id}
+                      className="card"
+                      onClick={handleToggle}
+                      style={{
+                        padding: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem', // Increased gap
+                        opacity: isDone ? 0.6 : 1,
+                        borderLeftColor: getTaskColor(),
+                        cursor: 'pointer', // Indicate clickable
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isDone}
+                        onChange={() => { }} // Handled by parent onClick
+                        style={{
+                          width: '24px',
+                          height: '24px',
+                          cursor: 'pointer',
+                          transform: 'scale(1.2)', // Make visual target larger
+                          marginRight: '0.5rem',
+                          pointerEvents: 'none' // Let parent handle click
+                        }}
+                      />
+                      <div style={{ flex: 1, textAlign: 'left', textDecoration: isDone ? 'line-through' : 'none' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: '1rem', lineHeight: '1.4' }}>{task.text}</span>
+                          {task.isEventTodo && <span style={{ fontSize: '0.7rem', background: '#ff6b81', color: 'white', padding: '2px 6px', borderRadius: '4px', marginLeft: '0.5rem', whiteSpace: 'nowrap' }}>Event</span>}
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.2rem' }}>
+                          {task.isEventTodo ? `Kopplad till: ${task.event.summary}` : (task.assignee ? `👤 ${task.assignee}` : 'Ej tilldelad')}
+                        </div>
+                      </div>
+                      {!task.isEventTodo && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteTask(task.id);
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '1.4rem', // Larger icon
+                            color: '#ff6b6b',
+                            padding: '0.8rem', // Touchable area padding
+                            margin: '-0.8rem', // Counteract padding for layout
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          🗑️
+                        </button>
+                      )}
+                      {task.isEventTodo && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteEventTask(task.event, task.originalTodo);
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '1.4rem',
+                            color: '#ff6b6b',
+                            padding: '0.8rem',
+                            margin: '-0.8rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
+
+
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-  {/* Inbox Modal */ }
-  <InboxModal
-    isOpen={showInbox}
-    onClose={() => {
-      setShowInbox(false);
-      fetchInbox(); // Refresh to ensure sync (e.g. if new items arrived while open)
-    }}
-    onImport={(item) => {
-      // We rely on polling or close to update badge, but since badge is usually 0 when open, this is fine
-    }}
-    getGoogleLink={getGoogleCalendarLink}
-  />
+      {/* Inbox Modal */}
+      <InboxModal
+        isOpen={showInbox}
+        onClose={() => {
+          setShowInbox(false);
+          fetchInbox(); // Refresh to ensure sync (e.g. if new items arrived while open)
+        }}
+        onImport={(item) => {
+          // We rely on polling or close to update badge, but since badge is usually 0 when open, this is fine
+        }}
+        getGoogleLink={getGoogleCalendarLink}
+      />
 
     </div >
   )
