@@ -108,14 +108,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 boxSizing: 'border-box'
             }}>
 
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '1.5rem',
-                    width: '100%',
-                    maxWidth: '600px' // Match grid max-width for alignment
-                }}
-                >
+                <div className="new-home-container">
 
                     {/* Top Bar */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -175,19 +168,11 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                     </div>
 
                     {/* Main Grid */}
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', // minmax(0, 1fr) prevents blowouts
-                        gap: '1rem',
-                        maxWidth: '600px',
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        padding: '0 0.5rem' // Small internal padding to prevent edge touching
-                    }}>
+                    <div className="new-home-grid">
 
                         {/* 1. Next Event - Spans Full Width */}
                         <Card
-                            style={{ gridColumn: 'span 2', minHeight: '160px', background: 'linear-gradient(135deg, #2c3e50 0%, #1e2329 100%)' }}
+                            style={{ gridColumn: '1 / -1', minHeight: '160px', background: 'linear-gradient(135deg, #2c3e50 0%, #1e2329 100%)' }}
                             onClick={() => {
                                 if (setViewMode) setViewMode('upcoming');
                                 setActiveTab('timeline');
@@ -248,7 +233,8 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         </Card>
 
                         {/* 2. Calendar Button */}
-                        <Card onClick={() => setActiveTab('timeline')} style={{ aspectRatio: '1/1', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                        {/* 2. Calendar Button */}
+                        <Card onClick={() => setActiveTab('timeline')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                             <div style={{ marginBottom: '0.8rem', color: '#a29bfe' }}>
                                 {/* Calendar Icon */}
                                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -262,7 +248,8 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         </Card>
 
                         {/* 3. Tasks Button */}
-                        <Card onClick={() => setActiveTab('todos')} style={{ aspectRatio: '1/1', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                        {/* 3. Tasks Button */}
+                        <Card onClick={() => setActiveTab('todos')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                             <div style={{ marginBottom: '0.8rem', color: theme.success }}>
                                 {/* Check/Todo Icon */}
                                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -281,7 +268,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         {/* 4. School Schedule Button */}
                         {/* 4. School Schedule Button - Hide for Leon */}
                         {user.name !== 'Leon' && (
-                            <Card onClick={() => setActiveTab('schedule')} style={{ aspectRatio: '1/1', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                            <Card onClick={() => setActiveTab('schedule')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                                 <div style={{ marginBottom: '0.8rem', color: '#ff9f43' }}>
                                     {/* School/Book Icon */}
                                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -295,7 +282,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                         {/* 5. Weather / Environment (Mockup style based on user image) */}
                         {/* 5. Weather / Environment (Adaptive Gauge) */}
-                        <Card style={{ aspectRatio: '1/1', background: '#1e2329', padding: '0.8rem' }}>
+                        <Card style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, background: '#1e2329', padding: '0.8rem' }}>
                             <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                                 {(() => {
                                     // Monthly Normals for Lidköping (Daily Mean in Celsius)
@@ -352,7 +339,8 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         </Card>
 
                         {/* 5. Create New (Button) */}
-                        <Card onClick={() => setActiveTab('create-event')} style={{ aspectRatio: '1/1', alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: '#2c3e50' }}>
+                        {/* 5. Create New (Button) */}
+                        <Card onClick={() => setActiveTab('create-event')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: '#2c3e50' }}>
                             <div style={{ marginBottom: '0.5rem', color: theme.textMain }}>
                                 {/* Plus Icon */}
                                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
