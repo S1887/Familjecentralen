@@ -318,30 +318,30 @@ body {
 
 .card.source-svante,
 .card.assigned-svante {
-  border-left-color: #ff4757;
-  /* Röd för Svante */
+  border-left-color: #ff7675;
+  /* Soft Red/Coral for Svante */
 }
 
 .card.source-mamma,
 .card.source-sarah,
 .card.assigned-sarah {
-  border-left-color: #f1c40f;
-  /* Gul för Sarah */
+  border-left-color: #ffeaa7;
+  /* Soft Yellow/Cream for Sarah */
 }
 
 .card.assigned-algot {
-  border-left-color: #3498db;
-  /* Blå för Algot */
+  border-left-color: #74b9ff;
+  /* Soft Blue for Algot */
 }
 
 .card.assigned-leon {
-  border-left-color: #2ed573;
-  /* Grön för Leon */
+  border-left-color: #55efc4;
+  /* Soft Green/Mint for Leon */
 }
 
 .card.assigned-tuva {
-  border-left-color: #9b59b6;
-  /* Lila för Tuva */
+  border-left-color: #a29bfe;
+  /* Soft Purple/Lavender for Tuva */
 }
 
 .card.assigned {
@@ -519,39 +519,50 @@ h3 {
 .calendar-grid-month {
   display: grid;
   grid-template-columns: repeat(7, minmax(40px, 1fr));
-  gap: 1px;
-  background: var(--border-color);
-  border-radius: 8px;
+  gap: 6px;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  border: 1px solid var(--border-color);
+  border: none;
   font-size: 0.75rem;
 }
 
 .calendar-day-header {
-  background: var(--modal-bg);
+  background: transparent;
   padding: 0.5rem 0.2rem;
   text-align: center;
-  font-weight: bold;
-  font-size: 0.8rem;
+  font-weight: 700;
+  font-size: 0.85rem;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.2rem;
 }
 
 .calendar-cell {
-  background: var(--bg-main);
+  background: var(--card-bg);
   /* Match main bg */
-  min-height: 80px;
+  min-height: 90px;
   /* Reduced from 100px */
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 
   padding: 0.5rem;
   font-size: 0.8rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .calendar-cell:hover {
-  background: var(--button-hover);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .calendar-cell.different-month {
@@ -561,13 +572,14 @@ h3 {
 }
 
 .calendar-cell.today {
-  background: rgba(46, 213, 115, 0.1);
+  background: rgba(46, 213, 115, 0.15);
+  border: 1px solid rgba(46, 213, 115, 0.3);
   font-weight: bold;
 }
 
 .calendar-event {
-  background: #3498db;
-  color: white;
+  background: #74b9ff;
+  color: #2d3436;
   padding: 2px 4px;
   border-radius: 3px;
   margin-bottom: 2px;
@@ -579,11 +591,13 @@ h3 {
 }
 
 .calendar-event.source-svante {
-  background: #ff4757;
+  background: #ff7675;
+  color: white;
 }
 
 .calendar-event.source-mamma {
-  background: #5352ed;
+  background: #ffeaa7;
+  color: #2d3436;
 }
 
 .calendar-event.done {

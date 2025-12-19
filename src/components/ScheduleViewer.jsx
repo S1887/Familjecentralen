@@ -1,35 +1,44 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 
-const ScheduleViewer = ({ events }) => {
-    const [selectedStudent, setSelectedStudent] = useState('Algot');
+const ScheduleViewer = ({ events, initialStudent }) => {
+    const validStudents = ['Algot', 'Tuva'];
+    const startStudent = validStudents.includes(initialStudent) ? initialStudent : 'Algot';
+    const [selectedStudent, setSelectedStudent] = useState(startStudent);
+
+    React.useEffect(() => {
+        if (validStudents.includes(initialStudent)) {
+            setSelectedStudent(initialStudent);
+        }
+    }, [initialStudent]);
+
     const [weekOffset, setWeekOffset] = useState(0);
     const scrollRef = useRef(null);
 
     // Student colors
     const studentColors = {
-        'Algot': '#3498db',
-        'Tuva': '#9b59b6'
+        'Algot': '#89CFF0', // Pastel Blue
+        'Tuva': '#DDA0DD'   // Plum/Pastel Purple
     };
 
-    const studentColor = studentColors[selectedStudent] || '#646cff';
+    const studentColor = studentColors[selectedStudent] || '#A9A9A9'; // Pastel Grey default
 
     // Subject colors for lessons
     const getSubjectColor = (summary) => {
         const subjectLower = (summary || '').toLowerCase();
 
-        if (subjectLower.includes('svenska')) return '#f1c40f'; // Gult
-        if (subjectLower.includes('matematik') || subjectLower.includes('matte')) return '#3498db'; // Blått
-        if (subjectLower.includes('engelska')) return '#e74c3c'; // Rött
-        if (subjectLower.includes('samhällo') || subjectLower.includes('so')) return '#8b4513'; // Brun
-        if (subjectLower.includes('natur') || subjectLower.includes('no') || subjectLower.includes('biologi')) return '#27ae60'; // Grön
-        if (subjectLower.includes('idrott') || subjectLower.includes('gympa')) return '#ff69b4'; // Rosa
-        if (subjectLower.includes('slöjd') || subjectLower.includes('trä')) return '#ecf0f1'; // Vit/ljusgrå
-        if (subjectLower.includes('musik')) return '#e67e22'; // Orange
-        if (subjectLower.includes('bild') || subjectLower.includes('konst')) return '#9b59b6'; // Lila
-        if (subjectLower.includes('teknik')) return '#95a5a6'; // Grå
+        if (subjectLower.includes('svenska')) return '#FDFD96'; // Pastel Yellow
+        if (subjectLower.includes('matematik') || subjectLower.includes('matte')) return '#AEC6CF'; // Pastel Blue
+        if (subjectLower.includes('engelska')) return '#FFB7B2'; // Pastel Red
+        if (subjectLower.includes('samhällo') || subjectLower.includes('so')) return '#C3B1E1'; // Pastel Purple-ish
+        if (subjectLower.includes('natur') || subjectLower.includes('no') || subjectLower.includes('biologi')) return '#B2F7EF'; // Pastel Teal/Green
+        if (subjectLower.includes('idrott') || subjectLower.includes('gympa')) return '#FFDAC1'; // Peach/Pastel Pink
+        if (subjectLower.includes('slöjd') || subjectLower.includes('trä')) return '#E2F0CB'; // Pastel Lime
+        if (subjectLower.includes('musik')) return '#FFCCB6'; // Pastel Orange
+        if (subjectLower.includes('bild') || subjectLower.includes('konst')) return '#E0BBE4'; // Pastel Lavender
+        if (subjectLower.includes('teknik')) return '#D4D4D4'; // Pastel Grey
 
-        return '#444'; // Default grå
+        return '#444'; // Default darker grey for contrast against light pastel text? No wait, background is pastel. Text needs to be dark.
     };
 
     // Filter events for the schedule
@@ -81,31 +90,32 @@ const ScheduleViewer = ({ events }) => {
 
     return (
         <div className="schedule-viewer-container">
-            <div className="schedule-header">
-                <h3>Skolschema</h3>
-                <div className="student-selector">
-                    <button
-                        className={selectedStudent === 'Algot' ? 'active' : ''}
-                        onClick={() => setSelectedStudent('Algot')}
-                        style={{
-                            background: selectedStudent === 'Algot' ? 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)' : '#333',
-                            color: selectedStudent === 'Algot' ? 'white' : '#888',
-                            border: selectedStudent === 'Algot' ? 'none' : '1px solid #444'
-                        }}
-                    >
-                        Algot
-                    </button>
-                    <button
-                        className={selectedStudent === 'Tuva' ? 'active' : ''}
-                        onClick={() => setSelectedStudent('Tuva')}
-                        style={{
-                            background: selectedStudent === 'Tuva' ? 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)' : '#333',
-                            color: selectedStudent === 'Tuva' ? 'white' : '#888',
-                            border: selectedStudent === 'Tuva' ? 'none' : '1px solid #444'
-                        }}
-                    >
-                        Tuva
-                    </button>
+            <div className="schedule-header" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '400', marginBottom: '1rem' }}>Skolschema</h3>
+                <div className="student-selector" style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+                    {['Algot', 'Tuva'].map(student => (
+                        <button
+                            key={student}
+                            onClick={() => setSelectedStudent(student)}
+                            style={{
+                                background: selectedStudent === student
+                                    ? (student === 'Algot' ? 'linear-gradient(135deg, #89CFF0 0%, #0077BE 100%)' : 'linear-gradient(135deg, #DDA0DD 0%, #800080 100%)')
+                                    : '#2d3436',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.8rem 2rem',
+                                borderRadius: '24px',
+                                fontSize: '1rem',
+                                fontWeight: '500',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                opacity: selectedStudent === student ? 1 : 0.7,
+                                transform: selectedStudent === student ? 'scale(1.05)' : 'scale(1)'
+                            }}
+                        >
+                            {student}
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -132,11 +142,14 @@ const ScheduleViewer = ({ events }) => {
                     ◀
                 </button>
                 <span style={{
-                    fontWeight: 'bold',
-                    fontSize: '1.1rem',
+                    fontWeight: '500',
+                    fontSize: '1.2rem',
                     minWidth: '120px',
                     textAlign: 'center',
-                    color: 'white'
+                    color: 'white',
+                    background: 'rgba(255,255,255,0.05)',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '16px'
                 }}>
                     Vecka {weekNumber}
                 </span>
@@ -198,8 +211,9 @@ const ScheduleViewer = ({ events }) => {
                                 flex: isMobile ? '0 0 calc(33.333% - 7px)' : '1',
                                 minWidth: isMobile ? 'calc(33.333% - 7px)' : '140px',
                                 scrollSnapAlign: 'start',
-                                background: '#2a2a2a',
-                                borderRadius: '8px'
+                                background: '#1e2329',
+                                borderRadius: '24px',
+                                overflow: 'hidden'
                             }}
                         >
                             <div
@@ -209,8 +223,8 @@ const ScheduleViewer = ({ events }) => {
                                     color: isToday ? 'white' : '#eee',
                                     padding: '8px',
                                     textAlign: 'center',
-                                    borderRadius: '8px 8px 0 0',
-                                    borderBottom: isToday ? 'none' : '1px solid #444'
+                                    borderRadius: '0',
+                                    borderBottom: isToday ? 'none' : '1px solid rgba(255,255,255,0.05)'
                                 }}
                             >
                                 <div className="day-name" style={{ fontWeight: 'bold', textTransform: 'capitalize' }}>{dayName}</div>
@@ -228,19 +242,20 @@ const ScheduleViewer = ({ events }) => {
                                             className="schedule-card"
                                             style={{
                                                 background: getSubjectColor(ev.summary),
-                                                padding: isMobile ? '6px' : '8px',
-                                                borderRadius: '4px',
+                                                padding: isMobile ? '8px' : '12px',
+                                                borderRadius: '16px',
                                                 fontSize: isMobile ? '0.75em' : '0.9em',
                                                 borderLeft: `4px solid ${studentColor}`,
                                                 wordBreak: 'break-word',
-                                                color: getSubjectColor(ev.summary) === '#ecf0f1' ? '#333' : '#fff' // Dark text for white/light gray background
+                                                color: '#2c3e50', // Always dark text for pastel backgrounds
+                                                boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
                                             }}
                                         >
-                                            <div className="time" style={{ fontSize: isMobile ? '0.7em' : '0.8em', color: getSubjectColor(ev.summary) === '#ecf0f1' ? '#666' : '#ddd', marginBottom: '2px' }}>
+                                            <div className="time" style={{ fontSize: isMobile ? '0.7em' : '0.8em', color: '#555', marginBottom: '2px', fontWeight: '500' }}>
                                                 {formatTime(ev.start)}
                                             </div>
-                                            <div className="subject" style={{ fontWeight: 'bold', color: getSubjectColor(ev.summary) === '#ecf0f1' ? '#333' : '#fff', fontSize: isMobile ? '0.85em' : '1em', lineHeight: '1.2' }}>{ev.summary}</div>
-                                            {!isMobile && <div className="location" style={{ fontSize: '0.75em', color: getSubjectColor(ev.summary) === '#ecf0f1' ? '#666' : '#bbb', marginTop: '4px' }}>{ev.location}</div>}
+                                            <div className="subject" style={{ fontWeight: 'bold', color: '#2c3e50', fontSize: isMobile ? '0.85em' : '1em', lineHeight: '1.2' }}>{ev.summary}</div>
+                                            {!isMobile && <div className="location" style={{ fontSize: '0.75em', color: '#666', marginTop: '4px' }}>{ev.location}</div>}
                                         </div>
                                     ))
                                 )}
