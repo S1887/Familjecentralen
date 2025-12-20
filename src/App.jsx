@@ -1379,9 +1379,9 @@ function App() {
 
                     {/* EDIT Button - ONLY for writable Google sources */}
                     {(() => {
-                      const isGoogleWritable = GOOGLE_CALENDAR_EMAILS[editEventData.source] || GOOGLE_CALENDAR_EMAILS[editEventData.source?.split(' (')[0] + ' (Privat)'];
+                      const isGoogleWritable = (GOOGLE_CALENDAR_EMAILS[editEventData.source] || GOOGLE_CALENDAR_EMAILS[editEventData.source?.split(' (')[0] + ' (Privat)']) && editEventData.uid?.includes('@google.com');
 
-                      // Strict check: Must be "Writable" to show button
+                      // Strict check: Must be "Writable" AND be a real Google Event to show button
                       if (isGoogleWritable) {
                         return (
                           <a
