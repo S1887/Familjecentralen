@@ -1377,31 +1377,48 @@ function App() {
                       })()}
                     </span>
 
-                    {/* Single "Redigera i Google-kalendern" button for ALL external sources */}
-                    {(editEventData.isExternalSource || editEventData.source?.includes('Familjen') || editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah')) && (
-                      <a
-                        href={getGoogleCalendarLink(editEventData, false)} // Use false to preserve Deep Link behavior (edit event)
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          background: 'white',
-                          color: '#2ed573',
-                          padding: '0.6rem 1rem',
-                          borderRadius: '4px',
-                          textDecoration: 'none',
-                          fontWeight: '600',
-                          fontSize: '0.9rem',
-                          whiteSpace: 'nowrap',
-                          display: 'inline-block',
-                          marginTop: '0.5rem',
-                          cursor: 'pointer',
-                          textAlign: 'center',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                        }}
-                      >
-                        Redigera i Google-kalendern ↗️
-                      </a>
-                    )}
+                    {/* EDIT Button - ONLY for writable Google sources */}
+                    {(() => {
+                      const isGoogleWritable = GOOGLE_CALENDAR_EMAILS[editEventData.source] || GOOGLE_CALENDAR_EMAILS[editEventData.source?.split(' (')[0] + ' (Privat)'];
+
+                      // Strict check: Must be "Writable" to show button
+                      if (isGoogleWritable) {
+                        return (
+                          <a
+                            href={getGoogleCalendarLink(editEventData, false)} // Deep Link
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              background: 'white',
+                              color: '#2ed573',
+                              padding: '0.6rem 1rem',
+                              borderRadius: '4px',
+                              textDecoration: 'none',
+                              fontWeight: '600',
+                              fontSize: '0.9rem',
+                              whiteSpace: 'nowrap',
+                              display: 'inline-block',
+                              marginTop: '0.5rem',
+                              cursor: 'pointer',
+                              textAlign: 'center',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            }}
+                          >
+                            Redigera i Google-kalendern ↗️
+                          </a>
+                        );
+                      }
+
+                      // If external/subscription but NOT writable -> Show "Read-Only" badge
+                      if (editEventData.isExternalSource) {
+                        return (
+                          <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)', fontStyle: 'italic', background: 'rgba(0,0,0,0.1)', padding: '4px 8px', borderRadius: '4px' }}>
+                            Prenumeration - redigeras vid källan
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 )}
 
@@ -1570,17 +1587,17 @@ function App() {
                     <textarea
                       placeholder="Anteckningar..."
                       value={editEventData.description}
-                      onChange={e => isAdmin && setEditEventData({ ...editEventData, description: e.target.value })}
-                      readOnly={!isAdmin}
+                      onChange={e => isAdmin && !editEventData.isExternalSource && setEditEventData({ ...editEventData, description: e.target.value })}
+                      readOnly={editEventData.isExternalSource || !isAdmin}
                       style={{
                         width: '100%',
                         padding: '0.5rem',
                         borderRadius: '4px',
                         border: '1px solid #ddd',
                         minHeight: '80px',
-                        background: isAdmin ? 'white' : '#f0f0f0',
-                        cursor: isAdmin ? 'text' : 'not-allowed',
-                        opacity: isAdmin ? 1 : 0.7
+                        background: (editEventData.isExternalSource || !isAdmin) ? '#f0f0f0' : 'white',
+                        cursor: (editEventData.isExternalSource || !isAdmin) ? 'not-allowed' : 'text',
+                        opacity: (editEventData.isExternalSource || !isAdmin) ? 0.7 : 1
                       }}
                     ></textarea>
                   </div>
