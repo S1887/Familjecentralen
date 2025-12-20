@@ -62,7 +62,12 @@ export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink })
     const handleSaveToGoogle = (item, e) => {
         if (getGoogleLink) {
             const url = getGoogleLink(item, true); // forceSave = true
-            window.open(url, '_blank', 'noopener,noreferrer');
+            // Mobile-friendly link opening (works in HA app iframe)
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.click();
         }
         // Auto-ignore (hide) from inbox since we handled it
         handleIgnore(item.uid, e);

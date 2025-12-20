@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getTravelTime, formatDuration } from '../mapService';
 const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
-const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays }) => {
+const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
@@ -174,8 +174,9 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         <Card
                             style={{ gridColumn: '1 / -1', minHeight: '160px', background: 'linear-gradient(135deg, #2c3e50 0%, #1e2329 100%)' }}
                             onClick={() => {
-                                if (setViewMode) setViewMode('upcoming');
-                                setActiveTab('timeline');
+                                if (nextEvent && onOpenEventDetail) {
+                                    onOpenEventDetail(nextEvent);
+                                }
                             }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

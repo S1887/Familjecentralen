@@ -158,12 +158,14 @@ const MapUpdater = ({ route, center }) => {
 
 import InboxModal from './components/InboxModal';
 import NewHome from './components/NewHome';
+import EventDetailModal from './components/EventDetailModal';
 
 function App() {
   const [showInbox, setShowInbox] = useState(false);
   const [inboxData, setInboxData] = useState([]); // Store actual items to track UIDs
   const inboxCount = inboxData.length;
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('familyOpsDarkMode') === 'true');
+  const [selectedEventForDetail, setSelectedEventForDetail] = useState(null); // Event detail modal state
 
   const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -533,10 +535,38 @@ function App() {
     fetch(getApiUrl('api/events'))
       .then(res => res.json())
       .then(data => {
-        // Deduplicate: Hide external events that match a local event (Same Summary & Start)
-        // We prefer Local events because they have Assignments/Assignees data.
-        const localEvents = data.filter(e => e.source === 'FamilyOps' || e.createdBy);
-        const externalEvents = data.filter(e => e.source !== 'FamilyOps' && !e.createdBy);
+        // 1. GLOBAL CLEANUP & ENRICHMENT
+        // Remove prefixes like "Svante:", tag Football matches, handle cancellation
+        const cleanedData = data.map(ev => {
+          let newEv = { ...ev };
+          const summary = (ev.summary || '');
+
+          // Remove "Name:" prefixes (e.g. "Svante: ...")
+          const namePrefixRegex = /^(Svante|Sarah|Algot|Leon|Tuva|Familjen|Örtendahls):\s*/i;
+          if (namePrefixRegex.test(summary)) {
+            newEv.summary = summary.replace(namePrefixRegex, '');
+          }
+
+          const summaryLower = newEv.summary.toLowerCase();
+
+          // Identify Football matches (Arsenal / ÖIS)
+          const isArsenal = newEv.source === 'Arsenal FC' || summaryLower.includes('arsenal');
+          const isOis = newEv.source === 'Örgryte IS' || summaryLower.includes('örgryte') || summaryLower.includes('orgryte');
+
+          if ((isArsenal || isOis) && !newEv.category) {
+            newEv.category = 'Fotboll';
+          }
+
+          // Cancellation
+          if (summaryLower.includes('inställd')) {
+            newEv.cancelled = true;
+          }
+          return newEv;
+        });
+
+        // 2. DEDUPLICATE (on cleaned data)
+        const localEvents = cleanedData.filter(e => e.source === 'FamilyOps' || e.createdBy);
+        const externalEvents = cleanedData.filter(e => e.source !== 'FamilyOps' && !e.createdBy);
 
         const uniqueExternal = externalEvents.filter(ext => {
           const isDuplicate = localEvents.some(loc => {
@@ -547,15 +577,7 @@ function App() {
           return !isDuplicate;
         });
 
-        let processedData = [...localEvents, ...uniqueExternal];
-
-        // Auto-detect cancellation for Google events (if title contains "Inställd")
-        processedData = processedData.map(ev => {
-          if (ev.summary && ev.summary.toLowerCase().includes('inställd')) {
-            return { ...ev, cancelled: true };
-          }
-          return ev;
-        });
+        const processedData = [...localEvents, ...uniqueExternal];
 
         setEvents(processedData);
         // Försök hämta koordinater och restid för events (asynkront i bakgrunden)
@@ -1077,71 +1099,48 @@ function App() {
   const createEvent = async (e) => {
     e.preventDefault();
 
-    // Determine which Google Calendar to use based on assignees
-    const hasSvante = newEvent.assignees && newEvent.assignees.includes('Svante');
-    const hasSarah = newEvent.assignees && newEvent.assignees.includes('Sarah');
-    const hasChildren = newEvent.assignees && (
-      newEvent.assignees.includes('Algot') ||
-      newEvent.assignees.includes('Tuva') ||
-      newEvent.assignees.includes('Leon')
-    );
-    const isWholeFamily = newEvent.assignees && newEvent.assignees.includes('Hela familjen');
+    // This function now only handles LOCAL saving
+    // Google Calendar saving is handled by the separate <a> tag button
 
-    // Calendar routing logic:
-    // - Only Svante → Svantes calendar
-    // - Only Sarah → Sarahs calendar
-    // - Children, whole family, or mixed → Family calendar
-    let calendarTarget = null;
-    let calendarEmail = null;
+    const startDateTime = new Date(`${newEvent.date}T${newEvent.time}`);
+    const endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
 
-    if (hasSvante && !hasSarah && !hasChildren && !isWholeFamily) {
-      calendarTarget = 'Svante';
-      calendarEmail = 'svante.ortendahl@gmail.com';
-    } else if (hasSarah && !hasSvante && !hasChildren && !isWholeFamily) {
-      calendarTarget = 'Sarah';
-      calendarEmail = 'sarah.ortendahl@gmail.com';
-    } else {
-      // Default: Family calendar (for children, whole family, or mixed assignees)
-      calendarTarget = 'Familjen';
-      calendarEmail = 'family17438490542731545369@group.calendar.google.com';
+    try {
+      await fetch(getApiUrl('api/events'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          summary: newEvent.summary,
+          location: newEvent.location,
+          coords: newEvent.coords,
+          description: newEvent.description,
+          start: startDateTime.toISOString(),
+          end: endDateTime.toISOString(),
+          assignees: newEvent.assignees || [],
+          assignee: (newEvent.assignees || []).join(', '),
+          category: newEvent.category || null,
+          source: 'Familjen (Eget)'
+        })
+      });
+
+      // Close modal and reset form
+      setActiveTab('new-home');
+      setNewEvent({
+        summary: '',
+        location: '',
+        description: '',
+        assignees: [],
+        category: null,
+        date: new Date().toISOString().split('T')[0],
+        time: '12:00',
+        endTime: '13:00'
+      });
+
+      fetchEvents();
+    } catch (err) {
+      console.error("Could not create event", err);
+      alert("Något gick fel vid skapande av händelse.");
     }
-
-    // Build Google Calendar URL with pre-filled data
-    const baseDate = (newEvent.date || '').replace(/-/g, '');
-    const startTime = (newEvent.time || '12:00').replace(/:/g, '') + '00';
-    const endTime = (newEvent.endTime || newEvent.time || '13:00').replace(/:/g, '') + '00';
-    const dates = `${baseDate}T${startTime}/${baseDate}T${endTime}`;
-
-    const text = encodeURIComponent(newEvent.summary || 'Ny händelse');
-    const details = encodeURIComponent(
-      `${newEvent.description || ''}\n\n` +
-      `Vem: ${newEvent.assignees.join(', ')}\n` +
-      `Kategori: ${newEvent.category || 'Ingen'}\n\n` +
-      `(Skapad via Familjecentralen)`
-    );
-    const location = encodeURIComponent(newEvent.location || '');
-
-    // Add calendar-specific parameter (adds to specific calendar if user has access)
-    const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}&add=${encodeURIComponent(calendarEmail)}`;
-
-    // Open Google Calendar in new tab
-    window.open(googleUrl, '_blank');
-
-    // Close modal and reset form
-    setActiveTab('new-home');
-    setNewEvent({
-      summary: '',
-      location: '',
-      description: '',
-      assignees: [],
-      category: null,
-      date: new Date().toISOString().split('T')[0],
-      time: '12:00',
-      endTime: '13:00'
-    });
-
-    // Show confirmation message
-    alert(`Öppnar ${calendarTarget}s Google Calendar.\n\nKlicka "Spara" där för att skapa händelsen.\nDen dyker sedan automatiskt upp i Familjecentralen inom 5 minuter!`);
   };
 
 
@@ -1383,6 +1382,15 @@ function App() {
                           href={getGoogleCalendarLink(editEventData)}
                           target="_blank"
                           rel="noopener noreferrer" // Security best practice
+                          onClick={(e) => {
+                            // HA mobile app WebView workaround
+                            e.preventDefault();
+                            const url = getGoogleCalendarLink(editEventData);
+                            // Try multiple methods for maximum compatibility
+                            setTimeout(() => {
+                              window.location.href = url;
+                            }, 100);
+                          }}
                           style={{
                             background: 'white',
                             color: '#4285f4',
@@ -1392,7 +1400,8 @@ function App() {
                             fontWeight: '600',
                             fontSize: '0.85rem',
                             whiteSpace: 'nowrap',
-                            display: 'inline-block'
+                            display: 'inline-block',
+                            cursor: 'pointer'
                           }}
                         >
                           Öppna Google Kalender ↗️
@@ -1405,6 +1414,14 @@ function App() {
                         href={getGoogleCalendarLink(editEventData, true)}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => {
+                          // HA mobile app WebView workaround
+                          e.preventDefault();
+                          const url = getGoogleCalendarLink(editEventData, true);
+                          setTimeout(() => {
+                            window.location.href = url;
+                          }, 100);
+                        }}
                         style={{
                           background: 'white',
                           color: '#2ed573',
@@ -1415,7 +1432,8 @@ function App() {
                           fontSize: '0.85rem',
                           whiteSpace: 'nowrap',
                           display: 'inline-block',
-                          marginTop: isMobile ? '0.5rem' : '0'
+                          marginTop: isMobile ? '0.5rem' : '0',
+                          cursor: 'pointer'
                         }}
                       >
                         Redigera i Google-kalendern
@@ -1993,49 +2011,78 @@ function App() {
             {/* Next Match Ticker - inline in header */}
             {(() => {
               const now = new Date();
-              const nextMatch = events
+              const upcomingMatches = events
                 .filter(e => {
-                  const isArsenal = e.source === 'Arsenal FC';
-                  const isOis = e.source === 'Örgryte IS';
+                  const summary = (e.summary || '').toLowerCase();
+                  const isArsenal = e.source === 'Arsenal FC' || summary.includes('arsenal');
+                  const isOis = e.source === 'Örgryte IS' || summary.includes('örgryte') || summary.includes('orgryte');
                   return (isArsenal || isOis) && new Date(e.start) > now;
                 })
-                .sort((a, b) => new Date(a.start) - new Date(b.start))[0];
+                .sort((a, b) => new Date(a.start) - new Date(b.start));
 
-              if (!nextMatch) return null;
+              const nextMatch = upcomingMatches[0];
+
+              // If no upcoming match at all, show placeholder
+              if (!nextMatch) {
+                return (
+                  <div
+                    onClick={() => setShowMatchModal(true)}
+                    style={{
+                      background: 'var(--card-bg)',
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '12px',
+                      fontSize: '0.75rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid var(--border-color)',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      lineHeight: 1.3,
+                      minWidth: '120px'
+                    }}
+                    title="Visa alla matcher"
+                  >
+                    <span style={{ fontWeight: 600, fontSize: '0.7rem' }}>Matcher</span>
+                  </div>
+                );
+              }
 
               const isArsenal = nextMatch.source === 'Arsenal FC' || (nextMatch.summary || '').toLowerCase().includes('arsenal');
-
-              // Adjust time for Arsenal (UK time +1h for SE) if needed
               const displayDate = new Date(nextMatch.start);
-              // if (isArsenal) {
-              // }
+
+              // Remove "Svante:" or any assignee prefix from summary
+              const cleanSummary = nextMatch.summary.replace(/^[^:]+:\s*/, '');
 
               return (
                 <div
                   onClick={() => setShowMatchModal(true)}
                   style={{
                     background: 'var(--card-bg)',
-                    padding: '0.3rem 0.6rem',
+                    padding: '0.4rem 0.8rem',
                     borderRadius: '12px',
                     fontSize: '0.75rem',
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'center', /* Center alignment looks better stacked usually, checking user req "båda lagen syns och lägga tid och datum under". Center often looks cleaner in a header bar. */
+                    alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0',
+                    gap: '0.1rem',
                     border: '1px solid var(--border-color)',
                     color: 'var(--text-main)',
-                    maxWidth: 'none', /* Ensure full width visibility */
-                    textDecoration: 'none',
                     cursor: 'pointer',
-                    lineHeight: 1.2
+                    lineHeight: 1.3,
+                    transition: 'transform 0.2s'
                   }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  title="Nästa match - klicka för alla matcher"
                 >
-                  <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{nextMatch.summary}</span>
-                  <span style={{ opacity: 0.7, fontSize: '0.7rem' }}>
-                    {displayDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric' })}
-                    {' '}
-                    {displayDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                  <span style={{ fontWeight: 700, whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
+                    {cleanSummary}
+                  </span>
+                  <span style={{ opacity: 0.7, fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+                    {displayDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
                   </span>
                 </div>
               );
@@ -2306,6 +2353,7 @@ function App() {
             setSelectedDate={setSelectedDate}
             setViewMode={setViewMode}
             holidays={holidays}
+            onOpenEventDetail={setSelectedEventForDetail}
           />
         )
       }
@@ -3966,6 +4014,19 @@ function App() {
         }}
         getGoogleLink={getGoogleCalendarLink}
       />
+
+      {/* Event Detail Modal */}
+      {selectedEventForDetail && (
+        <EventDetailModal
+          event={selectedEventForDetail}
+          allEvents={allEvents}
+          onClose={() => setSelectedEventForDetail(null)}
+          onEdit={(event) => {
+            setSelectedEventForDetail(event);
+          }}
+          getGoogleCalendarLink={getGoogleCalendarLink}
+        />
+      )}
 
     </div >
   )
