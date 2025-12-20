@@ -370,8 +370,7 @@ function App() {
 
     // SCENARIO 2: "Edit/View" Private Event
     // Try to construct deep link to SPECIFIC event
-    const sourceName = event.source?.split(' (')[0] + ' (Privat)'; // Attempt to normalize "Svante (Privat)"
-    const calendarId = GOOGLE_CALENDAR_EMAILS[event.source] || GOOGLE_CALENDAR_EMAILS[sourceName];
+    // calendarId is already determined above
 
     if (calendarId && event.uid && event.uid.includes('@google.com')) {
       // Extract ID part (before @google.com)
