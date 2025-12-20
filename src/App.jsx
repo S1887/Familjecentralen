@@ -4005,7 +4005,8 @@ function App() {
           allEvents={allEvents}
           onClose={() => setSelectedEventForDetail(null)}
           onEdit={(event) => {
-            setSelectedEventForDetail(event);
+            setEditEventData(event);
+            setIsEditingEvent(true);
           }}
           getGoogleCalendarLink={getGoogleCalendarLink}
         />
