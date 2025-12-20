@@ -1363,63 +1363,37 @@ function App() {
                         }
 
                         // Format message based on source type
-                        if (isValidSource) {
-                          return `Källa: ${source}. Öppna Google Kalender för att ändra tid, plats eller ta bort händelsen.`;
-                        } else if (hasSubscriptionSource) {
-                          return `Källa: ${source} genom Örtendahls familjekalender. Öppna Google Kalender för att ändra tid, plats eller ta bort händelsen.`;
-                        } else {
-                          return `Extern källa: ${source}. Öppna Google Kalender för att ändra tid, plats eller ta bort händelsen.`;
+                        // Format message based on source type
+                        if (hasSubscriptionSource) {
+                          return `Källa: ${source}`;
                         }
+                        return `Källa: ${displaySource}`; // keep it simple
                       })()}
                     </span>
-                    {/* Only show Google Calendar link for Google sources */}
-                    {(() => {
-                      const cleanSource = (editEventData.source || '').split(' (')[0];
-                      const finalSource = cleanSource === 'Familjen' ? 'Örtendahls familjekalender' : cleanSource;
-                      return finalSource.includes('Svante') || finalSource.includes('Sarah') || finalSource.includes('Örtendahls familjekalender');
-                    })() && (
-                        <a
-                          href={getGoogleCalendarLink(editEventData)}
-                          target="_blank"
-                          rel="noopener noreferrer" // Security best practice
-                          style={{
-                            background: 'white',
-                            color: '#4285f4',
-                            padding: '0.4rem 0.8rem',
-                            borderRadius: '4px',
-                            textDecoration: 'none',
-                            fontWeight: '600',
-                            fontSize: '0.85rem',
-                            whiteSpace: 'nowrap',
-                            display: 'inline-block',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Öppna Google Kalender ↗️
-                        </a>
-                      )}
 
-                    {/* Show "Save to Calendar" for External non-private sources (e.g. Arsenal, Vklass) */}
-                    {!(editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Privat') || editEventData.source?.includes('Familjen')) && editEventData.isExternalSource && (
+                    {/* Single "Redigera i Google-kalendern" button for ALL external sources */}
+                    {(editEventData.isExternalSource || editEventData.source?.includes('Familjen') || editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah')) && (
                       <a
-                        href={getGoogleCalendarLink(editEventData, true)}
+                        href={getGoogleCalendarLink(editEventData, false)} // Use false to preserve Deep Link behavior (edit event)
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
                           background: 'white',
                           color: '#2ed573',
-                          padding: '0.4rem 0.8rem',
+                          padding: '0.6rem 1rem',
                           borderRadius: '4px',
                           textDecoration: 'none',
                           fontWeight: '600',
-                          fontSize: '0.85rem',
+                          fontSize: '0.9rem',
                           whiteSpace: 'nowrap',
                           display: 'inline-block',
-                          marginTop: isMobile ? '0.5rem' : '0',
-                          cursor: 'pointer'
+                          marginTop: '0.5rem',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                         }}
                       >
-                        Redigera i Google-kalendern
+                        Redigera i Google-kalendern ↗️
                       </a>
                     )}
                   </div>
