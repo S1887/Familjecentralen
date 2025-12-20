@@ -327,16 +327,23 @@ function App() {
   // Google Calendar Mapping
   const GOOGLE_CALENDAR_EMAILS = {
     'Svante (Privat)': 'svante.ortendahl@gmail.com',
+    'Svante': 'svante.ortendahl@gmail.com',
     'Sarah (Privat)': 'sarah.ortendahl@gmail.com',
-    'Familjen': 'family17438490542731545369@group.calendar.google.com'
+    'Sarah': 'sarah.ortendahl@gmail.com',
+    'Familjen': 'family17438490542731545369@group.calendar.google.com',
+    'Örtendahls familjekalender': 'family17438490542731545369@group.calendar.google.com'
   };
 
   const getGoogleCalendarLink = (event, forceSave = false) => {
     if (!event) return 'https://calendar.google.com/calendar/r';
 
-    // SCENARIO 1: "Save to Calendar" (Add copy) - For external events
+    // Determine target calendar 
+    const sourceNameHelper = event.source?.split(' (')[0] + ' (Privat)';
+    const calendarId = GOOGLE_CALENDAR_EMAILS[event.source] || GOOGLE_CALENDAR_EMAILS[sourceNameHelper];
+
+    // SCENARIO 1: "Save to Calendar" (Add copy) - For external events unknown to us
     // or if explicitly requested via forceSave
-    if (forceSave || (!event.source?.includes('Privat') && !event.source?.includes('Familjen'))) {
+    if (forceSave || !calendarId) {
       const startStr = event.start ? new Date(event.start).toISOString().replace(/-|:|\.\d\d\d/g, "") : "";
       const endStr = event.end ? new Date(event.end).toISOString().replace(/-|:|\.\d\d\d/g, "") : "";
 
@@ -352,7 +359,7 @@ function App() {
         url += `&location=${encodeURIComponent(event.location)}`;
       }
 
-      // Pre-select Family Calendar
+      // Pre-select Family Calendar for new/copied events
       const familyEmail = GOOGLE_CALENDAR_EMAILS['Familjen'];
       if (familyEmail) {
         url += `&src=${encodeURIComponent(familyEmail)}`;
