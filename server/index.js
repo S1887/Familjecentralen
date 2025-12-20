@@ -394,6 +394,7 @@ async function fetchCalendarsFromGoogle() {
                         location: ev.location || 'Okänd plats',
                         description: ev.description || '',
                         source: eventSource,
+                        originalSource: cal.name, // Preserve original source for UI display
                         inboxOnly: isInbox,
                         assignees: assignees,
                         category: category,

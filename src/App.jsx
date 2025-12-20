@@ -1351,7 +1351,7 @@ function App() {
                     <span>🔒</span>
                     <span style={{ color: 'white', fontSize: '0.85rem', flex: 1 }}>
                       {(() => {
-                        const rawSource = editEventData.source || 'Familjen';
+                        const rawSource = editEventData.originalSource || editEventData.source || 'Familjen';
                         let source = rawSource.split(' (')[0];
                         if (source === 'Familjen') source = 'Örtendahls familjekalender';
 
@@ -1368,7 +1368,6 @@ function App() {
                           displaySource = displaySource.replace('Familjen', 'Örtendahls familjekalender');
                         }
 
-                        // Format message based on source type
                         // Format message based on source type
                         if (hasSubscriptionSource) {
                           return `Källa: ${source}`;
