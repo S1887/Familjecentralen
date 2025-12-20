@@ -1382,15 +1382,6 @@ function App() {
                           href={getGoogleCalendarLink(editEventData)}
                           target="_blank"
                           rel="noopener noreferrer" // Security best practice
-                          onClick={(e) => {
-                            // HA mobile app WebView workaround
-                            e.preventDefault();
-                            const url = getGoogleCalendarLink(editEventData);
-                            // Try multiple methods for maximum compatibility
-                            setTimeout(() => {
-                              window.location.href = url;
-                            }, 100);
-                          }}
                           style={{
                             background: 'white',
                             color: '#4285f4',
@@ -1414,14 +1405,6 @@ function App() {
                         href={getGoogleCalendarLink(editEventData, true)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={(e) => {
-                          // HA mobile app WebView workaround
-                          e.preventDefault();
-                          const url = getGoogleCalendarLink(editEventData, true);
-                          setTimeout(() => {
-                            window.location.href = url;
-                          }, 100);
-                        }}
                         style={{
                           background: 'white',
                           color: '#2ed573',

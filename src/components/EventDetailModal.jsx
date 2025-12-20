@@ -308,18 +308,11 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, getGoogleCalendar
                             ✏️ Redigera
                         </button>
 
-                        {getGoogleCalendarLink && event.source && event.source.includes('Svante' || 'Sarah' || 'Familjen') && (
+                        {getGoogleCalendarLink && event.source && (event.source.includes('Svante') || event.source.includes('Sarah') || event.source.includes('Familjen')) && (
                             <a
                                 href={getGoogleCalendarLink(event)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    const url = getGoogleCalendarLink(event);
-                                    setTimeout(() => {
-                                        window.location.href = url;
-                                    }, 100);
-                                }}
                                 style={{
                                     flex: 1,
                                     padding: '0.75rem 1.5rem',
