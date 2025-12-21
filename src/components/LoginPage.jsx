@@ -1,18 +1,30 @@
 import { useState } from 'react';
 import './LoginPage.css';
 
+// User list for display ONLY - No PINs here!
 const USERS = [
-    { name: 'Svante', pin: '486512', role: 'parent' },
-    { name: 'Sarah', pin: '060812', role: 'parent' },
-    { name: 'Algot', pin: '502812', role: 'child' },
-    { name: 'Tuva', pin: '502812', role: 'child' },
-    { name: 'Leon', pin: '502812', role: 'child' },
+    { name: 'Svante', role: 'parent' }, // Password removed
+    { name: 'Sarah', role: 'parent' },  // Password removed
+    { name: 'Algot', role: 'child' },   // Password removed
+    { name: 'Tuva', role: 'child' },    // Password removed
+    { name: 'Leon', role: 'child' },    // Password removed
 ];
+
+// Determine API URL based on environment (similar to App.jsx helper)
+const getApiUrl = (endpoint) => {
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+    if (window.location.port === '3001') return '/' + cleanEndpoint;
+    // Simple fallback for relative path in production/ingress
+    const pathname = window.location.pathname;
+    const basePath = pathname.replace(/\/+$/, '');
+    return basePath && basePath !== '/' ? basePath + '/' + cleanEndpoint : './' + cleanEndpoint;
+};
 
 function LoginPage({ onLogin }) {
     const [selectedUser, setSelectedUser] = useState(null);
     const [pin, setPin] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleUserSelect = (user) => {
         setSelectedUser(user);
@@ -20,14 +32,36 @@ function LoginPage({ onLogin }) {
         setError('');
     };
 
-    const handlePinSubmit = () => {
-        const user = USERS.find(u => u.name === selectedUser);
-        if (user && user.pin === pin) {
-            localStorage.setItem('familjecentralen_user', JSON.stringify(user));
-            onLogin(user);
-        } else {
-            setError('Fel PIN-kod');
-            setPin('');
+    const handlePinSubmit = async () => {
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const response = await fetch(getApiUrl('api/login'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: selectedUser,
+                    pin: pin
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Login successful
+                localStorage.setItem('familjecentralen_user', JSON.stringify(data));
+                onLogin(data);
+            } else {
+                // Login failed
+                setError(data.error || 'Fel PIN-kod');
+                setPin('');
+            }
+        } catch (err) {
+            console.error('Login error:', err);
+            setError('Kunde inte nå servern');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -61,6 +95,7 @@ function LoginPage({ onLogin }) {
                             className="pin-input"
                             placeholder="••••••"
                             autoFocus
+                            disabled={isLoading}
                         />
 
                         {error && <p className="error-msg">{error}</p>}
@@ -68,9 +103,9 @@ function LoginPage({ onLogin }) {
                         <button
                             type="submit"
                             className="login-btn"
-                            disabled={pin.length !== 6}
+                            disabled={pin.length !== 6 || isLoading}
                         >
-                            Logga in
+                            {isLoading ? 'Loggar in...' : 'Logga in'}
                         </button>
                     </form>
                 </div>

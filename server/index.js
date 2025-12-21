@@ -549,7 +549,41 @@ const saveTasks = () => {
     fs.writeFileSync(TASKS_FILE, JSON.stringify(tasksData, null, 2));
 };
 
+// --- AUTHENTICATION CONFIG ---
+// Moved from client-side for security
+const USERS = [
+    { name: 'Svante', pin: '486512', role: 'parent' },
+    { name: 'Sarah', pin: '060812', role: 'parent' },
+    { name: 'Algot', pin: '502812', role: 'child' },
+    { name: 'Tuva', pin: '502812', role: 'child' },
+    { name: 'Leon', pin: '502812', role: 'child' },
+];
+
 // --- API ---
+
+app.post('/api/login', (req, res) => {
+    const { username, pin } = req.body;
+
+    // Simple validation
+    if (!username || !pin) {
+        return res.status(400).json({ error: 'Missing credentials' });
+    }
+
+    // Check credentials
+    const user = USERS.find(u => u.name === username);
+
+    // Constant-time comparison not strictly necessary for this low-stakes app, 
+    // but good practice. Here we just do direct comparison.
+    if (user && user.pin === pin) {
+        // Return user info WITHOUT the PIN
+        res.json({
+            name: user.name,
+            role: user.role
+        });
+    } else {
+        res.status(401).json({ error: 'Invalid PIN' });
+    }
+});
 
 app.get('/api/tasks', async (req, res) => {
     try {
