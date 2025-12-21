@@ -1,28 +1,44 @@
 import React, { useState } from 'react';
 import { formatDuration } from '../mapService';
 
-const EventDetailModal = ({ event, allEvents, onClose, onEdit, getGoogleCalendarLink }) => {
+const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, getGoogleCalendarLink }) => {
     if (!event) return null;
 
     // Sort events chronologically (upcoming only)
     const now = new Date();
-    const sortedEvents = [...allEvents]
+    // Filter duplicates and sort
+    const uniqueEvents = [...allEvents].reduce((acc, current) => {
+        const x = acc.find(item => item.uid === current.uid);
+        if (!x) {
+            return acc.concat([current]);
+        } else {
+            return acc;
+        }
+    }, []);
+
+    const sortedEvents = uniqueEvents
         .filter(e => new Date(e.start) > now)
-        .sort((a, b) => new Date(a.start) - new Date(b.start));
+        .sort((a, b) => {
+            const timeDiff = new Date(a.start) - new Date(b.start);
+            if (timeDiff !== 0) return timeDiff;
+            const summaryDiff = (a.summary || '').localeCompare(b.summary || '');
+            if (summaryDiff !== 0) return summaryDiff;
+            return a.uid.localeCompare(b.uid);
+        });
 
     const currentIndex = sortedEvents.findIndex(e => e.uid === event.uid);
     const hasPrevious = currentIndex > 0;
     const hasNext = currentIndex < sortedEvents.length - 1;
 
     const handlePrevious = () => {
-        if (hasPrevious) {
-            onEdit(sortedEvents[currentIndex - 1]);
+        if (hasPrevious && onNavigate) {
+            onNavigate(sortedEvents[currentIndex - 1]);
         }
     };
 
     const handleNext = () => {
-        if (hasNext) {
-            onEdit(sortedEvents[currentIndex + 1]);
+        if (hasNext && onNavigate) {
+            onNavigate(sortedEvents[currentIndex + 1]);
         }
     };
 
@@ -119,7 +135,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, getGoogleCalendar
                         position: 'absolute',
                         top: '1rem',
                         right: '1rem',
-                        background: 'rgba(0, 0, 0, 0.3)',
+                        background: 'transparent',
                         border: 'none',
                         borderRadius: '50%',
                         width: '40px',
@@ -131,10 +147,10 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, getGoogleCalendar
                         color: 'white',
                         fontSize: '1.5rem',
                         zIndex: 10,
-                        transition: 'background 0.2s'
+                        transition: 'transform 0.2s'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.3)'}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
                     ✕
                 </button>
@@ -341,7 +357,8 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, getGoogleCalendar
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        paddingTop: '1rem',
+                        marginTop: 'auto',
+                        paddingTop: '2rem',
                         borderTop: '1px solid rgba(255, 255, 255, 0.1)'
                     }}>
                         <button
@@ -349,20 +366,19 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, getGoogleCalendar
                             disabled={!hasPrevious}
                             style={{
                                 padding: '0.75rem 1.5rem',
-                                background: hasPrevious ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                                background: hasPrevious ? accentColor : 'rgba(255, 255, 255, 0.05)',
                                 color: hasPrevious ? 'white' : 'rgba(255, 255, 255, 0.3)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                border: 'none',
                                 borderRadius: '12px',
                                 fontSize: '1rem',
-                                fontWeight: '500',
+                                fontWeight: '600',
                                 cursor: hasPrevious ? 'pointer' : 'not-allowed',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.5rem',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                opacity: hasPrevious ? 1 : 0.5
                             }}
-                            onMouseEnter={(e) => hasPrevious && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)')}
-                            onMouseLeave={(e) => hasPrevious && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
                         >
                             ← Föregående
                         </button>
@@ -376,20 +392,19 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, getGoogleCalendar
                             disabled={!hasNext}
                             style={{
                                 padding: '0.75rem 1.5rem',
-                                background: hasNext ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                                background: hasNext ? accentColor : 'rgba(255, 255, 255, 0.05)',
                                 color: hasNext ? 'white' : 'rgba(255, 255, 255, 0.3)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                border: 'none',
                                 borderRadius: '12px',
                                 fontSize: '1rem',
-                                fontWeight: '500',
+                                fontWeight: '600',
                                 cursor: hasNext ? 'pointer' : 'not-allowed',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.5rem',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.2s',
+                                opacity: hasNext ? 1 : 0.5
                             }}
-                            onMouseEnter={(e) => hasNext && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)')}
-                            onMouseLeave={(e) => hasNext && (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)')}
                         >
                             Nästa →
                         </button>

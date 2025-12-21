@@ -164,7 +164,7 @@ function App() {
   const [showInbox, setShowInbox] = useState(false);
   const [inboxData, setInboxData] = useState([]); // Store actual items to track UIDs
   const inboxCount = inboxData.length;
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('familyOpsDarkMode') === 'true');
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('familyOpsDarkMode') !== 'false');
   const [selectedEventForDetail, setSelectedEventForDetail] = useState(null); // Event detail modal state
 
   const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
@@ -1272,6 +1272,19 @@ function App() {
 
   return (
     <div className="container" style={{ position: 'relative' }}>
+      {/* GLOBAL BACKGROUND - Always Dark per user request */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: -1,
+        background: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), url('/bg-family.jpg')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      }} />
 
 
       {/* Header and modals - always visible */}
@@ -1314,7 +1327,7 @@ function App() {
         {
           isEditingEvent && editEventData && (
             <div className="modal-overlay">
-              <div className="modal" style={{ padding: '2rem', position: 'relative' }}>
+              <div className="modal" style={{ padding: '2rem', position: 'relative', color: 'var(--card-text)' }}>
                 <button
                   type="button"
                   onClick={() => setIsEditingEvent(false)}
@@ -1326,7 +1339,7 @@ function App() {
                     border: 'none',
                     fontSize: '1.5rem',
                     cursor: 'pointer',
-                    color: 'var(--text-secondary)',
+                    color: 'var(--card-text)',
                     padding: '0.25rem',
                     lineHeight: 1
                   }}
@@ -1536,7 +1549,7 @@ function App() {
                               borderRadius: '15px',
                               border: '1px solid var(--border-color)',
                               background: isSelected ? '#2ed573' : 'var(--input-bg)',
-                              color: isSelected ? 'white' : 'var(--text-main)',
+                              color: isSelected ? 'white' : 'var(--card-text)',
                               fontSize: '0.8rem',
                               cursor: isAdmin ? 'pointer' : 'not-allowed',
                               opacity: isAdmin ? 1 : 0.6,
@@ -1567,7 +1580,7 @@ function App() {
                               borderRadius: '15px',
                               border: '1px solid var(--border-color)',
                               background: isSelected ? '#646cff' : 'var(--input-bg)',
-                              color: isSelected ? 'white' : 'var(--text-main)',
+                              color: isSelected ? 'white' : 'var(--card-text)',
                               fontSize: '0.8rem',
                               cursor: isAdmin ? 'pointer' : 'not-allowed',
                               opacity: isAdmin ? 1 : 0.6,
@@ -2048,7 +2061,7 @@ function App() {
                     justifyContent: 'center',
                     gap: '0.1rem',
                     border: '1px solid var(--border-color)',
-                    color: 'var(--text-main)',
+                    color: 'var(--card-text)',
                     cursor: 'pointer',
                     lineHeight: 1.3,
                     transition: 'transform 0.2s'
@@ -2068,6 +2081,8 @@ function App() {
             })()}
 
           </div>
+
+
 
           {/* Right: Menu */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
@@ -2140,7 +2155,8 @@ function App() {
                     boxShadow: '0 4px 12px var(--shadow-color)',
                     zIndex: 1000,
                     minWidth: '200px',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    color: 'var(--card-text)' // Ensure text inherits correct color
                   }}>
                     {currentUser?.role !== 'child' && (
                       <button
@@ -2157,7 +2173,7 @@ function App() {
                           background: 'transparent',
                           border: 'none',
                           borderBottom: '1px solid var(--border-color)',
-                          color: 'var(--text-main)',
+                          color: 'var(--card-text)',
                           fontSize: '0.95rem',
                           cursor: 'pointer',
                           display: 'flex',
@@ -2194,7 +2210,7 @@ function App() {
                           background: 'transparent',
                           border: 'none',
                           borderBottom: '1px solid var(--border-color)',
-                          color: 'var(--text-main)',
+                          color: 'var(--card-text)',
                           fontSize: '0.95rem',
                           cursor: 'pointer',
                           display: 'flex',
@@ -2215,7 +2231,7 @@ function App() {
                         background: 'transparent',
                         border: 'none',
                         borderBottom: '1px solid var(--border-color)',
-                        color: 'var(--text-main)',
+                        color: 'var(--card-text)',
                         fontSize: '0.95rem',
                         cursor: 'pointer',
                         display: 'flex',
@@ -2236,7 +2252,7 @@ function App() {
                           background: 'transparent',
                           border: 'none',
                           borderBottom: '1px solid var(--border-color)',
-                          color: 'var(--text-main)',
+                          color: 'var(--card-text)',
                           fontSize: '0.95rem',
                           cursor: 'pointer',
                           display: 'flex',
@@ -2333,6 +2349,7 @@ function App() {
             setViewMode={setViewMode}
             holidays={holidays}
             onOpenEventDetail={setSelectedEventForDetail}
+            darkMode={darkMode}
           />
         )
       }
@@ -2340,7 +2357,7 @@ function App() {
       {/* CREATE EVENT VIEW */}
       {
         activeTab === 'create-event' && (
-          <div className="create-event-view" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', paddingBottom: '80px' }}>
+          <div className="create-event-view" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', paddingBottom: '80px', color: 'var(--card-text)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
               <h2>✨ Skapa ny händelse</h2>
               {/* Close button that goes back to dashboard */}
@@ -2351,7 +2368,7 @@ function App() {
                   border: 'none',
                   fontSize: '1.5rem',
                   cursor: 'pointer',
-                  color: 'var(--text-secondary)',
+                  color: 'var(--card-text)',
                   padding: '0.25rem',
                   lineHeight: 1
                 }}
@@ -3110,7 +3127,7 @@ function App() {
               background: 'var(--card-bg)',
               border: '1px solid var(--border-color)',
               borderRadius: '12px',
-              color: 'var(--text-main)',
+              color: 'var(--card-text)',
               fontSize: '0.9rem',
               textAlign: 'left',
               display: 'flex',
@@ -3151,7 +3168,8 @@ function App() {
                   maxWidth: '400px',
                   width: '100%',
                   maxHeight: '80vh',
-                  overflowY: 'auto'
+                  overflowY: 'auto',
+                  color: 'var(--card-text)'
                 }}
                 onClick={e => e.stopPropagation()}
               >
@@ -3164,7 +3182,7 @@ function App() {
                       border: 'none',
                       fontSize: '1.5rem',
                       cursor: 'pointer',
-                      color: 'var(--text-main)',
+                      color: 'var(--card-text)',
                       padding: '0',
                       lineHeight: 1
                     }}
@@ -3187,7 +3205,7 @@ function App() {
                           style={{
                             padding: '0.8rem',
                             background: filterChild === child ? '#2ed573' : 'transparent',
-                            color: filterChild === child ? 'white' : 'var(--text-main)',
+                            color: filterChild === child ? 'white' : 'var(--card-text)',
                             border: '1px solid var(--border-color)',
                             borderRadius: '8px',
                             cursor: 'pointer',
@@ -3212,7 +3230,7 @@ function App() {
                           style={{
                             padding: '0.8rem',
                             background: filterCategory === cat ? '#2ed573' : 'transparent',
-                            color: filterCategory === cat ? 'white' : 'var(--text-main)',
+                            color: filterCategory === cat ? 'white' : 'var(--card-text)',
                             border: '1px solid var(--border-color)',
                             borderRadius: '8px',
                             cursor: 'pointer',
@@ -3293,7 +3311,7 @@ function App() {
                     onClick={() => setViewMode(view.id)}
                     style={{
                       background: viewMode === view.id ? 'var(--card-bg)' : 'transparent',
-                      color: viewMode === view.id ? 'white' : 'rgba(255,255,255,0.6)',
+                      color: viewMode === view.id ? 'var(--card-text)' : 'var(--text-muted)',
                       border: 'none',
                       borderRadius: '24px',
                       padding: '0.6rem 1rem',
@@ -3327,7 +3345,7 @@ function App() {
                     <button onClick={() => navigateView(1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>▶</button>
                   </>
                 ) : (
-                  <span>
+                  <span style={{ color: 'var(--text-main)' }}>
                     📅 Kommande händelser
                   </span>
                 )}
@@ -3429,7 +3447,7 @@ function App() {
                           id={isTodayHeader ? 'today-column' : undefined}
                           style={{
                             flex: 1,
-                            background: '#1e2329',
+                            background: 'var(--card-bg)',
                             borderRadius: '24px',
                             overflow: 'hidden',
                             display: 'flex',
@@ -3578,7 +3596,7 @@ function App() {
                               borderRadius: '8px',
                               fontWeight: '600',
                               fontSize: '0.9rem',
-                              color: 'rgba(255,255,255,0.5)',
+                              color: 'var(--text-muted)',
                               display: 'flex',
                               alignItems: 'center',
                               gap: '0.6rem',
@@ -3597,8 +3615,8 @@ function App() {
                               padding: '1rem',
                               marginBottom: '0.8rem',
                               borderRadius: '24px',
-                              background: 'rgba(255,255,255,0.08)',
-                              border: '1px solid rgba(255,255,255,0.05)',
+                              background: 'var(--card-bg)',
+                              border: '1px solid var(--border-color)',
                               borderLeft: `4px solid ${event.source && event.source.includes('Svante') ? '#ff7675' : '#74b9ff'}`,
                               display: 'flex',
                               flexDirection: 'column',
@@ -3607,7 +3625,7 @@ function App() {
                             onClick={() => openEditModal(event)}
                           >
                             <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.85rem' }}>
-                              <span className="time" style={{ fontWeight: 'bold', color: 'rgba(255,255,255,0.9)' }}>
+                              <span className="time" style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>
                                 {new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                               <span className="source-badge" style={{ opacity: 0.7, fontSize: '0.8em' }}>
@@ -3631,12 +3649,12 @@ function App() {
                                 })()}
                               </span>
                             </div>
-                            <h3 style={{ textDecoration: event.cancelled ? 'line-through' : 'none', color: event.cancelled ? '#7f8c8d' : 'white', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.2rem 0' }}>
+                            <h3 style={{ textDecoration: event.cancelled ? 'line-through' : 'none', color: event.cancelled ? 'var(--text-muted)' : 'var(--card-text)', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.2rem 0' }}>
                               {event.cancelled && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}
                               {event.summary}
                             </h3>
                             <p className="location" onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
-                              style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'rgba(255,255,255,0.6)', textDecoration: event.coords ? 'underline' : 'none', fontSize: '0.9rem', margin: '0' }}
+                              style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'var(--text-muted)', textDecoration: event.coords ? 'underline' : 'none', fontSize: '0.9rem', margin: '0' }}
                               title={event.coords ? "Se på karta" : "Ingen plats"}>
                               📍 {event.location || 'Hemma/Okänd plats'}
                             </p>
@@ -4000,10 +4018,8 @@ function App() {
           event={selectedEventForDetail}
           allEvents={allEvents}
           onClose={() => setSelectedEventForDetail(null)}
-          onEdit={(event) => {
-            setEditEventData(event);
-            setIsEditingEvent(true);
-          }}
+          onEdit={openEditModal}
+          onNavigate={setSelectedEventForDetail}
           getGoogleCalendarLink={getGoogleCalendarLink}
         />
       )}

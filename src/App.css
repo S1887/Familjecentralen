@@ -1,25 +1,43 @@
 :root {
-  --bg-main: #ffffff;
-  --text-main: #213547;
-  --text-muted: #666;
-  --card-bg: #ffffff;
+  /* LIGHT MODE (HYBRID): Background Image + White Cards */
+  --bg-main: transparent;
+  --text-main: #ffffff;
+  /* White text for headers on background */
+  --text-muted: rgba(255, 255, 255, 0.8);
+  /* Light grey for background items */
+
+  --card-bg: rgba(255, 255, 255, 0.95);
+  /* White cards (high opacity) */
+  --card-text: #2c3e50;
+  /* Dark text inside white cards */
+  --card-text-muted: #636e72;
+  /* Grey text inside white cards */
+
   --card-border-left: #ccc;
-  --border-color: #eee;
+  --border-color: rgba(255, 255, 255, 0.3);
   --input-bg: #ffffff;
-  --input-border: #ddd;
+  --input-border: #ccc;
   --modal-bg: #ffffff;
-  --button-bg: #eee;
-  --button-text: #333;
-  --button-hover: #f9f9f9;
-  --shadow-color: rgba(0, 0, 0, 0.1);
-  --header-border: #eee;
+  --button-bg: #f8f9fa;
+  --button-text: #2c3e50;
+  --button-hover: #e9ecef;
+  --shadow-color: rgba(0, 0, 0, 0.15);
+  --header-border: rgba(255, 255, 255, 0.2);
+  --week-header-bg: rgba(255, 255, 255, 0.9);
+  --week-header-text: #2d3436;
 }
 
 .dark-mode {
-  --bg-main: #1a1a1a;
+  --bg-main: transparent;
   --text-main: #f0f0f0;
   --text-muted: #aaa;
-  --card-bg: #2a2a2a;
+
+  --card-bg: #1e2329;
+  /* Dark cards */
+  --card-text: #f0f0f0;
+  /* Light text inside dark cards */
+  --card-text-muted: #aaa;
+
   --card-border-left: #444;
   --border-color: #444;
   --input-bg: #333;
@@ -30,6 +48,8 @@
   --button-hover: #444;
   --shadow-color: rgba(0, 0, 0, 0.5);
   --header-border: #333;
+  --week-header-bg: #333;
+  --week-header-text: #f0f0f0;
 }
 
 /* Global reset for mobile */
@@ -246,7 +266,7 @@ body {
 .filter-btn {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  color: var(--text-main);
+  color: var(--card-text);
   padding: 0.4rem 0.8rem;
   /* Mobile: compact */
   min-height: 36px;
@@ -304,7 +324,8 @@ body {
   transition: transform 0.2s;
   position: relative;
   overflow: hidden;
-  color: var(--text-main);
+  overflow: hidden;
+  color: var(--card-text);
   font-size: 0.9rem;
   /* Mobile: slightly smaller */
 }
@@ -353,7 +374,7 @@ body {
   justify-content: space-between;
   margin-bottom: 0.5rem;
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: var(--card-text-muted);
 }
 
 .source-badge {
@@ -654,9 +675,11 @@ h3 {
 .week-column-header {
   padding: 0.3rem;
   text-align: center;
+  text-align: center;
   border-bottom: 1px solid var(--border-color);
   font-weight: bold;
-  background: var(--button-bg);
+  background: var(--week-header-bg);
+  color: var(--week-header-text);
   border-radius: 8px 8px 0 0;
   font-size: 0.85rem;
 }

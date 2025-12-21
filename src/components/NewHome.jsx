@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getTravelTime, formatDuration } from '../mapService';
 const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
-const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail }) => {
+const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail, darkMode }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
@@ -40,16 +40,37 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
     };
     const currentWeather = getCurrentWeather();
 
-    // Dark Theme Colors matching the user's image vibe (Space/Dark Blue/Gray)
-    const theme = {
-        bg: '#121212', // Deep dark background
-        cardBg: '#1e2329', // Slightly lighter card background
-        cardBgHighlight: '#2c3e50', // Highlight for active/important
-        accent: '#74b9ff', // Light blue accent
-        textMain: '#ffffff',
+    // Theme Colors
+    const theme = darkMode ? {
+        // Dark Mode
+        bgOverlay: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85))',
+        cardBg: '#1e2329',
+        cardBgHighlight: '#2c3e50',
+        accent: '#74b9ff',
+        textMain: '#ffffff', // Global text on background
+        cardText: '#ffffff', // Text inside cards
         textMuted: '#b2bec3',
         success: '#2ed573',
-        warning: '#ffa502'
+        warning: '#ffa502',
+        weatherWidgetBg: 'rgba(255,255,255,0.08)',
+        weatherWidgetBorder: 'rgba(255,255,255,0.1)',
+        nextEventBg: 'linear-gradient(135deg, #2c3e50 0%, #1e2329 100%)',
+        textColorInverse: '#000'
+    } : {
+        // Light Mode (Hybrid)
+        bgOverlay: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85))', // DARK background for light mode too
+        cardBg: '#ffffff',
+        cardBgHighlight: '#f1f2f6',
+        accent: '#0984e3',
+        textMain: '#ffffff', // Global text on background MUST be white
+        cardText: '#2d3436', // Text inside cards MUST be dark
+        textMuted: '#636e72',
+        success: '#00b894',
+        warning: '#fdcb6e',
+        weatherWidgetBg: 'rgba(255,255,255,0.2)', // More transparent
+        weatherWidgetBorder: 'rgba(255,255,255,0.3)',
+        nextEventBg: 'linear-gradient(135deg, #ffffff 0%, #f1f2f6 100%)',
+        textColorInverse: '#fff'
     };
 
     const Card = ({ children, onClick, style, className }) => (
@@ -61,12 +82,13 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 borderRadius: '24px',
                 padding: '1.2rem',
                 cursor: onClick ? 'pointer' : 'default',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                border: '1px solid rgba(255,255,255,0.05)',
+                boxShadow: darkMode ? '0 4px 6px rgba(0,0,0,0.1)' : '0 10px 20px rgba(0,0,0,0.1)',
+                border: darkMode ? '1px solid rgba(255,255,255,0.05)' : 'none',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 transition: 'transform 0.2s ease, background 0.2s',
+                color: theme.cardText, // Use cardText instead of textMain
                 ...style
             }}
             onMouseEnter={e => { if (onClick) e.currentTarget.style.transform = 'scale(1.02)'; }}
@@ -78,19 +100,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
     return (
         <>
-            {/* Fixed Background Layer */}
-            <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                zIndex: 0, // Ensure it's above body background but behind content
-                background: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), url('/bg-family.jpg')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundAttachment: 'fixed' // Redundant on fixed div but good for legacy
-            }} />
+
 
             {/* Content Container */}
             <div style={{
@@ -114,13 +124,13 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                         <div>
                             <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '400', opacity: 0.9 }}>Hej {user.name}!</h1>
-                            <div style={{ fontSize: '0.9rem', opacity: 0.7, marginTop: '0.2rem' }}>
+                            <div style={{ fontSize: '0.9rem', opacity: 0.7, marginTop: '0.2rem', color: '#ecf0f1' }}>
                                 {capitalizeFirst(currentTime.toLocaleDateString('sv-SE', { weekday: 'long' }))} {currentTime.getDate()} {currentTime.toLocaleDateString('sv-SE', { month: 'long' })}
                                 {holidays && holidays.some(h => {
                                     const d = new Date(h.start);
                                     return d.getDate() === currentTime.getDate() && d.getMonth() === currentTime.getMonth();
                                 }) && (
-                                        <span style={{ color: '#ff7675', marginLeft: '0.5rem', fontWeight: 'bold' }}>
+                                        <span style={{ color: theme.warning, marginLeft: '0.5rem', fontWeight: 'bold' }}>
                                             • {holidays.find(h => {
                                                 const d = new Date(h.start);
                                                 return d.getDate() === currentTime.getDate() && d.getMonth() === currentTime.getMonth();
@@ -130,26 +140,23 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                             </div>
                         </div>
                         <div
-                            onClick={() => setActiveTab('dashboard')}
+                            onClick={() => window.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank')}
                             style={{
-                                background: 'rgba(255,255,255,0.08)',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                background: theme.weatherWidgetBg,
+                                border: `1px solid ${theme.weatherWidgetBorder}`,
                                 borderRadius: '20px',
                                 padding: '0.4rem 0.8rem',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '0.5rem',
                                 cursor: 'pointer',
-                                backdropFilter: 'blur(10px)'
+                                backdropFilter: 'blur(10px)',
+                                color: theme.textMain
                             }}
+                            title="Gå till YR.no"
                         >
                             <span
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    window.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank');
-                                }}
-                                style={{ fontSize: '1.2rem', cursor: 'pointer' }}
-                                title="Gå till YR.no"
+                                style={{ fontSize: '1.2rem' }}
                             >
                                 {currentWeather?.icon || '🌤️'}
                             </span>
@@ -157,11 +164,11 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                 {currentWeather ? `${currentWeather.temp}°` : ''}
                             </span>
                             {currentWeather?.wind && (
-                                <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', marginRight: '0.2rem' }}>
+                                <span style={{ fontSize: '0.8rem', opacity: 0.7, marginRight: '0.2rem' }}>
                                     {Math.round(currentWeather.wind)} m/s
                                 </span>
                             )}
-                            <span style={{ fontSize: '0.9rem', fontWeight: '600', color: 'rgba(255,255,255,0.9)' }}>
+                            <span style={{ fontSize: '0.9rem', fontWeight: '600', opacity: 0.9 }}>
                                 {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                         </div>
@@ -172,7 +179,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                         {/* 1. Next Event - Spans Full Width */}
                         <Card
-                            style={{ gridColumn: '1 / -1', minHeight: '160px', background: 'linear-gradient(135deg, #2c3e50 0%, #1e2329 100%)' }}
+                            style={{ gridColumn: '1 / -1', minHeight: '160px', background: theme.nextEventBg }}
                             onClick={() => {
                                 if (nextEvent && onOpenEventDetail) {
                                     onOpenEventDetail(nextEvent);
@@ -184,7 +191,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                     Nästa händelse
                                 </div>
                                 {nextEvent && (
-                                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.3rem 0.8rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                    <div style={{ background: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)', padding: '0.3rem 0.8rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', color: theme.cardText }}>
                                         {(() => {
                                             const eventDate = new Date(nextEvent.start);
                                             const now = new Date();
@@ -217,12 +224,17 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                             <div style={{ marginTop: '1rem' }}>
                                 {nextEvent ? (
                                     <>
-                                        <div style={{ fontSize: '1.8rem', fontWeight: '600', marginBottom: '0.5rem', lineHeight: 1.2 }}>
+                                        <div style={{ fontSize: '1.8rem', fontWeight: '600', marginBottom: '0.5rem', lineHeight: 1.2, color: theme.cardText }}>
                                             {nextEvent.summary}
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: theme.textMuted, fontSize: '1rem' }}>
                                             {nextEvent.location && <span>📍 {nextEvent.location}</span>}
                                             {nextEvent.travelTime && <span>• 🚗 {formatDuration(nextEvent.travelTime.duration)}</span>}
+                                            {nextEvent.assignees && nextEvent.assignees.length > 0 && (
+                                                <span style={{ marginLeft: (nextEvent.location || nextEvent.travelTime) ? '0.5rem' : 0 }}>
+                                                    👥 {nextEvent.assignees.join(', ')}
+                                                </span>
+                                            )}
                                         </div>
                                     </>
                                 ) : (
@@ -283,7 +295,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                         {/* 5. Weather / Environment (Mockup style based on user image) */}
                         {/* 5. Weather / Environment (Adaptive Gauge) */}
-                        <Card style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, background: '#1e2329', padding: '0.8rem' }}>
+                        <Card style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, background: theme.cardBg, padding: '0.8rem' }}>
                             <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                                 {(() => {
                                     // Monthly Normals for Lidköping (Daily Mean in Celsius)
@@ -320,7 +332,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                         <div style={{ position: 'relative', width: '100px', height: '60px', overflow: 'hidden', display: 'flex', justifyContent: 'center', marginBottom: '0.2rem' }}>
                                             <svg width="100" height="100" viewBox="0 0 100 100" style={{ transform: 'rotate(135deg)' }}>
                                                 {/* Background Track */}
-                                                <circle cx="50" cy="50" r={radius} fill="none" stroke="#2d3436" strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset="0" />
+                                                <circle cx="50" cy="50" r={radius} fill="none" stroke={darkMode ? "#2d3436" : "#e0e0e0"} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset="0" />
                                                 {/* Active Value */}
                                                 <circle cx="50" cy="50" r={radius} fill="none" stroke={color} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} style={{ transition: 'stroke-dashoffset 1s ease, stroke 0.5s ease' }} />
                                             </svg>
@@ -341,8 +353,8 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                         {/* 5. Create New (Button) */}
                         {/* 5. Create New (Button) */}
-                        <Card onClick={() => setActiveTab('create-event')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: '#2c3e50' }}>
-                            <div style={{ marginBottom: '0.5rem', color: theme.textMain }}>
+                        <Card onClick={() => setActiveTab('create-event')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                            <div style={{ marginBottom: '0.5rem', color: theme.cardText }}>
                                 {/* Plus Icon */}
                                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
