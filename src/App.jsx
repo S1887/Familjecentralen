@@ -1865,13 +1865,13 @@ function App() {
             background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000
           }} onClick={() => setShowMatchModal(false)}>
             <div style={{
-              background: 'var(--modal-bg)', color: 'var(--text-main)', padding: '1.5rem', borderRadius: '16px',
+              background: 'var(--modal-bg)', color: 'var(--card-text)', padding: '1.5rem', borderRadius: '16px',
               width: '90%', maxWidth: '500px', maxHeight: '80vh', overflowY: 'auto',
               boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
             }} onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h3 style={{ margin: 0 }}>Kommande matcher ⚽</h3>
-                <button onClick={() => setShowMatchModal(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>✕</button>
+                <button onClick={() => setShowMatchModal(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--card-text)' }}>✕</button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
