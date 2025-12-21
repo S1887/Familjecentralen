@@ -1918,7 +1918,7 @@ function App() {
                     return (
                       <div key={match.uid} style={{
                         background: 'var(--card-bg)',
-                        border: '1px solid var(--border-color)',
+                        border: '1px solid var(--input-border)',
                         padding: '1rem',
                         borderRadius: '12px',
                         display: 'flex',
@@ -1926,7 +1926,7 @@ function App() {
                         gap: '0.5rem'
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-muted)' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--card-text-muted)' }}>
                             {matchDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' })} • {matchDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           <span style={{ fontSize: '1.2rem' }}>{isArsenal ? '🔴⚪' : '🔴🔵'}</span>
@@ -1934,7 +1934,7 @@ function App() {
 
                         <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{match.summary}</div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--card-text-muted)' }}>
                           <span>📍</span> {arena}
                         </div>
                       </div>
@@ -1946,7 +1946,7 @@ function App() {
                   const isOis = e.source === 'Örgryte IS' || (e.summary || '').toLowerCase().includes('örgryte');
                   return (isArsenal || isOis) && new Date(e.start) > new Date();
                 }).length === 0 && (
-                    <p style={{ textAlign: 'center', fontStyle: 'italic', color: 'var(--text-muted)' }}>Inga kommande matcher hittades.</p>
+                    <p style={{ textAlign: 'center', fontStyle: 'italic', color: 'var(--card-text-muted)' }}>Inga kommande matcher hittades.</p>
                   )}
               </div>
             </div>
