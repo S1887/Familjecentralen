@@ -6,8 +6,8 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   build: {
-    // Inline images under 500KB as base64 (hero image ~400KB)
-    assetsInlineLimit: 512000,
+    // Inline images under 600KB as base64 (hero image ~550KB)
+    assetsInlineLimit: 600000,
   },
   server: {
     host: true, // Listen on all local IPs
