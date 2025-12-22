@@ -1,9 +1,7 @@
-#!/usr/bin/with-contenv bashio
-# ==============================================================================
-# Start the Familjecentralen service
-# ==============================================================================
+#!/bin/bash
+# Start Familjecentralen
 
-bashio::log.info "Starting Familjecentralen..."
+echo "Starting Familjecentralen..."
 
 cd /app
-exec npm run server
+exec node server/index.js
