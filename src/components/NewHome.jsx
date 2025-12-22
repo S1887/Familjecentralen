@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getTravelTime, formatDuration } from '../mapService';
-import heroCustomImg from '../assets/hero-custom.jpg';
+
+// Use relative path to public folder (works with HA ingress)
+const heroImagePath = './hero-custom.jpg';
 const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
 const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail, darkMode }) => {
@@ -117,7 +119,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 position: 'relative',
                 zIndex: 1,
                 boxSizing: 'border-box',
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.8)), url(${heroCustomImg})`,
+                backgroundImage: `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.8)), url(${heroImagePath})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundAttachment: 'fixed'
