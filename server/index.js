@@ -40,6 +40,27 @@ app.use((req, res, next) => {
     next();
 });
 
+// Serve hero image from HA config folder (local, private)
+// The image is expected at /config/hero-custom.jpg on the Pi
+app.get('/api/hero-image', (req, res) => {
+    const possiblePaths = [
+        '/config/hero-custom.jpg',           // HA Add-on mapped config folder
+        '/config/hero-custom.png',           // PNG variant
+        path.join(__dirname, '..', 'public', 'hero-custom.jpg'), // Fallback: public folder
+        path.join(__dirname, '..', 'src', 'assets', 'hero-custom.jpg') // Dev fallback
+    ];
+
+    for (const imagePath of possiblePaths) {
+        if (fs.existsSync(imagePath)) {
+            console.log(`[Hero] Serving image from: ${imagePath}`);
+            return res.sendFile(imagePath);
+        }
+    }
+
+    console.log('[Hero] No hero image found');
+    res.status(404).send('Hero image not found. Place hero-custom.jpg in /config/');
+});
+
 // En enkel databas för att spara vem som gör vad
 
 // Hjälpfunktion för att läsa/skriva databas

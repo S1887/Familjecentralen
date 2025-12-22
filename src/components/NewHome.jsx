@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { getTravelTime, formatDuration } from '../mapService';
 
-// Use relative path to public folder (works with HA ingress)
-const heroImagePath = './hero-custom.jpg';
+// Hero image is served from HA's /config folder via API
+const getHeroImageUrl = () => {
+    // Works in both direct access and HA Ingress contexts
+    const pathname = window.location.pathname;
+    if (pathname.includes('ingress') || pathname.includes('hassio')) {
+        const basePath = pathname.replace(/\/+$/, '');
+        return basePath + '/api/hero-image';
+    }
+    return '/api/hero-image';
+};
 const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
 const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail, darkMode }) => {
@@ -119,7 +127,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 position: 'relative',
                 zIndex: 1,
                 boxSizing: 'border-box',
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.8)), url(${heroImagePath})`,
+                backgroundImage: `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.8)), url(${getHeroImageUrl()})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundAttachment: 'fixed'
