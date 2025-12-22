@@ -52,35 +52,4 @@ jobs:
           # Build for ARM64 (Raspberry Pi 4/5) and AMD64
           platforms: linux/arm64,linux/amd64
 
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Connect to Tailscale
-        uses: tailscale/github-action@v2
-        with:
-          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }} # Optional alternative
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-          version: 1.42.0
 
-      - name: Deploy via SSH over Tailscale
-        run: |
-          # Debugging: Check connection before trying SSH
-          echo "Checking Tailscale status..."
-          tailscale status
-          
-          echo "Pinging Pi..."
-          tailscale ping -c 3 ${{ secrets.PI_IP }}
-
-          # Use StrictHostKeyChecking=no explicitly for ephemeral runners
-          # Added -vvv for verbose debug output to find out why it fails (ACLs? User?)
-          ssh -vvv -o StrictHostKeyChecking=no -o ConnectTimeout=15 ${{ secrets.PI_USERNAME }}@${{ secrets.PI_IP }} "\
-            docker pull ghcr.io/${{ github.repository }}:latest && \
-            docker stop family-ops || true && \
-            docker rm family-ops || true && \
-            docker run -d \
-              --name family-ops \
-              --restart unless-stopped \
-              -p 3001:3001 \
-              -v ~/family-ops-data:/data \
-              ghcr.io/${{ github.repository }}:latest"
