@@ -16,4 +16,4 @@ RUN npm run build
 RUN npm prune --production
 
 EXPOSE 3001
-CMD ["npm", "run", "serve"]
+CMD ["npm", "run", "server"]
