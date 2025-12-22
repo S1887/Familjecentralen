@@ -1,5 +1,5 @@
 name: "Örtendahls Familjecentral"
-version: "3.0.23"
+version: "3.0.24"
 slug: "ortendahls_familjecentral"
 description: "Örtendahls Familjecentral - Kalender och Sysslor"
 image: "ghcr.io/s1887/familjecentralen:latest"
