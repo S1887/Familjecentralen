@@ -1,14 +1,13 @@
-ARG BUILD_FROM
-FROM $BUILD_FROM
+FROM node:18-alpine
 
-# Installera Node.js, npm och git
-RUN apk add --no-cache nodejs npm git bash
+# Installera git och bash
+RUN apk add --no-cache git bash
 
 # Skapa app-mapp
 WORKDIR /app
 
 # Klona koden från GitHub
-ARG CACHEBUST=37
+ARG CACHEBUST=38
 RUN git clone https://github.com/S1887/Familjecentralen.git .
 
 # Installera beroenden
@@ -17,10 +16,15 @@ RUN npm install
 # Bygg frontend
 RUN npm run build
 
+# Skapa data-mapp
+RUN mkdir -p /data && chown -R node:node /data
+
 # Exponera port
 EXPOSE 3001
 
-# Skapa run-script DIREKT i Dockerfilen (garanterar Unix line endings)
-RUN mkdir -p /etc/services.d/familjecentralen && \
-    printf '#!/bin/bash\necho "Starting Familjecentralen..."\ncd /app\nexec node server/index.js\n' > /etc/services.d/familjecentralen/run && \
-    chmod +x /etc/services.d/familjecentralen/run
+# Kör som node-användare
+USER node
+
+# Starta servern
+ENV DATA_DIR=/data
+CMD ["node", "server/index.js"]

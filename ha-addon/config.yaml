@@ -1,6 +1,6 @@
-name: "Familjecentralen 2.0"
-version: "2.0.4"
-slug: "familjecentralen_2"
+name: "Örtendahls Familjecentral"
+version: "3.0.0"
+slug: "ortendahls_familjecentral"
 description: "Örtendahls Familjecentral - Kalender och Sysslor"
 url: "https://github.com/S1887/Familjecentralen"
 arch:
@@ -17,3 +17,4 @@ map:
   - config:rw
 options: {}
 schema: {}
+image: "ghcr.io/s1887/familjecentralen/{arch}"
