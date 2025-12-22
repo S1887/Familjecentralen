@@ -5,6 +5,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: './',
+  build: {
+    // Inline images under 500KB as base64 (hero image ~400KB)
+    assetsInlineLimit: 512000,
+  },
   server: {
     host: true, // Listen on all local IPs
     port: 5173,
