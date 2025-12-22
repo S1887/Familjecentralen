@@ -64,27 +64,15 @@ jobs:
           version: 1.42.0
 
       - name: Deploy via SSH over Tailscale
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PI_IP }}
-          username: ${{ secrets.PI_USERNAME }}
-          # Use key if available, or password if preferred (add PI_PASSWORD secret)
-          # Assuming passwordless auth if key is not provided is risky, 
-          # but via Tailscale SSH it handles auth automatically if MagicDNS matches user.
-          # However, appleboy/ssh-action often needs explicit auth.
-          # If using Tailscale SSH *without* additional keys, we might need a workaround script.
-          # Let's try standard SSH command first as it uses the tailscale socket.
-          script: |
-            echo "Connected to Pi!"
-            # Pull new image
-            docker pull ghcr.io/${{ github.repository }}:latest
-            # Stop old container
-            docker stop family-ops || true
-            docker rm family-ops || true
-            # Run new container
+        run: |
+          # Use StrictHostKeyChecking=no explicitly for ephemeral runners
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 ${{ secrets.PI_USERNAME }}@${{ secrets.PI_IP }} "\
+            docker pull ghcr.io/${{ github.repository }}:latest && \
+            docker stop family-ops || true && \
+            docker rm family-ops || true && \
             docker run -d \
               --name family-ops \
               --restart unless-stopped \
               -p 3001:3001 \
-              -v /home/${{ secrets.PI_USERNAME }}/family-ops-data:/data \
-              ghcr.io/${{ github.repository }}:latest
+              -v ~/family-ops-data:/data \
+              ghcr.io/${{ github.repository }}:latest"
