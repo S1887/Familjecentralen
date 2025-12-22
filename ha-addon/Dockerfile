@@ -7,8 +7,8 @@ RUN apk add --no-cache nodejs npm git
 # Skapa app-mapp
 WORKDIR /app
 
-# Klona koden från GitHub (Uppdaterad 2.2.0 - FORCE NEW CLONE)
-ARG CACHEBUST=35
+# Klona koden från GitHub
+ARG CACHEBUST=36
 RUN git clone https://github.com/S1887/Familjecentralen.git .
 
 # Installera beroenden
@@ -20,9 +20,11 @@ RUN npm run build
 # Exponera port
 EXPOSE 3001
 
-# Kopiera startscript
-COPY run.sh /
-RUN chmod a+x /run.sh && sed -i 's/\r$//' /run.sh
+# Skapa S6 service directory (rätt sätt för HA Add-ons)
+RUN mkdir -p /etc/services.d/familjecentralen
 
-# Starta med scriptet
-CMD [ "/run.sh" ]
+# Kopiera startscript till S6 service directory
+COPY run.sh /etc/services.d/familjecentralen/run
+RUN chmod a+x /etc/services.d/familjecentralen/run && \
+    sed -i 's/\r$//' /etc/services.d/familjecentralen/run
+

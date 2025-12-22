@@ -1,9 +1,9 @@
 #!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Start the Familjecentralen service
+# ==============================================================================
 
-echo "Starting Familjecentralen..."
+bashio::log.info "Starting Familjecentralen..."
 
-# Navigera till app-mappen
 cd /app
-
-# Starta servern
-npm run server
+exec npm run server
