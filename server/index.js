@@ -746,6 +746,40 @@ app.get('/api/events', async (req, res) => {
     }
 });
 
+// ============ RESET ENDPOINT ============
+// Clears all local data (cache, local events, tasks, assignments)
+// Visit /api/reset to trigger
+app.get('/api/reset', (req, res) => {
+    console.log('[Reset] Clearing all local data...');
+    const filesToDelete = [DB_FILE, LOCAL_EVENTS_FILE, IGNORED_EVENTS_FILE, CACHE_FILE, TASKS_FILE];
+    let deleted = [];
+    let errors = [];
+
+    filesToDelete.forEach(file => {
+        try {
+            if (fs.existsSync(file)) {
+                fs.unlinkSync(file);
+                deleted.push(path.basename(file));
+                console.log(`[Reset] Deleted: ${file}`);
+            }
+        } catch (e) {
+            errors.push(`${path.basename(file)}: ${e.message}`);
+            console.error(`[Reset] Failed to delete ${file}: ${e.message}`);
+        }
+    });
+
+    // Clear in-memory cache
+    cachedCalendarEvents = [];
+    cacheTimestamp = null;
+
+    res.json({
+        success: true,
+        message: 'Local data cleared. Refresh the page to reload from Google Calendar.',
+        deleted,
+        errors
+    });
+});
+
 // ICS Feed Endpoint
 app.get('/api/feed.ics', async (req, res) => {
     console.log(`[ICS] Feed requested by ${req.ip} - User-Agent: ${req.get('User-Agent')}`);
