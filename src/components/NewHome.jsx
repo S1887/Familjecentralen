@@ -13,7 +13,7 @@ const getHeroImageUrl = () => {
 };
 const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
-const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail, darkMode }) => {
+const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail, onOpenMatchModal, darkMode }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
@@ -366,7 +366,59 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                             </div>
                         </Card>
 
-                        {/* 5. Create New (Button) */}
+                        {/* 5.5. Next Match Card */}
+                        {(() => {
+                            const now = new Date();
+                            const upcomingMatches = events
+                                .filter(e => {
+                                    const summary = (e.summary || '').toLowerCase();
+                                    const isArsenal = e.source === 'Arsenal FC' || summary.includes('arsenal');
+                                    const isOis = e.source === 'Örgryte IS' || summary.includes('örgryte') || summary.includes('orgryte');
+                                    return (isArsenal || isOis) && new Date(e.start) > now;
+                                })
+                                .sort((a, b) => new Date(a.start) - new Date(b.start));
+
+                            const nextMatch = upcomingMatches[0];
+
+                            if (!nextMatch) return null; // Don't show card if no match
+
+                            const isArsenal = nextMatch.source === 'Arsenal FC' || (nextMatch.summary || '').toLowerCase().includes('arsenal');
+                            const displayDate = new Date(nextMatch.start);
+                            // Remove "Svante:" or any assignee prefix from summary
+                            const cleanSummary = nextMatch.summary.replace(/^[^:]+:\s*/, '');
+
+                            return (
+                                <Card
+                                    onClick={onOpenMatchModal}
+                                    style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: theme.cardBg }}
+                                >
+                                    <div style={{ marginBottom: '0.8rem', color: isArsenal ? '#ff4757' : '#2e86de' }}>
+                                        {/* Football Icon */}
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <path d="M12 12l4.8 2.4"></path>
+                                            <path d="M12 12l0 -5"></path>
+                                            <path d="M12 12l-4.8 2.4"></path>
+                                            <path d="M12 7l4.3 -2.5"></path>
+                                            <path d="M12 7l-4.3 -2.5"></path>
+                                            <path d="M16.8 14.4l2.2 3.8"></path>
+                                            <path d="M7.2 14.4l-2.2 3.8"></path>
+                                        </svg>
+                                    </div>
+                                    <div style={{ fontSize: '1rem', fontWeight: '500', marginBottom: '0.2rem' }}>
+                                        Nästa match
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: theme.cardText, fontWeight: '600', lineHeight: 1.2 }}>
+                                        {cleanSummary}
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: theme.textMuted }}>
+                                        {displayDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                    </div>
+                                </Card>
+                            );
+                        })()}
+
+                        {/* 6. Create New (Button) */}
                         {/* 5. Create New (Button) */}
                         <Card onClick={() => setActiveTab('create-event')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                             <div style={{ marginBottom: '0.5rem', color: theme.cardText }}>
