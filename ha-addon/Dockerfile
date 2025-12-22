@@ -2,13 +2,13 @@ ARG BUILD_FROM
 FROM $BUILD_FROM
 
 # Installera Node.js, npm och git
-RUN apk add --no-cache nodejs npm git
+RUN apk add --no-cache nodejs npm git bash
 
 # Skapa app-mapp
 WORKDIR /app
 
 # Klona koden från GitHub
-ARG CACHEBUST=36
+ARG CACHEBUST=37
 RUN git clone https://github.com/S1887/Familjecentralen.git .
 
 # Installera beroenden
@@ -20,11 +20,7 @@ RUN npm run build
 # Exponera port
 EXPOSE 3001
 
-# Skapa S6 service directory (rätt sätt för HA Add-ons)
-RUN mkdir -p /etc/services.d/familjecentralen
-
-# Kopiera startscript till S6 service directory
-COPY run.sh /etc/services.d/familjecentralen/run
-RUN chmod a+x /etc/services.d/familjecentralen/run && \
-    sed -i 's/\r$//' /etc/services.d/familjecentralen/run
-
+# Skapa run-script DIREKT i Dockerfilen (garanterar Unix line endings)
+RUN mkdir -p /etc/services.d/familjecentralen && \
+    printf '#!/bin/bash\necho "Starting Familjecentralen..."\ncd /app\nexec node server/index.js\n' > /etc/services.d/familjecentralen/run && \
+    chmod +x /etc/services.d/familjecentralen/run
