@@ -22,7 +22,7 @@ EXPOSE 3001
 
 # Kopiera startscript
 COPY run.sh /
-RUN chmod a+x /run.sh
+RUN chmod a+x /run.sh && sed -i 's/\r$//' /run.sh
 
 # Starta med scriptet
 CMD [ "/run.sh" ]
