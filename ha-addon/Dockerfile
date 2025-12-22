@@ -20,5 +20,9 @@ RUN npm run build
 # Exponera port
 EXPOSE 3001
 
-# Starta servern
-CMD [ "npm", "run", "server" ]
+# Kopiera startscript
+COPY run.sh /
+RUN chmod a+x /run.sh
+
+# Starta med scriptet
+CMD [ "/run.sh" ]
