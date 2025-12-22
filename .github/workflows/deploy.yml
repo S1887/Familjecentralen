@@ -1,0 +1,84 @@
+name: Deploy to Pi via Tailscale
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=long
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Build for ARM64 (Raspberry Pi 4/5) and AMD64
+          platforms: linux/arm64,linux/amd64
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }} # Optional alternative
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          version: 1.42.0
+
+      - name: Deploy via SSH over Tailscale
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PI_IP }}
+          username: ${{ secrets.PI_USERNAME }}
+          # Use key if available, or password if preferred (add PI_PASSWORD secret)
+          # Assuming passwordless auth if key is not provided is risky, 
+          # but via Tailscale SSH it handles auth automatically if MagicDNS matches user.
+          # However, appleboy/ssh-action often needs explicit auth.
+          # If using Tailscale SSH *without* additional keys, we might need a workaround script.
+          # Let's try standard SSH command first as it uses the tailscale socket.
+          script: |
+            echo "Connected to Pi!"
+            # Pull new image
+            docker pull ghcr.io/${{ github.repository }}:latest
+            # Stop old container
+            docker stop family-ops || true
+            docker rm family-ops || true
+            # Run new container
+            docker run -d \
+              --name family-ops \
+              --restart unless-stopped \
+              -p 3001:3001 \
+              -v /home/${{ secrets.PI_USERNAME }}/family-ops-data:/data \
+              ghcr.io/${{ github.repository }}:latest

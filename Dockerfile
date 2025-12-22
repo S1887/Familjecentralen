@@ -1,26 +1,39 @@
-FROM node:18-alpine
-
+FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Install dependencies (only what's needed)
+# Copy package files
 COPY package.json package-lock.json ./
-# Use --production false to ensure 'devDependencies' (like Vite) are installed for the build step
-# Or just npm install which installs everything.
-# Since we build inside the image, we need devDependencies.
-RUN npm install
+RUN npm ci
 
-# Copy source
+# Copy source code
 COPY . .
 
 # Build frontend
 RUN npm run build
 
-# Prune dev dependencies to save space (optional but good practice)
-# RUN npm prune --production
+# --- Production Stage ---
+FROM node:18-alpine
+WORKDIR /app
+
+# Copy backend dependencies
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# Copy backend source
+COPY server ./server
+
+# Copy built frontend from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Create data directory for persistent storage (e.g. MongoDB/NeDB files)
+RUN mkdir -p /data && chown node:node /data
+ENV DATA_DIR=/data
 
 # Expose port
 EXPOSE 3001
 
-# Start command
-ENV DATA_DIR=/data
-CMD ["npm", "run", "server"]
+# Run as non-root user
+USER node
+
+# Start server
+CMD ["node", "server/index.js"]
