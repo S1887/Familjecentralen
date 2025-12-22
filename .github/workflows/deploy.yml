@@ -65,8 +65,16 @@ jobs:
 
       - name: Deploy via SSH over Tailscale
         run: |
+          # Debugging: Check connection before trying SSH
+          echo "Checking Tailscale status..."
+          tailscale status
+          
+          echo "Pinging Pi..."
+          tailscale ping -c 3 ${{ secrets.PI_IP }}
+
           # Use StrictHostKeyChecking=no explicitly for ephemeral runners
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 ${{ secrets.PI_USERNAME }}@${{ secrets.PI_IP }} "\
+          # Added -vvv for verbose debug output to find out why it fails (ACLs? User?)
+          ssh -vvv -o StrictHostKeyChecking=no -o ConnectTimeout=15 ${{ secrets.PI_USERNAME }}@${{ secrets.PI_IP }} "\
             docker pull ghcr.io/${{ github.repository }}:latest && \
             docker stop family-ops || true && \
             docker rm family-ops || true && \
