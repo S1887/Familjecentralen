@@ -1,7 +1,8 @@
 name: "Örtendahls Familjecentral"
-version: "3.0.20"
+version: "3.0.21"
 slug: "ortendahls_familjecentral"
 description: "Örtendahls Familjecentral - Kalender och Sysslor"
+image: "ghcr.io/s1887/familjecentralen:latest"
 url: "https://github.com/S1887/Familjecentralen"
 arch:
   - aarch64
