@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getTravelTime, formatDuration } from '../mapService';
+import heroCustomImg from '../assets/hero-custom.jpg';
 const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
 const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail, darkMode }) => {
@@ -114,8 +115,12 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 gap: '1.5rem',
                 width: '100%',
                 position: 'relative',
-                zIndex: 1, // Ensure content sits on top of fixed background
-                boxSizing: 'border-box'
+                zIndex: 1,
+                boxSizing: 'border-box',
+                backgroundImage: `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.8)), url(${heroCustomImg})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundAttachment: 'fixed'
             }}>
 
                 <div className="new-home-container">
