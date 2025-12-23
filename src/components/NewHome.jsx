@@ -113,6 +113,20 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
         <>
 
 
+            {/* Fixed Background Layer */}
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                zIndex: 0,
+                backgroundImage: `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.8)), url(${getHeroImageUrl()})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                pointerEvents: 'none' // Ensure clicks pass through
+            }} />
+
             {/* Content Container */}
             <div style={{
                 minHeight: '100vh',
@@ -126,11 +140,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 width: '100%',
                 position: 'relative',
                 zIndex: 1,
-                boxSizing: 'border-box',
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.8)), url(${getHeroImageUrl()})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundAttachment: 'fixed'
+                boxSizing: 'border-box'
             }}>
 
                 <div className="new-home-container">
