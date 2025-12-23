@@ -1108,8 +1108,8 @@ body.modal-open {
   flex-direction: column;
   gap: 1.5rem;
   width: 100%;
-  max-width: 600px;
-  /* Default (Mobile) */
+  max-width: 100%;
+  /* Default (Mobile) - changed from 600px to 100% */
   margin: 0 auto;
   transition: max-width 0.3s ease;
 }
