@@ -1324,44 +1324,36 @@ app.post('/api/assign', async (req, res) => {
 const distPath = path.resolve(__dirname, '..', 'dist');
 console.log('Serving frontend from:', distPath);
 
-// 1. Manual Asset Handler for debugging and explicit serving
-app.get('/assets/:filename', (req, res) => {
-    const filename = req.params.filename;
-    // Security check
-    if (filename.includes('..') || filename.includes('/')) {
-        return res.status(403).send('Forbidden');
+// 1. Serve static files from dist directory (handles assets, favicon, etc.)
+app.use(express.static(distPath, {
+    setHeaders: (res, filepath) => {
+        // Ensure correct MIME types
+        if (filepath.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        } else if (filepath.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+        }
     }
+}));
 
-    const filepath = path.join(distPath, 'assets', filename);
-    console.log(`[Asset Request] Looking for: ${filepath}`);
-
-    if (fs.existsSync(filepath)) {
-        // Explicitly set MIME types
-        if (filename.endsWith('.js')) res.type('application/javascript');
-        else if (filename.endsWith('.css')) res.type('text/css');
-        else if (filename.endsWith('.svg')) res.type('image/svg+xml');
-
-        console.log(`[Asset Request] Serving file: ${filename}`);
-        res.sendFile(filepath);
-    } else {
-        console.error(`[Asset Request] File NOT FOUND at: ${filepath}`);
-        res.status(404).send('Asset not found');
-    }
-});
-
-// 2. Serve other static files (like favicon, manifest) from root dist
-app.use(express.static(distPath));
-
-// 3. Fallback handler
+// 2. Fallback handler - serve index.html for all non-API, non-asset routes (SPA routing)
 app.use((req, res) => {
-    // Debug log to see if we accidentally fell through
     console.log(`Fallback triggered for: ${req.url}`);
 
-    if (req.path.startsWith('/api') || req.path.includes('.')) {
-        res.status(404).send('Not found');
+    // Don't serve index.html for API routes
+    if (req.path.startsWith('/api')) {
+        res.status(404).send('API endpoint not found');
         return;
     }
 
+    // For file requests that weren't found by static middleware, return 404
+    if (req.path.includes('.') && !req.path.endsWith('.html')) {
+        console.log(`[404] Static file not found: ${req.path}`);
+        res.status(404).send('File not found');
+        return;
+    }
+
+    // For all other routes (SPA navigation), serve index.html
     const indexPath = path.join(distPath, 'index.html');
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
