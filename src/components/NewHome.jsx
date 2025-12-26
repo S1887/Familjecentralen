@@ -135,7 +135,6 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 padding: '2rem 0.5rem',
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
                 gap: '1.5rem',
                 width: '100%',
                 position: 'relative',
