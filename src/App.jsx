@@ -1996,73 +1996,76 @@ function App() {
               </svg>
             </button>
 
-            {/* Quick Links */}
-            {[
-              {
-                name: 'Översikt', url: '/lovelace/Oversikt', icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                  </svg>
-                )
-              },
-              {
-                name: 'Belysning', url: '/lovelace/hue', icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 18h6" />
-                    <path d="M10 22h4" />
-                    <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z" />
-                  </svg>
-                )
-              },
-              {
-                name: 'Larm', url: '/lovelace/larm', icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                  </svg>
-                )
-              },
-              {
-                name: 'Bil', url: '/lovelace/bil', icon: (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
-                    <circle cx="7" cy="17" r="2" />
-                    <circle cx="17" cy="17" r="2" />
-                    <path d="M14 17H9" />
-                  </svg>
-                )
-              }
-            ].map((link, i) => (
-              <a
-                key={i}
-                href={link.url}
-                target="_top"
-                title={link.name}
-                style={{
-                  textDecoration: 'none',
-                  display: 'flex',  // Anchor tag behaves as container
-                  alignItems: 'center',
-                  marginLeft: '0.4rem'
-                }}
-              >
-                <div
+            {/* Quick Links - only show in HA environment */}
+            {(window.location.pathname.includes('ingress') ||
+              window.location.pathname.includes('hassio') ||
+              window.location.hostname.includes('homeassistant') ||
+              window.location.hostname.includes('nabu.casa')) && [
+                {
+                  name: 'Översikt', url: '/lovelace/Oversikt', icon: (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                      <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                  )
+                },
+                {
+                  name: 'Belysning', url: '/lovelace/hue', icon: (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 18h6" />
+                      <path d="M10 22h4" />
+                      <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z" />
+                    </svg>
+                  )
+                },
+                {
+                  name: 'Larm', url: '/lovelace/larm', icon: (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                  )
+                },
+                {
+                  name: 'Bil', url: '/lovelace/bil', icon: (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+                      <circle cx="7" cy="17" r="2" />
+                      <circle cx="17" cy="17" r="2" />
+                      <path d="M14 17H9" />
+                    </svg>
+                  )
+                }
+              ].map((link, i) => (
+                <a
+                  key={i}
+                  href={link.url}
+                  target="_top"
+                  title={link.name}
                   style={{
-                    background: 'transparent',
-                    color: 'var(--text-main)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    padding: isMobile ? '0.4rem' : '0.5rem',
-                    fontSize: isMobile ? '1.3rem' : '1.4rem',
-                    display: 'flex',
+                    textDecoration: 'none',
+                    display: 'flex',  // Anchor tag behaves as container
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    marginLeft: '0.4rem'
                   }}
                 >
-                  {link.icon}
-                </div>
-              </a>
-            ))}
+                  <div
+                    style={{
+                      background: 'transparent',
+                      color: 'var(--text-main)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      padding: isMobile ? '0.4rem' : '0.5rem',
+                      fontSize: isMobile ? '1.3rem' : '1.4rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {link.icon}
+                  </div>
+                </a>
+              ))}
           </div>
 
           {/* Center: Ticker */}
