@@ -47,7 +47,8 @@ if (process.env.AUTH_USER && process.env.AUTH_PASS) {
         const authHeader = req.headers.authorization;
         if (!authHeader) {
             res.setHeader('WWW-Authenticate', 'Basic realm="Familjecentralen"');
-            return res.status(401).send('Autentisering krävs');
+            res.setHeader('Content-Type', 'text/plain');
+            return res.status(401).end();
         }
 
         const [scheme, credentials] = authHeader.split(' ');
