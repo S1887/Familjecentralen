@@ -34,6 +34,42 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(bodyParser.json());
 
+// Optional HTTP Basic Auth for Render deployment
+// Set AUTH_USER and AUTH_PASS environment variables to enable
+if (process.env.AUTH_USER && process.env.AUTH_PASS) {
+    console.log('[Auth] HTTP Basic Auth enabled');
+    app.use((req, res, next) => {
+        // Skip auth for health check endpoints
+        if (req.path === '/health' || req.path === '/api/health') {
+            return next();
+        }
+
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            res.setHeader('WWW-Authenticate', 'Basic realm="Familjecentralen"');
+            return res.status(401).send('Autentisering krävs');
+        }
+
+        const [scheme, credentials] = authHeader.split(' ');
+        if (scheme !== 'Basic' || !credentials) {
+            res.setHeader('WWW-Authenticate', 'Basic realm="Familjecentralen"');
+            return res.status(401).send('Ogiltig autentisering');
+        }
+
+        const decoded = Buffer.from(credentials, 'base64').toString();
+        const [user, pass] = decoded.split(':');
+
+        if (user === process.env.AUTH_USER && pass === process.env.AUTH_PASS) {
+            next();
+        } else {
+            res.setHeader('WWW-Authenticate', 'Basic realm="Familjecentralen"');
+            return res.status(401).send('Fel användarnamn eller lösenord');
+        }
+    });
+} else {
+    console.log('[Auth] No AUTH_USER/AUTH_PASS set - running without HTTP auth');
+}
+
 // Request logging middleware
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
