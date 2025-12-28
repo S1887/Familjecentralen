@@ -6,10 +6,12 @@ WORKDIR /app
 # Install git to clone source
 RUN apk add --no-cache git
 
-# Clone the repository to specifically get the root content
-# We use a build arg or env to bust cache if needed
-ENV APP_VERSION=3.0.43
-RUN git clone https://github.com/S1887/Familjecentralen .
+# Clone the repository to a temporary directory first to avoid "non-empty directory" errors
+ENV APP_VERSION=3.0.44
+RUN git clone https://github.com/S1887/Familjecentralen /tmp/repo && \
+    cp -r /tmp/repo/* . && \
+    cp -r /tmp/repo/.* . 2>/dev/null || true && \
+    rm -rf /tmp/repo
 
 # Install dependencies and build
 RUN npm ci
