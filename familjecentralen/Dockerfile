@@ -6,6 +6,7 @@ RUN apk add --no-cache git
 WORKDIR /app
 
 # Clone the repository to get source code (since we are in a subdir context)
+ENV APP_VERSION=3.0.39
 RUN git clone https://github.com/S1887/Familjecentralen .
 
 # Install dependencies and build
