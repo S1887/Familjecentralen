@@ -3,8 +3,13 @@ FROM node:18-alpine
 # Set correct work directory
 WORKDIR /app
 
-# Copy local files to container (ignores listed in .dockerignore)
-COPY . .
+# Install git to clone source
+RUN apk add --no-cache git
+
+# Clone the repository to specifically get the root content
+# We use a build arg or env to bust cache if needed
+ENV APP_VERSION=3.0.43
+RUN git clone https://github.com/S1887/Familjecentralen .
 
 # Install dependencies and build
 RUN npm ci
