@@ -1,7 +1,36 @@
-node_modules
+# Git
 .git
+.gitignore
 .github
+
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor/IDE
+.vscode
+.idea
+*.swp
+*.suo
+.DS_Store
+
+# Agent/AI
+.agent
 .gemini
 brain
-ha-addon
-*.log
+*.md
+
+# Addon metadata (optional to ignore, but good practice)
+# config.yaml (we need this? No, config.yaml is for Supervisor, but usually not needed INSIDE the container unless used by app)
+# Dockerfile (not needed inside)
+repository.yaml
