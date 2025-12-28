@@ -59,5 +59,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           # Build for ARM64 (Raspberry Pi 4/5) and AMD64
           platforms: linux/arm64,linux/amd64
+          # Enable GitHub Actions cache for Docker layers
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
 
