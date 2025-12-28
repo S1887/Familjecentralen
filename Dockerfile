@@ -1,4 +1,7 @@
-FROM node:18-alpine
+FROM node:20-alpine
+
+# Set memory limit to avoid OOM in CI
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Set correct work directory
 WORKDIR /app
