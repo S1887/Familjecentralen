@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { formatDuration } from '../mapService';
 
-const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, getGoogleCalendarLink }) => {
+const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onShowAllUpcoming, getGoogleCalendarLink }) => {
     if (!event) return null;
 
     // Sort events chronologically (upcoming only)
@@ -409,6 +409,40 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, getGo
                             Nästa →
                         </button>
                     </div>
+
+                    {/* Show All Upcoming Button */}
+                    {onShowAllUpcoming && (
+                        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
+                            <button
+                                onClick={onShowAllUpcoming}
+                                style={{
+                                    background: 'transparent',
+                                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                                    color: 'rgba(255, 255, 255, 0.8)',
+                                    borderRadius: '12px',
+                                    padding: '0.75rem 1.5rem',
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                    e.currentTarget.style.color = 'white';
+                                    e.currentTarget.style.borderColor = 'white';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
+                                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                                }}
+                            >
+                                📅 Se alla kommande händelser
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

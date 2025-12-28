@@ -295,11 +295,25 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                 </svg>
                             </div>
                             <div style={{ fontSize: '1rem', fontWeight: '500' }}>Att göra</div>
-                            {tasks.filter(t => !t.done).length > 0 && (
-                                <div style={{ marginTop: '0.2rem', fontSize: '0.8rem', color: theme.textMuted }}>
-                                    {tasks.filter(t => !t.done).length} uppgifter
-                                </div>
-                            )}
+                            {(() => {
+                                const pending = tasks.filter(t => !t.done);
+                                if (pending.length === 0) return null;
+
+                                const assignees = [...new Set(pending.map(t => t.assignee).filter(Boolean))].sort();
+
+                                return (
+                                    <div style={{ marginTop: '0.2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.8rem', color: theme.textMuted }}>
+                                            {pending.length} uppgifter
+                                        </div>
+                                        {assignees.length > 0 && (
+                                            <div style={{ fontSize: '0.7rem', color: theme.textMuted, opacity: 0.8, marginTop: '0.2rem' }}>
+                                                {assignees.join(', ')}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
                         </Card>
 
                         {/* 4. School Schedule Button */}

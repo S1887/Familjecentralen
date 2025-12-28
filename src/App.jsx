@@ -1130,7 +1130,7 @@ function App() {
       });
 
       // Close modal and reset form
-      setActiveTab('new-home');
+      setActiveTab('timeline'); // Return to calendar/timeline view
       setNewEvent({
         summary: '',
         location: '',
@@ -2358,7 +2358,7 @@ function App() {
               <h2>✨ Skapa ny händelse</h2>
               {/* Close button that goes back to dashboard */}
               <button
-                onClick={() => setActiveTab('dashboard')}
+                onClick={() => setActiveTab('timeline')}
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -3264,7 +3264,7 @@ function App() {
         </div>
 
         {/* Main Content Grid (Timeline + Todo) - on mobile: Events first, then Todo */}
-        <div className={`main-content-grid ${viewMode === 'week' ? 'week-view-active' : ''}`} style={isMobile ? {
+        <div className={`main-content-grid ${viewMode === 'week' ? 'week-view-active' : ''} ${activeTab !== 'dashboard' ? 'single-view-active' : ''}`} style={isMobile ? {
           marginTop: '0',
           display: 'flex',
           flexDirection: 'column',
@@ -3300,11 +3300,28 @@ function App() {
                   { id: 'upcoming', label: 'Kommande' },
                   { id: 'week', label: `Vecka ${getWeekNumber(selectedDate)}` },
                   { id: 'month', label: selectedDate.toLocaleDateString('sv-SE', { month: 'long' }) },
+                  { id: 'create', label: '+ Ny händelse' },
                   { id: 'history', label: 'Historik' }
                 ].map(view => (
                   <button
                     key={view.id}
-                    onClick={() => setViewMode(view.id)}
+                    onClick={() => {
+                      if (view.id === 'create') {
+                        setNewEvent({
+                          summary: '',
+                          location: '',
+                          description: '',
+                          assignees: [],
+                          category: null,
+                          date: selectedDate.toLocaleDateString('sv-SE'), // Use currently selected date
+                          time: '12:00',
+                          endTime: '13:00'
+                        });
+                        setActiveTab('create-event');
+                      } else {
+                        setViewMode(view.id);
+                      }
+                    }}
                     style={{
                       background: viewMode === view.id ? 'var(--card-bg)' : 'transparent',
                       color: viewMode === view.id ? 'var(--card-text)' : 'var(--text-muted)',
@@ -3316,7 +3333,6 @@ function App() {
                       fontWeight: viewMode === view.id ? '600' : '500',
                       boxShadow: viewMode === view.id ? '0 4px 12px rgba(0,0,0,0.2)' : 'none',
                       transition: 'all 0.2s ease',
-                      textTransform: 'capitalize',
                       whiteSpace: 'nowrap',
                       flex: 1,
                       textAlign: 'center',
@@ -3387,7 +3403,13 @@ function App() {
                       return (
                         <div key={idx}
                           className={`calendar-cell ${d.type !== 'current' ? 'different-month' : ''} ${isTodayCell ? 'today' : ''}`}
-                          onClick={() => changeDay(Math.floor((d.date - selectedDate) / (1000 * 60 * 60 * 24)))} // Select this day
+                          onClick={() => {
+                            if (window.confirm('Vill du skapa en ny händelse?')) {
+                              changeDay(Math.floor((d.date - selectedDate) / (1000 * 60 * 60 * 24))); // Select this day
+                              setNewEvent({ ...newEvent, date: d.date.toLocaleDateString('sv-SE') }); // Pre-fill date
+                              setActiveTab('create-event'); // Open creator
+                            }
+                          }}
                         >
                           {(() => {
                             const isRed = holidays.some(h => isSameDay(h.start, d.date) && h.isRedDay);
@@ -3447,7 +3469,16 @@ function App() {
                             borderRadius: '24px',
                             overflow: 'hidden',
                             display: 'flex',
-                            flexDirection: 'column'
+                            flexDirection: 'column',
+                            cursor: 'pointer' // Indicate clickable background
+                          }}
+                          onClick={() => {
+                            // Clicking the column background opens create event for that day
+                            if (window.confirm('Vill du skapa en ny händelse?')) {
+                              setSelectedDate(d);
+                              setNewEvent({ ...newEvent, date: d.toLocaleDateString('sv-SE') });
+                              setActiveTab('create-event');
+                            }
                           }}
                         >
                           <div className="week-column-header" style={{
@@ -4009,16 +4040,24 @@ function App() {
       />
 
       {/* Event Detail Modal */}
-      {selectedEventForDetail && (
-        <EventDetailModal
-          event={selectedEventForDetail}
-          allEvents={allEvents}
-          onClose={() => setSelectedEventForDetail(null)}
-          onEdit={openEditModal}
-          onNavigate={setSelectedEventForDetail}
-          getGoogleCalendarLink={getGoogleCalendarLink}
-        />
-      )}
+      {
+        selectedEventForDetail && (
+          <EventDetailModal
+            event={selectedEventForDetail}
+            allEvents={allEvents}
+            onClose={() => setSelectedEventForDetail(null)}
+            onEdit={openEditModal}
+            onNavigate={setSelectedEventForDetail}
+            onShowAllUpcoming={() => {
+              setSelectedEventForDetail(null);
+              setViewMode('upcoming');
+              setActiveTab('timeline'); // Switch to dedicated timeline/calendar view
+              // Optional: Scroll to top or specific element if needed
+            }}
+            getGoogleCalendarLink={getGoogleCalendarLink}
+          />
+        )
+      }
 
     </div >
   )

@@ -105,7 +105,9 @@ body {
   flex-direction: column;
   font-family: 'Inter', sans-serif;
   width: 100%;
-  max-width: 100%;
+  max-width: 1600px;
+  /* Max width for really large screens */
+  margin: 0 auto;
   overflow-x: hidden;
 }
 
@@ -474,6 +476,13 @@ h3 {
     /* Timeline 60%, Todo 40% - gives Todo section more room */
     /* Desktop layout only for screens 13" and above */
     align-items: start;
+  }
+
+  .main-content-grid.single-view-active {
+    grid-template-columns: 1fr;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
   }
 
   /* When week view is active, make timeline take full width */
