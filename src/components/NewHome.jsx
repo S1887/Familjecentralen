@@ -51,35 +51,35 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
     };
     const currentWeather = getCurrentWeather();
 
-    // Theme Colors
+    // Theme Colors - Hardcoded for reliability (CSS variables didn't work well here)
     const theme = darkMode ? {
-        // Dark Mode
+        // Dark Mode - Spotify-style
         bgOverlay: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85))',
-        cardBg: '#1e2329',
-        cardBgHighlight: '#2c3e50',
-        accent: '#74b9ff',
-        textMain: '#ffffff', // Global text on background
-        cardText: '#ffffff', // Text inside cards
-        textMuted: '#b2bec3',
+        cardBg: '#282828',
+        cardBgHighlight: '#333333',
+        accent: '#1DB954',
+        textMain: '#ffffff',
+        cardText: '#ffffff',
+        textMuted: '#b3b3b3',
         success: '#2ed573',
         warning: '#ffa502',
         weatherWidgetBg: 'rgba(255,255,255,0.08)',
         weatherWidgetBorder: 'rgba(255,255,255,0.1)',
-        nextEventBg: 'linear-gradient(135deg, #2c3e50 0%, #1e2329 100%)',
+        nextEventBg: 'linear-gradient(135deg, #333333 0%, #282828 100%)',
         textColorInverse: '#000'
     } : {
-        // Light Mode (Hybrid)
-        bgOverlay: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85))', // DARK background for light mode too
+        // Light Mode
+        bgOverlay: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7))',
         cardBg: '#ffffff',
-        cardBgHighlight: '#f1f2f6',
-        accent: '#0984e3',
-        textMain: '#ffffff', // Global text on background MUST be white
-        cardText: '#2d3436', // Text inside cards MUST be dark
+        cardBgHighlight: '#f8f9fa',
+        accent: '#1DB954',
+        textMain: '#ffffff',
+        cardText: '#2d3436',
         textMuted: '#636e72',
         success: '#00b894',
         warning: '#fdcb6e',
-        weatherWidgetBg: 'rgba(255,255,255,0.2)', // More transparent
-        weatherWidgetBorder: 'rgba(255,255,255,0.3)',
+        weatherWidgetBg: 'rgba(255,255,255,0.9)',
+        weatherWidgetBorder: 'rgba(0,0,0,0.1)',
         nextEventBg: 'linear-gradient(135deg, #ffffff 0%, #f1f2f6 100%)',
         textColorInverse: '#fff'
     };

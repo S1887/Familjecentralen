@@ -101,7 +101,7 @@ const ScheduleViewer = ({ events, initialStudent }) => {
                             style={{
                                 background: selectedStudent === student
                                     ? (student === 'Algot' ? 'linear-gradient(135deg, #89CFF0 0%, #0077BE 100%)' : 'linear-gradient(135deg, #DDA0DD 0%, #800080 100%)')
-                                    : '#2d3436',
+                                    : 'var(--button-bg)',
                                 color: 'white',
                                 border: 'none',
                                 padding: '0.8rem 2rem',
@@ -212,7 +212,7 @@ const ScheduleViewer = ({ events, initialStudent }) => {
                                 flex: isMobile ? '0 0 calc(33.333% - 7px)' : '1',
                                 minWidth: isMobile ? 'calc(33.333% - 7px)' : '140px',
                                 scrollSnapAlign: 'start',
-                                background: '#1e2329',
+                                background: 'var(--card-bg)',
                                 borderRadius: '24px',
                                 overflow: 'hidden'
                             }}

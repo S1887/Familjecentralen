@@ -113,7 +113,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
         >
             <div
                 style={{
-                    background: 'linear-gradient(135deg, #1e2329 0%, #2c3e50 100%)',
+                    background: 'var(--modal-bg)',
                     borderRadius: '24px',
                     maxWidth: '600px',
                     width: '100%',
