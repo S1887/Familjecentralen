@@ -2041,7 +2041,8 @@ function App() {
                 <a
                   key={i}
                   href={link.url}
-                  target="_top"
+                  target="_parent"
+                  rel="noopener noreferrer"
                   title={link.name}
                   style={{
                     textDecoration: 'none',
