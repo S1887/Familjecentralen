@@ -175,8 +175,10 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                     )}
                             </div>
                         </div>
-                        <div
-                            onClick={() => window.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank')}
+                        <a
+                            href="https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp"
+                            target="_blank"
+                            rel="noopener noreferrer"
                             style={{
                                 background: theme.weatherWidgetBg,
                                 border: `1px solid ${theme.weatherWidgetBorder}`,
@@ -187,7 +189,8 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                 gap: '0.5rem',
                                 cursor: 'pointer',
                                 backdropFilter: 'blur(10px)',
-                                color: theme.textMain
+                                color: theme.textMain,
+                                textDecoration: 'none'
                             }}
                             title="Gå till YR.no"
                         >
@@ -207,7 +210,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                             <span style={{ fontSize: '0.9rem', fontWeight: '600', opacity: 0.9 }}>
                                 {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                        </div>
+                        </a>
                     </div>
 
                     {/* Main Grid */}
@@ -501,7 +504,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                     </div>
                 </div>
-            </div>
+            </div >
         </>
     );
 };
