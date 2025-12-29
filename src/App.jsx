@@ -953,7 +953,9 @@ function App() {
   // Let's stick to: List = Upcoming (from tomorrow if today is selected, or just all upcoming).
   // Current code: `const otherEvents = filteredEvents.filter(event => !isToday(event.start));`
   // I will change this to:
-  const otherEvents = filteredEventsList.filter(event => !isSameDay(event.start, selectedDate));
+  // Include ALL filtered events (including today), sorted by start date
+  // Today's events should appear first, followed by future events in chronological order
+  const otherEvents = [...filteredEventsList].sort((a, b) => new Date(a.start) - new Date(b.start));
 
   // Helper to get color class based on who the event is FOR (checks assignees, summary, then assignments)
   const getAssignedColorClass = (event) => {
@@ -3626,11 +3628,26 @@ function App() {
                               color: 'var(--text-muted)',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.6rem',
-                              textTransform: 'capitalize'
+                              gap: '0.6rem'
                             }}>
                               <span style={{ color: holidays.some(h => isSameDay(h.start, eventDate) && h.isRedDay) ? '#ff4757' : 'inherit' }}>
-                                {eventDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                {(() => {
+                                  const dateStr = eventDate.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' });
+                                  const tomorrow = new Date();
+                                  tomorrow.setDate(tomorrow.getDate() + 1);
+                                  const isTomorrow = isSameDay(eventDate, tomorrow);
+
+                                  if (isToday(eventDate)) {
+                                    // "Idag, söndag 29 december" - lowercase day name
+                                    return <><strong style={{ marginRight: '0.3rem' }}>Idag,</strong>{dateStr}</>;
+                                  } else if (isTomorrow) {
+                                    // "Imorgon, måndag 30 december" - lowercase day name
+                                    return <><strong style={{ marginRight: '0.3rem' }}>Imorgon,</strong>{dateStr}</>;
+                                  } else {
+                                    // "Tisdag 31 december" - capitalize first letter
+                                    return dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+                                  }
+                                })()}
                               </span>
                             </div>
                           )}
@@ -3676,10 +3693,17 @@ function App() {
                                 })()}
                               </span>
                             </div>
-                            <h3 style={{ textDecoration: event.cancelled ? 'line-through' : 'none', color: event.cancelled ? 'var(--text-muted)' : 'var(--card-text)', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.2rem 0' }}>
-                              {event.cancelled && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}
-                              {event.summary}
-                            </h3>
+                            {(() => {
+                              const isPast = event.end && new Date(event.end) < new Date();
+                              const shouldStrikethrough = event.cancelled || isPast;
+                              return (
+                                <h3 style={{ textDecoration: shouldStrikethrough ? 'line-through' : 'none', color: shouldStrikethrough ? 'var(--text-muted)' : 'var(--card-text)', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.2rem 0', opacity: isPast ? 0.6 : 1 }}>
+                                  {event.cancelled && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}
+                                  {isPast && !event.cancelled && <span style={{ color: 'var(--text-muted)', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>PASSERAD</span>}
+                                  {event.summary}
+                                </h3>
+                              );
+                            })()}
                             <p className="location" onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
                               style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'var(--text-muted)', textDecoration: event.coords ? 'underline' : 'none', fontSize: '0.9rem', margin: '0' }}
                               title={event.coords ? "Se på karta" : "Ingen plats"}>

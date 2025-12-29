@@ -23,6 +23,18 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
     // Filter next upcoming event
     const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayEnd.getDate() + 1);
+
+    // Get all today's events (including past ones)
+    const todaysEvents = events
+        .filter(e => {
+            const eventDate = new Date(e.start);
+            return eventDate >= todayStart && eventDate < todayEnd;
+        })
+        .sort((a, b) => new Date(a.start) - new Date(b.start));
+
     const upcomingEvents = events
         .filter(e => new Date(e.start) > now)
         .sort((a, b) => new Date(a.start) - new Date(b.start));
@@ -201,69 +213,102 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                     {/* Main Grid */}
                     <div className="new-home-grid">
 
-                        {/* 1. Next Event - Spans Full Width */}
+                        {/* 1. Today's Events - Spans Full Width */}
                         <Card
-                            style={{ gridColumn: '1 / -1', minHeight: '160px', background: theme.nextEventBg }}
-                            onClick={() => {
-                                if (nextEvent && onOpenEventDetail) {
-                                    onOpenEventDetail(nextEvent);
-                                }
-                            }}
+                            style={{ gridColumn: '1 / -1', minHeight: '120px', maxHeight: '300px', background: theme.nextEventBg, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
                         >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
                                 <div style={{ fontSize: '0.9rem', color: theme.accent, fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                    Nästa händelse
+                                    Dagens händelser
                                 </div>
-                                {nextEvent && (
-                                    <div style={{ background: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)', padding: '0.3rem 0.8rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', color: theme.cardText }}>
-                                        {(() => {
-                                            const eventDate = new Date(nextEvent.start);
-                                            const now = new Date();
-                                            const isToday = eventDate.getDate() === now.getDate() && eventDate.getMonth() === now.getMonth() && eventDate.getFullYear() === now.getFullYear();
-
-                                            const tomorrow = new Date(now);
-                                            tomorrow.setDate(tomorrow.getDate() + 1);
-                                            const isTomorrow = eventDate.getDate() === tomorrow.getDate() && eventDate.getMonth() === tomorrow.getMonth() && eventDate.getFullYear() === tomorrow.getFullYear();
-
-                                            const diffTime = eventDate - now;
-                                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                                            let dayText = '';
-                                            if (isToday) dayText = 'Idag';
-                                            else if (isTomorrow) dayText = 'Imorgon';
-                                            else if (diffDays < 7) dayText = eventDate.toLocaleDateString('sv-SE', { weekday: 'long' }); // "Måndag"
-                                            else dayText = eventDate.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
-
-                                            return (
-                                                <>
-                                                    <span style={{ color: theme.accent, marginRight: '0.3rem' }}>{capitalizeFirst(dayText)}</span>
-                                                    {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </>
-                                            );
-                                        })()}
-                                    </div>
-                                )}
+                                <div style={{ background: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)', padding: '0.3rem 0.8rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', color: theme.cardText }}>
+                                    {todaysEvents.length} {todaysEvents.length === 1 ? 'händelse' : 'händelser'}
+                                </div>
                             </div>
 
-                            <div style={{ marginTop: '1rem' }}>
-                                {nextEvent ? (
-                                    <>
-                                        <div style={{ fontSize: '1.8rem', fontWeight: '600', marginBottom: '0.5rem', lineHeight: 1.2, color: theme.cardText }}>
-                                            {nextEvent.summary}
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: theme.textMuted, fontSize: '1rem' }}>
-                                            {nextEvent.location && <span>📍 {nextEvent.location}</span>}
-                                            {nextEvent.travelTime && <span>• 🚗 {formatDuration(nextEvent.travelTime.duration)}</span>}
-                                            {nextEvent.assignees && nextEvent.assignees.length > 0 && (
-                                                <span style={{ marginLeft: (nextEvent.location || nextEvent.travelTime) ? '0.5rem' : 0 }}>
-                                                    👥 {nextEvent.assignees.join(', ')}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </>
+                            <div style={{ flex: 1, overflowY: 'auto', marginRight: '-0.5rem', paddingRight: '0.5rem' }}>
+                                {todaysEvents.length === 0 ? (
+                                    <div style={{ fontSize: '1.1rem', color: theme.textMuted, fontStyle: 'italic', padding: '1rem 0' }}>
+                                        Inga händelser idag. Njut av dagen! 🌟
+                                    </div>
                                 ) : (
-                                    <div style={{ fontSize: '1.2rem', color: theme.textMuted, fontStyle: 'italic' }}>
-                                        Inget inplanerat just nu.
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                        {todaysEvents.map((event, idx) => {
+                                            const eventTime = new Date(event.start);
+                                            const eventEndTime = event.end ? new Date(event.end) : null;
+                                            const isPast = eventEndTime && eventEndTime < now;
+
+                                            return (
+                                                <div
+                                                    key={event.uid || idx}
+                                                    onClick={() => onOpenEventDetail && onOpenEventDetail(event)}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.8rem',
+                                                        padding: '0.6rem 0.8rem',
+                                                        background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                                        borderRadius: '12px',
+                                                        cursor: 'pointer',
+                                                        opacity: isPast ? 0.5 : 1,
+                                                        transition: 'transform 0.15s ease, background 0.15s ease'
+                                                    }}
+                                                    onMouseEnter={e => e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'}
+                                                    onMouseLeave={e => e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'}
+                                                >
+                                                    {/* Time */}
+                                                    <div style={{
+                                                        minWidth: '50px',
+                                                        fontWeight: '600',
+                                                        fontSize: '0.95rem',
+                                                        color: isPast ? theme.textMuted : theme.accent
+                                                    }}>
+                                                        {eventTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+
+                                                    {/* Event Info */}
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{
+                                                            fontWeight: '500',
+                                                            fontSize: '1rem',
+                                                            color: theme.cardText,
+                                                            textDecoration: isPast ? 'line-through' : 'none',
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis'
+                                                        }}>
+                                                            {isPast && <span style={{ color: theme.textMuted, marginRight: '0.3rem', fontSize: '0.8em' }}>✓</span>}
+                                                            {event.summary}
+                                                        </div>
+                                                        {event.location && (
+                                                            <div style={{
+                                                                fontSize: '0.8rem',
+                                                                color: theme.textMuted,
+                                                                whiteSpace: 'nowrap',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis'
+                                                            }}>
+                                                                📍 {event.location}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Assignees Badge */}
+                                                    {event.assignees && event.assignees.length > 0 && (
+                                                        <div style={{
+                                                            fontSize: '0.75rem',
+                                                            background: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                                                            padding: '0.2rem 0.5rem',
+                                                            borderRadius: '8px',
+                                                            color: theme.textMuted,
+                                                            whiteSpace: 'nowrap'
+                                                        }}>
+                                                            {event.assignees.length === 1 ? event.assignees[0] : `${event.assignees.length} pers`}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
