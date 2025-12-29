@@ -2856,7 +2856,10 @@ function App() {
               }}>
                 {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
               </div>
-              <div className="weather-widget"
+              <a className="weather-widget"
+                href="https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp"
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
                   cursor: 'pointer',
                   background: 'rgba(255,255,255,0.2)',
@@ -2870,9 +2873,10 @@ function App() {
                   minWidth: isMobile ? '85px' : '130px',
                   gap: '0.5rem',
                   backdropFilter: 'blur(5px)',
-                  zIndex: 10
+                  zIndex: 10,
+                  textDecoration: 'none',
+                  color: 'inherit'
                 }}
-                onClick={() => window.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank')}
                 title="Se prognos hos YR"
               >
                 {(() => {
@@ -2909,7 +2913,7 @@ function App() {
                   }
                   return <span>..</span>;
                 })()}
-              </div>
+              </a>
             </div>
           </div>
 
