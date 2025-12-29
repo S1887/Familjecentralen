@@ -2038,17 +2038,24 @@ function App() {
                   )
                 }
               ].map((link, i) => (
-                <a
+                <div
                   key={i}
-                  href={link.url}
-                  target="_parent"
-                  rel="noopener noreferrer"
+                  onClick={() => {
+                    try {
+                      // Navigate the top-level window (breaks out of HA ingress iframe)
+                      window.top.location.href = link.url;
+                    } catch (e) {
+                      // Fallback if cross-origin blocked
+                      window.location.href = link.url;
+                    }
+                  }}
                   title={link.name}
                   style={{
                     textDecoration: 'none',
-                    display: 'flex',  // Anchor tag behaves as container
+                    display: 'flex',
                     alignItems: 'center',
-                    marginLeft: '0.4rem'
+                    marginLeft: '0.4rem',
+                    cursor: 'pointer'
                   }}
                 >
                   <div
@@ -2067,7 +2074,7 @@ function App() {
                   >
                     {link.icon}
                   </div>
-                </a>
+                </div>
               ))}
           </div>
 
@@ -2857,10 +2864,14 @@ function App() {
               }}>
                 {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
               </div>
-              <a className="weather-widget"
-                href="https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp"
-                target="_blank"
-                rel="noopener noreferrer"
+              <div className="weather-widget"
+                onClick={() => {
+                  try {
+                    window.top.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank');
+                  } catch (e) {
+                    window.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank');
+                  }
+                }}
                 style={{
                   cursor: 'pointer',
                   background: 'rgba(255,255,255,0.2)',
@@ -2874,9 +2885,7 @@ function App() {
                   minWidth: isMobile ? '85px' : '130px',
                   gap: '0.5rem',
                   backdropFilter: 'blur(5px)',
-                  zIndex: 10,
-                  textDecoration: 'none',
-                  color: 'inherit'
+                  zIndex: 10
                 }}
                 title="Se prognos hos YR"
               >
@@ -2914,7 +2923,7 @@ function App() {
                   }
                   return <span>..</span>;
                 })()}
-              </a>
+              </div>
             </div>
           </div>
 
