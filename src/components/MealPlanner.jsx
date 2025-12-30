@@ -35,7 +35,7 @@ const getWeekDates = (year, week) => {
     return dates;
 };
 
-const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
+const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalendar }) => {
     // ... (state unchanged)
     const [currentWeek, setCurrentWeek] = useState(() => getWeekInfo(new Date()));
     const [meals, setMeals] = useState({});
@@ -412,6 +412,26 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
                                         )}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        {/* Events Indicator */}
+                                        {(() => {
+                                            const dayEvents = events.filter(e => e.start.startsWith(dateStr));
+                                            if (dayEvents.length === 0) return null;
+                                            return (
+                                                <div
+                                                    onClick={(e) => { e.stopPropagation(); onNavigateToCalendar && onNavigateToCalendar(dateStr); }}
+                                                    style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginRight: '0.5rem', cursor: 'pointer' }}
+                                                    title="Klicka för att se i kalendern"
+                                                >
+                                                    {dayEvents.slice(0, 3).map((ev, i) => (
+                                                        <div key={i} style={{ fontSize: '0.65rem', color: theme.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: '80px', textOverflow: 'ellipsis' }}>
+                                                            • {ev.summary}
+                                                        </div>
+                                                    ))}
+                                                    {dayEvents.length > 3 && <div style={{ fontSize: '0.65rem', color: theme.textMuted }}>+ {dayEvents.length - 3} till...</div>}
+                                                </div>
+                                            );
+                                        })()}
+
                                         {isToday && (
                                             <span style={{
                                                 background: theme.accent,
@@ -524,8 +544,9 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
                         );
                     })}
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 };
 

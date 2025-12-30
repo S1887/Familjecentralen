@@ -2351,7 +2351,19 @@ function App() {
                 ‹ Tillbaka till start
               </button>
             </div>
-            <MealPlanner holidays={holidays} darkMode={darkMode} events={events} />
+            <MealPlanner
+              holidays={holidays}
+              darkMode={darkMode}
+              events={events}
+              onNavigateToCalendar={(dateStr) => {
+                const d = new Date(dateStr);
+                // Adjust for timezone if needed, but dateStr is usually YYYY-MM-DD
+                // NewHome expects a Date object
+                setSelectedDate(d);
+                setViewMode('list'); // Show list view for that day
+                setActiveTab('new-home');
+              }}
+            />
           </div>
         )
       }
