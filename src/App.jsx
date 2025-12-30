@@ -159,6 +159,7 @@ const MapUpdater = ({ route, center }) => {
 import InboxModal from './components/InboxModal';
 import NewHome from './components/NewHome';
 import EventDetailModal from './components/EventDetailModal';
+import MealPlanner from './components/MealPlanner';
 
 function App() {
   const [showInbox, setShowInbox] = useState(false);
@@ -2344,6 +2345,34 @@ function App() {
         activeTab === 'schedule' && (
           <div className="tab-content" style={{ padding: '1rem' }}>
             <ScheduleViewer events={scheduleEvents} initialStudent={currentUser?.name} />
+          </div>
+        )
+      }
+
+      {/* Matsedel Tab Content */}
+      {
+        activeTab === 'matsedel' && (
+          <div className="tab-content" style={{ padding: '0' }}>
+            <div style={{ padding: '1rem 1rem 0 1rem' }}>
+              <button
+                onClick={() => setActiveTab('new-home')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  padding: 0,
+                  marginBottom: '0.5rem'
+                }}
+              >
+                ‹ Tillbaka till start
+              </button>
+            </div>
+            <MealPlanner holidays={holidays} darkMode={darkMode} events={events} />
           </div>
         )
       }

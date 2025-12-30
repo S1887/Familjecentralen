@@ -396,6 +396,18 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                             </Card>
                         )}
 
+                        {/* 4.5. Meal Plan Card */}
+                        <Card onClick={() => setActiveTab('matsedel')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                            <div style={{ marginBottom: '0.8rem', color: '#ff7675' }}>
+                                {/* Utensils Icon */}
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+                                    <path d="M7 2v20"></path>
+                                    <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path>
+                                </svg>
+                            </div>
+                            <div style={{ fontSize: '1rem', fontWeight: '500' }}>Matsedel</div>
+                        </Card>
 
 
                         {/* 5.5. Next Match Card */}

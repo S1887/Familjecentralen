@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import {
     connectToMongo,
     isMongoConnected,
@@ -225,6 +226,7 @@ const LOCAL_EVENTS_FILE = path.join(DATA_DIR, 'local_events.json');
 const IGNORED_EVENTS_FILE = path.join(DATA_DIR, 'ignored_events.json');
 const CACHE_FILE = path.join(DATA_DIR, 'calendar_cache.json');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
+const MEALS_FILE = path.join(DATA_DIR, 'meals.json');
 
 const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes (faster sync, still safe for Google API)
 let cachedCalendarEvents = [];
@@ -749,7 +751,131 @@ app.delete('/api/tasks/:id', async (req, res) => {
     res.json({ success: true });
 });
 
-// Manual calendar refresh endpoint
+// ============ MEALS API ============
+// Helper functions for meals
+const readMeals = () => {
+    try {
+        if (fs.existsSync(MEALS_FILE)) {
+            return JSON.parse(fs.readFileSync(MEALS_FILE, 'utf8'));
+        }
+    } catch (e) {
+        console.error('[Meals] Error reading meals:', e.message);
+    }
+    return {};
+};
+
+const writeMeals = (data) => {
+    try {
+        fs.writeFileSync(MEALS_FILE, JSON.stringify(data, null, 2));
+        console.log('[Meals] Saved meals data');
+    } catch (e) {
+        console.error('[Meals] Error writing meals:', e.message);
+    }
+};
+
+// Get meals for a specific week (format: 2025-W01)
+app.get('/api/meals/:week', (req, res) => {
+    const { week } = req.params;
+    const allMeals = readMeals();
+    const weekMeals = allMeals[week] || {};
+    console.log(`[Meals] GET ${week}: ${Object.keys(weekMeals).length} days`);
+    res.json(weekMeals);
+});
+
+// Save meals for a specific week
+app.put('/api/meals/:week', (req, res) => {
+    const { week } = req.params;
+    const weekMeals = req.body;
+
+    const allMeals = readMeals();
+    allMeals[week] = weekMeals;
+    writeMeals(allMeals);
+
+    console.log(`[Meals] PUT ${week}: Saved ${Object.keys(weekMeals).length} days`);
+    res.json({ success: true, week, days: Object.keys(weekMeals).length });
+});
+
+// Get all meals (for debugging/export)
+app.get('/api/meals', (req, res) => {
+    const allMeals = readMeals();
+    res.json(allMeals);
+});
+
+// ============ AI MEAL SUGGESTIONS ============
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+app.post('/api/meals/suggest', async (req, res) => {
+    if (!GEMINI_API_KEY) {
+        return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
+    }
+
+    try {
+        const { recentMeals = [], preferences = '', weekEvents = [], dates = [] } = req.body;
+
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+        // Analyze busy days from calendar
+        const busyDaysInfo = dates.map((date, i) => {
+            const dayEvents = weekEvents.filter(e => e.date === date);
+            const eventCount = dayEvents.length;
+            const activities = dayEvents.map(e => e.summary).join(', ');
+            const isBusy = eventCount >= 2;
+            return { date, isBusy, eventCount, activities };
+        });
+
+        const busyDaysText = busyDaysInfo
+            .filter(d => d.isBusy)
+            .map(d => `${d.date}: ${d.eventCount} aktiviteter (${d.activities})`)
+            .join('\n');
+
+        const prompt = `Du är en svensk familjs matplanerare för familjen Örtendahl i Lidköping. 
+Föreslå ${dates.length} middagsrätter för en familj med 3 barn (8, 11, 14 år).
+
+BUTIK: ICA Kvantum Hjertberg, Lidköping
+Ta gärna hänsyn till typiska veckans erbjudanden på ICA (färs, kyckling, lax brukar ofta vara på rea).
+
+FAMILJEKALENDER DENNA VECKA:
+${busyDaysText || 'Ingen speciellt upptagen dag'}
+
+REGLER:
+- Svara ENDAST med en JSON-array med ${dates.length} rätter, inget annat
+- Variera mellan kött, kyckling, fisk och vegetariskt
+- På upptagna dagar (2+ aktiviteter): föreslå snabblagade rätter (under 30 min)
+- Fredag = Mysigt (tacos, pizza, hamburgare ok)
+- Lördag/Söndag = Lite finare/mer tid
+- Undvik upprepning från senaste 2 veckorna
+- Gärna säsongsanpassat (nu är det vinter)
+
+${recentMeals.length > 0 ? `NYLIGEN ÄTIT (undvik):\n${recentMeals.slice(-10).join(', ')}` : ''}
+
+${preferences ? `ÖNSKEMÅL: ${preferences}` : ''}
+
+Svara ENDAST med JSON-array, exempel:
+["Köttbullar med potatismos", "Tacos", "Laxpasta med spenat", "Kycklinggryta", "Pannkakor", "Lasagne", "Pulled pork"]`;
+
+        console.log('[AI] Generating suggestions with prompt length:', prompt.length);
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        // Parse JSON from response
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+            const suggestions = JSON.parse(jsonMatch[0]);
+            console.log('[AI] Generated meal suggestions:', suggestions);
+            res.json({ suggestions, busyDays: busyDaysInfo.filter(d => d.isBusy) });
+        } else {
+            console.error('[AI] Could not parse response:', text);
+            res.status(500).json({ error: 'Could not parse AI response', raw: text });
+        }
+    } catch (error) {
+        console.error('[AI] Error generating suggestions:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.post('/api/refresh-calendars', async (req, res) => {
     console.log('[API] Manual calendar refresh triggered');
     try {
