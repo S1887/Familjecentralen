@@ -645,12 +645,37 @@ app.post('/api/login', (req, res) => {
 
 app.get('/api/tasks', async (req, res) => {
     try {
+        let tasks;
         if (isMongoConnected()) {
-            const tasks = await getAllTasks();
-            res.json(tasks);
+            tasks = await getAllTasks();
         } else {
-            res.json(tasksData);
+            tasks = tasksData;
         }
+
+        // Filter out old completed non-recurring tasks
+        // Get current ISO week in format "YYYY-Www"
+        const now = new Date();
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        const days = Math.floor((now - startOfYear) / (24 * 60 * 60 * 1000));
+        const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
+        const currentWeek = `${now.getFullYear()}-W${weekNumber.toString().padStart(2, '0')}`;
+
+        const filteredTasks = tasks.filter(task => {
+            // Always show recurring tasks
+            if (task.isRecurring) return true;
+
+            // Always show tasks without a specific week
+            if (!task.week) return true;
+
+            // Show if task week is current or future
+            if (task.week >= currentWeek) return true;
+
+            // Hide old non-recurring tasks
+            return false;
+        });
+
+        console.log(`[Tasks] Returning ${filteredTasks.length}/${tasks.length} tasks (filtered old completed)`);
+        res.json(filteredTasks);
     } catch (error) {
         console.error('[Tasks] Error fetching tasks:', error);
         res.json(tasksData); // Fallback to in-memory

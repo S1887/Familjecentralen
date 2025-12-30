@@ -13,6 +13,18 @@ const getHeroImageUrl = () => {
 };
 const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
+// Helper to check if event is all-day (starts at 00:00 and ends at 00:00 or 23:59)
+const isAllDayEvent = (event) => {
+    if (event.allDay) return true;
+    const start = new Date(event.start);
+    const end = new Date(event.end);
+    const startHour = start.getHours();
+    const startMin = start.getMinutes();
+    const endHour = end.getHours();
+    const endMin = end.getMinutes();
+    return startHour === 0 && startMin === 0 && ((endHour === 0 && endMin === 0) || (endHour === 23 && endMin === 59));
+};
+
 const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail, onOpenMatchModal, darkMode }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -271,7 +283,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                                         fontSize: '0.95rem',
                                                         color: isPast ? theme.textMuted : theme.accent
                                                     }}>
-                                                        {eventTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                                        {isAllDayEvent(event) ? 'Heldag' : eventTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                                                     </div>
 
                                                     {/* Event Info */}
@@ -384,63 +396,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                             </Card>
                         )}
 
-                        {/* 5. Weather / Environment (Mockup style based on user image) */}
-                        {/* 5. Weather / Environment (Adaptive Gauge) */}
-                        <Card style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, background: theme.cardBg, padding: '0.8rem' }}>
-                            <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                {(() => {
-                                    // Monthly Normals for Lidköping (Daily Mean in Celsius)
-                                    // Source: weatherandclimate.com
-                                    // Jan: -1, Feb: -0.5, Mar: 2.4, Apr: 8, May: 13, Jun: 16.7, Jul: 19, Aug: 18, Sep: 14, Oct: 9, Nov: 4.5, Dec: 1.2
-                                    const NORMALS = [-1, -0.5, 2.4, 8, 13, 16.7, 19, 18, 14, 9, 4.5, 1.2];
-                                    const month = new Date().getMonth();
-                                    const normal = NORMALS[month];
-                                    const current = currentWeather ? currentWeather.temp : normal;
 
-                                    // Calculate position (-20 to +20 from normal)
-                                    // Wider range to avoid "maxing out" on slightly warm days
-                                    const range = 20;
-                                    const diff = current - normal;
-                                    const clampedDiff = Math.max(-range, Math.min(range, diff));
-                                    const percent = ((clampedDiff + range) / (range * 2)) * 100;
-
-                                    // Gauge Color based on deviation
-                                    let color = theme.success; // Normal (Green)
-                                    if (diff <= -3 && diff > -7) color = '#74b9ff'; // Cool (Light Blue)
-                                    if (diff <= -7) color = '#0984e3'; // Cold (Blue)
-                                    if (diff >= 3 && diff < 7) color = '#ffeaa7'; // Warm (Yellow)
-                                    if (diff >= 7) color = '#ff7675'; // Hot (Red)
-
-                                    // SVG Path for Arc
-                                    // r=40, cx=50, cy=50. Start -135deg, End +135deg (Total 270)
-                                    // StrokeDasharray = ~200. Offset handles progress.
-                                    // Simplified approach: Background Arc + Foreground Arc
-                                    const radius = 35;
-                                    const circumference = 2 * Math.PI * radius * 0.75; // 270 degrees
-                                    const offset = circumference - ((percent / 100) * circumference);
-
-                                    return (
-                                        <div style={{ position: 'relative', width: '100px', height: '60px', overflow: 'hidden', display: 'flex', justifyContent: 'center', marginBottom: '0.2rem' }}>
-                                            <svg width="100" height="100" viewBox="0 0 100 100" style={{ transform: 'rotate(135deg)' }}>
-                                                {/* Background Track */}
-                                                <circle cx="50" cy="50" r={radius} fill="none" stroke={darkMode ? "#2d3436" : "#e0e0e0"} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset="0" />
-                                                {/* Active Value */}
-                                                <circle cx="50" cy="50" r={radius} fill="none" stroke={color} strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset} style={{ transition: 'stroke-dashoffset 1s ease, stroke 0.5s ease' }} />
-                                            </svg>
-                                            <div style={{ position: 'absolute', bottom: '5px', textAlign: 'center' }}>
-                                                <div style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>
-                                                    {currentWeather ? `${currentWeather.temp}°` : '--'}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
-                                <div style={{ fontSize: '0.75rem', color: theme.textMuted, marginTop: '0.2rem', textAlign: 'center' }}>
-                                    Utomhus
-                                    <div style={{ fontSize: '0.65rem', opacity: 0.6 }}>(Normalt: {[-1, -0.5, 2.4, 8, 13, 16.7, 19, 18, 14, 9, 4.5, 1.2][new Date().getMonth()]}°)</div>
-                                </div>
-                            </div>
-                        </Card>
 
                         {/* 5.5. Next Match Card */}
                         {(() => {

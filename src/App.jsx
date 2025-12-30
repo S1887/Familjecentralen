@@ -169,6 +169,27 @@ function App() {
 
   const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
+  // Helper to check if event is all-day (starts at 00:00 and ends at 00:00 or 23:59)
+  const isAllDayEvent = (event) => {
+    if (event.allDay) return true;
+    const start = new Date(event.start);
+    const end = new Date(event.end);
+    const startHour = start.getHours();
+    const startMin = start.getMinutes();
+    const endHour = end.getHours();
+    const endMin = end.getMinutes();
+    // All-day: starts 00:00 and (ends 00:00 next day OR ends 23:59 same day)
+    return startHour === 0 && startMin === 0 && ((endHour === 0 && endMin === 0) || (endHour === 23 && endMin === 59));
+  };
+
+  // Helper to format event time, showing "Heldag" for all-day events
+  const formatEventTime = (event) => {
+    if (isAllDayEvent(event)) return 'Heldag';
+    const start = new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+    const end = new Date(event.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+    return `${start} - ${end}`;
+  };
+
   // Auth state - persisted in localStorage
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('familjecentralen_user');
@@ -1884,7 +1905,6 @@ function App() {
                     return (isArsenal || isOis) && new Date(e.start) > new Date();
                   })
                   .sort((a, b) => new Date(a.start) - new Date(b.start))
-                  .slice(0, 10)
                   .map(match => {
                     const isArsenal = match.source === 'Arsenal FC' || (match.summary || '').toLowerCase().includes('arsenal');
                     const matchDate = new Date(match.start);
@@ -2742,9 +2762,7 @@ function App() {
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', opacity: 0.8, fontSize: '0.8rem' }}>
                           <span>
-                            {new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                            {' - '}
-                            {new Date(event.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                            {formatEventTime(event)}
                           </span>
                           <span style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 5px', borderRadius: '4px', fontSize: '0.7em' }}>{event.source || 'Familjen'}</span>
                         </div>
@@ -3548,7 +3566,7 @@ function App() {
                                   onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                                 >
                                   <div style={{ fontWeight: 'bold', opacity: 0.9 }}>
-                                    {new Date(ev.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                    {isAllDayEvent(ev) ? 'Heldag' : new Date(ev.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                                   </div>
                                   <div style={{ fontWeight: 600, fontSize: '0.9rem', textDecoration: ev.cancelled ? 'line-through' : 'none' }}>
                                     {ev.cancelled && <span style={{ color: '#ff4757', marginRight: '0.2rem' }}>🚫</span>}

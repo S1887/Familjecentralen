@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
 import { formatDuration } from '../mapService';
 
+// Helper to check if event is all-day (starts at 00:00 and ends at 00:00 or 23:59)
+const isAllDayEvent = (event) => {
+    if (event.allDay) return true;
+    const start = new Date(event.start);
+    const end = new Date(event.end);
+    const startHour = start.getHours();
+    const startMin = start.getMinutes();
+    const endHour = end.getHours();
+    const endMin = end.getMinutes();
+    return startHour === 0 && startMin === 0 && ((endHour === 0 && endMin === 0) || (endHour === 23 && endMin === 59));
+};
+
 const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onShowAllUpcoming, getGoogleCalendarLink }) => {
     if (!event) return null;
 
@@ -183,9 +195,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem' }}>
                             <span style={{ fontSize: '1.5rem' }}>🕐</span>
                             <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-                                {eventDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                                {' - '}
-                                {eventEnd.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                {isAllDayEvent(event) ? 'Heldag' : `${eventDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })} - ${eventEnd.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}`}
                             </span>
                         </div>
 
