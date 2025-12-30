@@ -78,7 +78,8 @@ export const formatDistance = (meters) => {
 };
 
 export const getTravelTime = async (toCoords, mode = 'driving') => {
-    let baseUrl = 'http://router.project-osrm.org/route/v1';
+    // Force HTTPS for OSRM to avoid Mixed Content errors
+    let baseUrl = 'https://router.project-osrm.org/route/v1';
     let profile = 'driving';
 
     // Välj rätt server beroende på färdsätt
@@ -89,11 +90,11 @@ export const getTravelTime = async (toCoords, mode = 'driving') => {
         // "routed-bike" ger ofta för snabba tider (t.ex. 30km/h). 
         // Vi kör standard OSRM för cykel som verkar mer realistisk (~17km/h),
         // men om den är nere kan vi behöva fallback. Vi testar standard först.
-        baseUrl = 'http://router.project-osrm.org/route/v1';
+        baseUrl = 'https://router.project-osrm.org/route/v1';
         profile = 'cycling';
     } else {
         // Default car
-        baseUrl = 'http://router.project-osrm.org/route/v1';
+        baseUrl = 'https://router.project-osrm.org/route/v1';
         profile = 'driving';
     }
 

@@ -8,30 +8,9 @@ import L from 'leaflet';
 import heroCustomImg from './assets/hero-custom.jpg';
 import { getCoordinates, getTravelTime, formatDuration, searchAddress, getHomeCoords, formatDistance } from './mapService';
 
-// API helper - works in both direct access and Ingress contexts
-const getApiUrl = (endpoint) => {
-  // Remove leading slash if present
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+import { getApiUrl } from './utils/api';
 
-  // Check if running in Home Assistant Ingress context
-  const pathname = window.location.pathname;
-
-  // If we're on port 3001 directly, use absolute paths
-  if (window.location.port === '3001') {
-    return '/' + cleanEndpoint;
-  }
-
-  // If in Ingress, the pathname will contain 'ingress' or similar
-  // We need to use the current path as base
-  if (pathname.includes('ingress') || pathname.includes('hassio')) {
-    // Get the base path up to and including the ingress segment
-    const basePath = pathname.replace(/\/+$/, ''); // Remove trailing slashes
-    return basePath + '/' + cleanEndpoint;
-  }
-
-  // Default fallback - relative to current location
-  return './' + cleanEndpoint;
-};
+// API helper - imported from utils/api.js
 
 // Fix för Leaflet icon
 import icon from 'leaflet/dist/images/marker-icon.png';

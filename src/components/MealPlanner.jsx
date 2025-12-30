@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { getApiUrl } from '../utils/api';
 
 // Get ISO week number and year
 const getWeekInfo = (date) => {
@@ -14,27 +15,10 @@ const getWeekInfo = (date) => {
     };
 };
 
-// Get dates for a week
-const getWeekDates = (year, week) => {
-    const simple = new Date(year, 0, 1 + (week - 1) * 7);
-    const dow = simple.getDay();
-    const ISOweekStart = simple;
-    if (dow <= 4) {
-        ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
-    } else {
-        ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
-    }
-
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
-        const d = new Date(ISOweekStart);
-        d.setDate(ISOweekStart.getDate() + i);
-        dates.push(d);
-    }
-    return dates;
-};
+// ... (getWeekDates unchanged)
 
 const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
+    // ... (state unchanged)
     const [currentWeek, setCurrentWeek] = useState(() => getWeekInfo(new Date()));
     const [meals, setMeals] = useState({});
     const [loading, setLoading] = useState(true);
@@ -54,12 +38,11 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
         border: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
     };
 
-    // ... (fetchMeals, useEffect, saveMeals, updateMeal - unchanged) ...
     // Fetch meals for current week
     const fetchMeals = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await fetch(`/api/meals/${currentWeek.weekString}`);
+            const response = await fetch(getApiUrl(`api/meals/${currentWeek.weekString}`));
             const data = await response.json();
             setMeals(data);
         } catch (error) {
@@ -76,7 +59,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
     const saveMeals = useCallback(async (newMeals) => {
         setSaving(true);
         try {
-            await fetch(`/api/meals/${currentWeek.weekString}`, {
+            await fetch(getApiUrl(`api/meals/${currentWeek.weekString}`), {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newMeals)
@@ -87,7 +70,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
         setSaving(false);
     }, [currentWeek.weekString]);
 
-    // Update meal
+    // Update meal (unchanged)
     const updateMeal = (dateStr, mealType, value) => {
         const newMeals = { ...meals };
         if (!newMeals[dateStr]) {
@@ -98,28 +81,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
         saveMeals(newMeals);
     };
 
-    // Navigate weeks (unchanged)
-    const goToWeek = (offset) => {
-        const currentDate = getWeekDates(currentWeek.year, currentWeek.week)[0];
-        currentDate.setDate(currentDate.getDate() + (offset * 7));
-        setCurrentWeek(getWeekInfo(currentDate));
-    };
-
-    // Check if date is weekend or holiday (unchanged)
-    const isWeekendOrHoliday = (date) => {
-        const day = date.getDay();
-        if (day === 0 || day === 6) return true;
-
-        const dateStr = date.toISOString().split('T')[0];
-        return holidays.some(h => h.date === dateStr);
-    };
-
-    // Get holiday name for date (unchanged)
-    const getHolidayName = (date) => {
-        const dateStr = date.toISOString().split('T')[0];
-        const holiday = holidays.find(h => h.date === dateStr);
-        return holiday ? holiday.name : null;
-    };
+    // ... (goToWeek, isWeekendOrHoliday, getHolidayName unchanged)
 
     // AI suggest meals (Updated)
     const suggestMeals = async (targetDateStr = null) => {
@@ -131,7 +93,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
 
         try {
             // Get recent dinners
-            const allMeals = await fetch('/api/meals').then(r => r.json());
+            const allMeals = await fetch(getApiUrl('api/meals')).then(r => r.json());
             const recentDinners = Object.values(allMeals)
                 .flatMap(week => Object.values(week))
                 .map(day => day.dinner)
@@ -153,7 +115,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
                     summary: e.summary
                 }));
 
-            const response = await fetch('/api/meals/suggest', {
+            const response = await fetch(getApiUrl('api/meals/suggest'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
