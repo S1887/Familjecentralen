@@ -213,7 +213,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
                         border: 'none',
                         borderRadius: '12px',
                         padding: '0.75rem 1rem',
-                        fontSize: '1.2rem',
+                        fontSize: '1.5rem',
                         cursor: 'pointer',
                         color: theme.text
                     }}
@@ -223,11 +223,14 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
 
                 <div style={{ textAlign: 'center' }}>
                     <h2 style={{ margin: 0, color: theme.text }}>
-                        🍽️ Matsedel
+                        Matsedel
                     </h2>
-                    <div style={{ color: theme.textMuted, fontSize: '0.9rem' }}>
-                        Vecka {currentWeek.week}, {currentWeek.year}
-                        {saving && <span style={{ marginLeft: '0.5rem', color: theme.accent }}>Sparar...</span>}
+                    <div style={{ color: theme.textMuted, fontSize: '0.9rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <span>Vecka {currentWeek.week}, {currentWeek.year}</span>
+                        <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+                            {weekDates[0].getDate()} {weekDates[0].toLocaleDateString('sv-SE', { month: 'short' }).replace('.', '')} - {weekDates[6].getDate()} {weekDates[6].toLocaleDateString('sv-SE', { month: 'short' }).replace('.', '')}
+                        </span>
+                        {saving && <span style={{ color: theme.accent, fontSize: '0.8rem' }}>Sparar...</span>}
                     </div>
                 </div>
 
@@ -238,7 +241,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
                         border: 'none',
                         borderRadius: '12px',
                         padding: '0.75rem 1rem',
-                        fontSize: '1.2rem',
+                        fontSize: '1.5rem',
                         cursor: 'pointer',
                         color: theme.text
                     }}
@@ -353,7 +356,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
                                             color: theme.textMuted,
                                             fontSize: '0.9rem'
                                         }}>
-                                            🍳 Lunch
+                                            Lunch
                                         </span>
                                         {isSpecialDay ? (
                                             <input
@@ -397,7 +400,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
                                             color: theme.textMuted,
                                             fontSize: '0.9rem'
                                         }}>
-                                            🍽️ Middag
+                                            Middag
                                         </span>
                                         <input
                                             type="text"

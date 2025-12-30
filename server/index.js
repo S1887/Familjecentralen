@@ -813,7 +813,7 @@ app.post('/api/meals/suggest', async (req, res) => {
         const { recentMeals = [], preferences = '', weekEvents = [], dates = [] } = req.body;
 
         const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
         // Analyze busy days from calendar
         const busyDaysInfo = dates.map((date, i) => {

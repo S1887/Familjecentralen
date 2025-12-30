@@ -92,19 +92,19 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
         nextEventBg: 'linear-gradient(135deg, #333333 0%, #282828 100%)',
         textColorInverse: '#000'
     } : {
-        // Light Mode
-        bgOverlay: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7))',
+        // Light Mode - Clean
+        bgOverlay: 'none',
         cardBg: '#ffffff',
         cardBgHighlight: '#f8f9fa',
-        accent: '#1DB954',
-        textMain: '#ffffff',
+        accent: '#00b894',
+        textMain: '#2d3436',
         cardText: '#2d3436',
         textMuted: '#636e72',
         success: '#00b894',
-        warning: '#fdcb6e',
-        weatherWidgetBg: 'rgba(255,255,255,0.9)',
+        warning: '#e67e22',
+        weatherWidgetBg: 'rgba(255,255,255,0.8)',
         weatherWidgetBorder: 'rgba(0,0,0,0.1)',
-        nextEventBg: 'linear-gradient(135deg, #ffffff 0%, #f1f2f6 100%)',
+        nextEventBg: '#ffffff',
         textColorInverse: '#fff'
     };
 
@@ -145,10 +145,10 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 width: '100%',
                 height: '100%',
                 zIndex: 0,
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.8)), url(${getHeroImageUrl()})`,
+                backgroundImage: `linear-gradient(${darkMode ? 'rgba(0,0,0,0.65), rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.70), rgba(255,255,255,0.80)'}), url(${getHeroImageUrl()})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                pointerEvents: 'none' // Ensure clicks pass through
+                pointerEvents: 'none'
             }} />
 
             {/* Content Container */}
@@ -172,7 +172,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                         <div>
                             <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '400', opacity: 0.9 }}>Hej {user.name}!</h1>
-                            <div style={{ fontSize: '0.9rem', opacity: 0.7, marginTop: '0.2rem', color: '#ecf0f1' }}>
+                            <div style={{ fontSize: '0.9rem', opacity: 0.7, marginTop: '0.2rem', color: theme.textMuted }}>
                                 {capitalizeFirst(currentTime.toLocaleDateString('sv-SE', { weekday: 'long' }))} {currentTime.getDate()} {currentTime.toLocaleDateString('sv-SE', { month: 'long' })}
                                 {holidays && holidays.some(h => {
                                     const d = new Date(h.start);

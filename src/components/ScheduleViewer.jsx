@@ -147,8 +147,9 @@ const ScheduleViewer = ({ events, initialStudent }) => {
                     fontSize: '1.2rem',
                     minWidth: '120px',
                     textAlign: 'center',
-                    color: 'white',
-                    background: 'rgba(255,255,255,0.05)',
+                    color: 'var(--text-main)',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
                     padding: '0.5rem 1rem',
                     borderRadius: '16px'
                 }}>
@@ -221,15 +222,15 @@ const ScheduleViewer = ({ events, initialStudent }) => {
                                 className="day-header"
                                 style={{
                                     background: isToday ? studentColor : 'transparent',
-                                    color: isToday ? 'white' : '#eee',
+                                    color: isToday ? '#2c3e50' : 'var(--text-main)',
                                     padding: '8px',
                                     textAlign: 'center',
                                     borderRadius: '0',
-                                    borderBottom: isToday ? 'none' : '1px solid rgba(255,255,255,0.05)'
+                                    borderBottom: isToday ? 'none' : '1px solid var(--border-color)'
                                 }}
                             >
                                 <div className="day-name" style={{ fontWeight: 'bold', textTransform: 'capitalize' }}>{dayName}</div>
-                                <div className="day-date" style={{ fontSize: '0.8em', color: isToday ? 'rgba(255,255,255,0.8)' : '#aaa' }}>
+                                <div className="day-date" style={{ fontSize: '0.8em', color: isToday ? 'rgba(0,0,0,0.6)' : 'var(--text-muted)' }}>
                                     {day.getDate()}/{day.getMonth() + 1}
                                 </div>
                             </div>
