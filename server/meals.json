@@ -1,7 +1,48 @@
 {
   "2026-W01": {
     "2025-12-29": {
-      "dinner": ""
+      "dinner": "Köttfärssås med pasta"
+    },
+    "2025-12-28": {
+      "dinner": "Korv stroganoff med ris"
+    },
+    "2025-12-30": {
+      "dinner": "Korvstroganoff med ris"
+    },
+    "2025-12-31": {
+      "dinner": "Hemmagjord pizza"
+    },
+    "2026-01-01": {
+      "dinner": "Krämig fiskgratäng med potatis"
+    },
+    "2026-01-02": {
+      "dinner": "Tacos"
+    },
+    "2026-01-03": {
+      "dinner": "Lasagne"
+    }
+  },
+  "2026-W02": {
+    "2026-01-04": {
+      "dinner": "Lasagne"
+    },
+    "2026-01-05": {
+      "dinner": "Krämig linssoppa med vitlöksbröd"
+    },
+    "2026-01-06": {
+      "dinner": "Snabb pasta med spenat, soltorkade tomater och fetaost"
+    },
+    "2026-01-07": {
+      "dinner": "Ugnsbakad falafel med rostad potatis och yoghurtsås"
+    },
+    "2026-01-08": {
+      "dinner": "Vegetariska biffar (t.ex. kikärts- eller grönsaksbiffar) med bulgur och en kall sås"
+    },
+    "2026-01-09": {
+      "dinner": "Indisk kikärts- och potatisgryta (Chana Aloo) med ris"
+    },
+    "2026-01-10": {
+      "dinner": "Halloumiburgare med briochebröd och sötpotatispommes"
     }
   }
 }

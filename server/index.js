@@ -185,7 +185,31 @@ const CALENDARS = [
 // 4. Graceful error handling
 
 // Datakatalog
-const DATA_DIR = process.env.DATA_DIR || __dirname;
+// HA-Aware Configuration
+const HA_OPTIONS_FILE = '/data/options.json';
+const HA_DATA_DIR = '/data';
+
+// Determine DATA_DIR
+let dataPath = process.env.DATA_DIR || __dirname;
+
+// If we are in HA (indicated by /data existence), use it for persistence
+if (fs.existsSync(HA_DATA_DIR)) {
+    console.log('[Init] Detected HA /data directory, using for persistence');
+    dataPath = HA_DATA_DIR;
+}
+
+const DATA_DIR = dataPath;
+
+// Load Options from HA (Environment Variables override these if set, but in HA env vars are hard)
+if (fs.existsSync(HA_OPTIONS_FILE)) {
+    try {
+        const options = JSON.parse(fs.readFileSync(HA_OPTIONS_FILE, 'utf8'));
+        if (options.gemini_api_key) {
+            process.env.GEMINI_API_KEY = options.gemini_api_key;
+            console.log('[Init] Loaded Gemini API Key from HA options');
+        }
+    } catch (e) { console.error('[Init] Failed to load HA options:', e.message); }
+}
 
 // Se till att katalogen finns (om den inte är root)
 if (process.env.DATA_DIR && !fs.existsSync(DATA_DIR)) {
@@ -810,7 +834,7 @@ app.post('/api/meals/suggest', async (req, res) => {
     }
 
     try {
-        const { recentMeals = [], preferences = '', weekEvents = [], dates = [] } = req.body;
+        const { recentMeals = [], preferences = '', weekEvents = [], dates = [], customInstructions = '', targetDate = null } = req.body;
 
         const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
@@ -829,7 +853,26 @@ app.post('/api/meals/suggest', async (req, res) => {
             .map(d => `${d.date}: ${d.eventCount} aktiviteter (${d.activities})`)
             .join('\n');
 
-        const prompt = `Du är en svensk familjs matplanerare för familjen Örtendahl i Lidköping. 
+        let prompt = '';
+
+        if (targetDate) {
+            // SINGLE DAY PROMPT
+            const dayInfo = busyDaysInfo.find(d => d.date === targetDate);
+            const dayBusyText = dayInfo && dayInfo.isBusy ? `(UPPTAGEN DAG: ${dayInfo.activities})` : '';
+
+            prompt = `Du är en svensk familjs matplanerare.
+Föreslå EN middagsrätt för ${targetDate}.
+
+KALENDERINFO: ${dayBusyText}
+REGLER:
+- Svara ENDAST med en JSON-array innehållande en sträng, t.ex. ["Köttbullar"].
+- ${customInstructions ? `INSTRUKTION FRÅN ANVÄNDAREN: ${customInstructions}` : 'Ge ett passande förslag baserat på veckodag.'}
+- Ta hänsyn till att det är en barnfamilj.
+
+Svara ENDAST med JSON-array.`;
+        } else {
+            // FULL WEEK PROMPT
+            prompt = `Du är en svensk familjs matplanerare för familjen Örtendahl i Lidköping. 
 Föreslå ${dates.length} middagsrätter för en familj med 3 barn (8, 11, 14 år).
 
 BUTIK: ICA Kvantum Hjertberg, Lidköping
@@ -849,10 +892,12 @@ REGLER:
 
 ${recentMeals.length > 0 ? `NYLIGEN ÄTIT (undvik):\n${recentMeals.slice(-10).join(', ')}` : ''}
 
-${preferences ? `ÖNSKEMÅL: ${preferences}` : ''}
+${preferences ? `GENERALLA ÖNSKEMÅL: ${preferences}` : ''}
+${customInstructions ? `\nVIKTIG INSTRUKTION DENNA VECKA:\n${customInstructions.toUpperCase()}` : ''}
 
 Svara ENDAST med JSON-array, exempel:
 ["Köttbullar med potatismos", "Tacos", "Laxpasta med spenat", "Kycklinggryta", "Pannkakor", "Lasagne", "Pulled pork"]`;
+        }
 
         console.log('[AI] Generating suggestions with prompt length:', prompt.length);
 
