@@ -375,7 +375,7 @@ async function fetchCalendarsFromGoogle() {
                     }
 
                     // 7. Örgryte IS (ÖIS) (Svante): ALL matches go directly to calendar
-                    if (cal.id === 'orgryte_is') {
+                    if (cal.id === 'ois_fotboll') {
                         console.log(`[Auto-Rule] Auto-importing ÖIS match for Svante: ${summary}`);
                         isInbox = false;
                         summary = `Svante: ${summary}`;
