@@ -99,7 +99,28 @@ const MealPlanner = ({ holidays = [], darkMode, events = [] }) => {
         saveMeals(newMeals);
     };
 
-    // ... (goToWeek, isWeekendOrHoliday, getHolidayName unchanged)
+    // Navigate weeks
+    const goToWeek = (offset) => {
+        const currentDate = getWeekDates(currentWeek.year, currentWeek.week)[0];
+        currentDate.setDate(currentDate.getDate() + (offset * 7));
+        setCurrentWeek(getWeekInfo(currentDate));
+    };
+
+    // Check if date is weekend or holiday
+    const isWeekendOrHoliday = (date) => {
+        const day = date.getDay();
+        if (day === 0 || day === 6) return true;
+
+        const dateStr = date.toISOString().split('T')[0];
+        return holidays.some(h => h.date === dateStr);
+    };
+
+    // Get holiday name for date
+    const getHolidayName = (date) => {
+        const dateStr = date.toISOString().split('T')[0];
+        const holiday = holidays.find(h => h.date === dateStr);
+        return holiday ? holiday.name : null;
+    };
 
     // AI suggest meals (Updated)
     const suggestMeals = async (targetDateStr = null) => {
