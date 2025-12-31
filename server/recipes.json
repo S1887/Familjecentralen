@@ -54,5 +54,13 @@
     "date": "2025-12-28",
     "type": "dinner",
     "savedAt": "2025-12-31T10:41:25.651Z"
+  },
+  {
+    "id": "1767180312223",
+    "mealName": "TIPS:",
+    "recipe": "Hej alla små och stora pizzabagare! Här kommer ett superenkelt recept som garanterat blir en hit vid middagsbordet. Perfekt när ni vill baka något gott tillsammans!\n\n**INGREDIENSER:**\n*   1 färdig pizzabotten (rektangulär eller rund, som rullas ut)\n*   1 burk krossade tomater (ca 400g)\n*   200g riven ost (gärna mozzarella eller gratängost)\n*   100g strimlad skinka (eller t.ex. salami)\n*   100g champinjoner (skivade, färska eller konserverade)\n*   1 tsk torkad oregano\n\n**TILLAGNING:**\n\n1.  **Förbered ugnen (5 min):** Sätt ugnen på 225°C. Rulla ut pizzabottnen direkt på en ugnsplåt med bakplåtspapper.\n2.  **Bred på såsen (5 min):** Bred ut de krossade tomaterna jämnt över pizzabottnen. Lämna en liten kant runtom så att det blir en fin skorpa.\n3.  **Toppa pizzan (5 min):** Strö över den rivna osten. Fördela sedan skinka och champinjoner över pizzan. Avsluta med att strö över oreganon.\n4.  **Grädda pizzan (10-15 min):** Ställ in plåten mitt i ugnen och grädda i 10-15 minuter, eller tills osten har smält och fått fin färg och kanterna är gyllene.\n5.  **Servera genast (2 min):** Ta ut pizzan från ugnen, låt den svalna någon minut och skär den sedan i lagom stora bitar med en pizzaskärare. Smaklig måltid!\n\n**TIPS:** Låt barnen vara med och lägga på toppingen – det blir både roligare och godare när alla får bestämma lite själva!",
+    "date": "2026-01-02",
+    "type": "dinner",
+    "savedAt": "2025-12-31T11:25:12.223Z"
   }
 ]

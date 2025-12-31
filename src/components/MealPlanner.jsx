@@ -108,14 +108,36 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
     const saveRecipe = async () => {
         if (!selectedMeal || !recipe) return;
 
-        // Try to extract new dish name from recipe (look for ## heading or first bold line)
+        // Try to extract new dish name from recipe (look for ## heading or first bold line, excluding "INGREDIENSER" etc)
         let newMealName = selectedMeal.name;
+
+        // Helper to validate name candidate
+        const isValidName = (name) => {
+            const lower = name.toLowerCase();
+            // Exclude common headers and strings that end with a colon (e.g. "Ingredienser:")
+            if (name.trim().endsWith(':')) return false;
+
+            return name.length < 60 &&
+                !lower.includes('ingredienser') &&
+                !lower.includes('tillagning') &&
+                !lower.includes('gör så här') &&
+                !lower.includes('instruktioner') &&
+                !lower.includes('servering') &&
+                !lower.includes('tips');
+        };
+
         const headingMatch = recipe.match(/^##\s*(.+)$/m);
-        const boldMatch = recipe.match(/^\*\*(.+?)\*\*/m);
-        if (headingMatch) {
+        // Find ALL bold matches to skip "Ingredienser" if it's the first one
+        const boldMatches = [...recipe.matchAll(/^\*\*(.+?)\*\*/gm)];
+
+        if (headingMatch && isValidName(headingMatch[1].trim())) {
             newMealName = headingMatch[1].trim();
-        } else if (boldMatch && boldMatch[1].length < 60) {
-            newMealName = boldMatch[1].trim();
+        } else if (boldMatches.length > 0) {
+            // Find first bold match that isn't a header keyword
+            const validBold = boldMatches.find(m => isValidName(m[1].trim()));
+            if (validBold) {
+                newMealName = validBold[1].trim();
+            }
         }
 
         // Save to meal day data (including updated meal name if extracted)
@@ -486,14 +508,14 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                     <span style={{ fontSize: '1.2rem' }}>👩‍🍳</span>
                     <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>AI-Kock</span>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <input
                         type="text"
                         value={aiInstructions}
                         onChange={(e) => setAiInstructions(e.target.value)}
                         placeholder="T.ex. 'Vi har mycket kyckling', 'Vegetariskt hela veckan'..."
                         style={{
-                            flex: 1,
+                            flex: '1 1 200px', // Allow grow/shrink, min-basis 200px
                             background: theme.inputBg,
                             border: `1px solid ${theme.border}`,
                             borderRadius: '8px',
@@ -548,7 +570,8 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                 style={{
                                     background: theme.cardBg,
                                     borderRadius: '16px',
-                                    padding: '1rem',
+                                    borderRadius: '16px',
+                                    padding: '0.75rem',
                                     border: isToday ? `2px solid ${theme.accent}` : `1px solid ${theme.border}`,
                                 }}
                             >
@@ -557,7 +580,9 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
-                                    marginBottom: '0.75rem'
+                                    marginBottom: '0.75rem',
+                                    flexWrap: 'wrap',
+                                    gap: '0.5rem'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center' }}>
                                         <span style={{
@@ -596,7 +621,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                             return (
                                                 <div
                                                     onClick={(e) => { e.stopPropagation(); onNavigateToCalendar && onNavigateToCalendar(dateStr); }}
-                                                    style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginRight: '0.5rem', cursor: 'pointer', maxWidth: '200px' }}
+                                                    style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginRight: '0.5rem', cursor: 'pointer', flex: '1 1 100px', minWidth: 0, maxWidth: '250px' }}
                                                     title="Klicka för att se i kalendern"
                                                 >
                                                     {dayEvents.map((ev, i) => {
@@ -618,9 +643,9 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                             <span style={{
                                                 background: theme.accent,
                                                 color: '#fff',
-                                                padding: '0.2rem 0.5rem',
                                                 borderRadius: '6px',
                                                 fontSize: '0.75rem',
+                                                whiteSpace: 'nowrap',
                                                 fontWeight: 'bold'
                                             }}>
                                                 IDAG
@@ -657,7 +682,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                 {/* Meal inputs */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     {/* Lunch */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', width: '80px', minHeight: '38px', alignItems: 'flex-start' }}>
                                             <span style={{ color: theme.textMuted, fontSize: '0.9rem' }}>
                                                 Lunch
@@ -671,7 +696,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                                 {dayMeals.times?.lunch ? `🕒 ${dayMeals.times.lunch}` : ''}
                                             </span>
                                         </div>
-                                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <input
                                                 type="text"
                                                 value={dayMeals.lunch || ''}
@@ -679,6 +704,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                                 placeholder={isSpecialDay ? "Lunch?" : "Skola/Jobb"}
                                                 style={{
                                                     flex: 1,
+                                                    minWidth: 0,
                                                     background: theme.inputBg,
                                                     border: `1px solid ${theme.border}`,
                                                     borderRadius: '8px',
@@ -710,7 +736,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                     </div>
 
                                     {/* Dinner */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', width: '80px', minHeight: '38px', alignItems: 'flex-start' }}>
                                             <span style={{ color: theme.textMuted, fontSize: '0.9rem' }}>
                                                 Middag
@@ -724,7 +750,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                                 {dayMeals.times?.dinner ? `🕒 ${dayMeals.times.dinner}` : ''}
                                             </span>
                                         </div>
-                                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <input
                                                 type="text"
                                                 value={dayMeals.dinner || ''}
@@ -733,6 +759,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                                 disabled={!isAdmin}
                                                 style={{
                                                     flex: 1,
+                                                    minWidth: 0,
                                                     background: theme.inputBg,
                                                     border: `1px solid ${theme.border}`,
                                                     borderRadius: '8px',
