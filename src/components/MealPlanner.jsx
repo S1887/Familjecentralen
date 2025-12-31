@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
+import SavedRecipes from './SavedRecipes';
 
 // Get ISO week number and year
 const getWeekInfo = (date) => {
@@ -35,7 +36,7 @@ const getWeekDates = (year, week) => {
     return dates;
 };
 
-const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalendar }) => {
+const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalendar, username = 'unknown', isAdmin = true }) => {
     // ... (state unchanged)
     const [currentWeek, setCurrentWeek] = useState(() => getWeekInfo(new Date()));
     const [meals, setMeals] = useState({});
@@ -44,6 +45,111 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
     const [suggesting, setSuggesting] = useState(false);
     const [aiInstructions, setAiInstructions] = useState('');
     const [regeneratingDay, setRegeneratingDay] = useState(null); // Track which day is regenerating
+
+    // Regeneration Modal State
+    const [regenModalOpen, setRegenModalOpen] = useState(false);
+    const [regenTargetDate, setRegenTargetDate] = useState(null);
+    const [regenInstruction, setRegenInstruction] = useState('');
+    const [regenTypes, setRegenTypes] = useState({ lunch: false, dinner: true });
+
+    // Meal Detail Modal State
+    const [mealDetailOpen, setMealDetailOpen] = useState(false);
+    const [selectedMeal, setSelectedMeal] = useState(null); // { dateStr, type, name, time, author }
+    const [recipe, setRecipe] = useState('');
+    const [loadingRecipe, setLoadingRecipe] = useState(false);
+    const [recipeRefinement, setRecipeRefinement] = useState('');
+
+    // Saved Recipes View State
+    const [showSavedRecipes, setShowSavedRecipes] = useState(false);
+
+    // Open regeneration modal
+    const openRegenModal = (dateStr) => {
+        setRegenTargetDate(dateStr);
+        setRegenInstruction('');
+        setRegenTypes({ lunch: false, dinner: true }); // Default to dinner
+        setRegenModalOpen(true);
+    };
+
+    // Open meal detail modal
+    const openMealDetail = (dateStr, type, name, time, author) => {
+        setSelectedMeal({ dateStr, type, name, time, author });
+        // Load saved recipe if available
+        const savedRecipe = meals[dateStr]?.recipes?.[type] || '';
+        setRecipe(savedRecipe);
+        setRecipeRefinement('');
+        setMealDetailOpen(true);
+    };
+
+    // Fetch recipe for meal
+    const fetchRecipe = async (refinementPrompt = null) => {
+        if (!selectedMeal?.name) return;
+        setLoadingRecipe(true);
+        try {
+            const response = await fetch(getApiUrl('api/meals/recipe'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    meal: selectedMeal.name,
+                    currentRecipe: refinementPrompt ? recipe : null,
+                    refinement: refinementPrompt
+                })
+            });
+            const data = await response.json();
+            setRecipe(data.recipe || 'Kunde inte hämta recept.');
+            setRecipeRefinement(''); // Clear prompt after use
+        } catch (error) {
+            console.error('Error fetching recipe:', error);
+            setRecipe('Kunde inte hämta recept.');
+        }
+        setLoadingRecipe(false);
+    };
+
+    // Save recipe to meal and collection
+    const saveRecipe = async () => {
+        if (!selectedMeal || !recipe) return;
+
+        // Try to extract new dish name from recipe (look for ## heading or first bold line)
+        let newMealName = selectedMeal.name;
+        const headingMatch = recipe.match(/^##\s*(.+)$/m);
+        const boldMatch = recipe.match(/^\*\*(.+?)\*\*/m);
+        if (headingMatch) {
+            newMealName = headingMatch[1].trim();
+        } else if (boldMatch && boldMatch[1].length < 60) {
+            newMealName = boldMatch[1].trim();
+        }
+
+        // Save to meal day data (including updated meal name if extracted)
+        const newMeals = { ...meals };
+        if (!newMeals[selectedMeal.dateStr]) newMeals[selectedMeal.dateStr] = {};
+        if (!newMeals[selectedMeal.dateStr].recipes) newMeals[selectedMeal.dateStr].recipes = {};
+        newMeals[selectedMeal.dateStr].recipes[selectedMeal.type] = recipe;
+
+        // Update meal name if it changed
+        if (newMealName !== selectedMeal.name) {
+            newMeals[selectedMeal.dateStr][selectedMeal.type] = newMealName;
+            setSelectedMeal({ ...selectedMeal, name: newMealName });
+        }
+
+        setMeals(newMeals);
+        saveMeals(newMeals);
+
+        // Save to collection via API
+        try {
+            await fetch(getApiUrl('api/recipes'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mealName: newMealName,
+                    recipe: recipe,
+                    date: selectedMeal.dateStr,
+                    type: selectedMeal.type
+                })
+            });
+            alert('✅ Recept sparat!' + (newMealName !== selectedMeal.name ? ` Rättnamn uppdaterat till "${newMealName}"` : ''));
+        } catch (error) {
+            console.error('Error saving recipe:', error);
+        }
+    };
 
     // Theme (unchanged)
     const theme = {
@@ -88,13 +194,27 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
         setSaving(false);
     }, [currentWeek.weekString]);
 
-    // Update meal (unchanged)
-    const updateMeal = (dateStr, mealType, value) => {
+    // Update meal with author tracking
+    const updateMeal = (dateStr, mealType, value, time = null, author = null) => {
         const newMeals = { ...meals };
         if (!newMeals[dateStr]) {
             newMeals[dateStr] = {};
         }
-        newMeals[dateStr][mealType] = value;
+
+        // If updating meal name (string value)
+        if (value !== undefined) {
+            newMeals[dateStr][mealType] = value;
+            // Set author when manually editing (use prop username or default)
+            if (!newMeals[dateStr].authors) newMeals[dateStr].authors = {};
+            newMeals[dateStr].authors[mealType] = author || username || 'manual';
+        }
+
+        // If updating time
+        if (time !== null) {
+            if (!newMeals[dateStr].times) newMeals[dateStr].times = {};
+            newMeals[dateStr].times[mealType] = time;
+        }
+
         setMeals(newMeals);
         saveMeals(newMeals);
     };
@@ -106,26 +226,42 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
         setCurrentWeek(getWeekInfo(currentDate));
     };
 
-    // Check if date is weekend or holiday
+    // Check if date is weekend or holiday (for lunch display - weekends show lunch input)
     const isWeekendOrHoliday = (date) => {
         const day = date.getDay();
-        if (day === 0 || day === 6) return true;
+        // Sunday is a day off, Saturday is not (for lunch purposes)
+        if (day === 0) return true;
 
         const dateStr = date.toISOString().split('T')[0];
-        return holidays.some(h => h.date === dateStr);
+        // Holidays have 'start' field (not 'date') and 'isRedDay' flag
+        return holidays.some(h => h.start === dateStr && h.isRedDay);
     };
 
-    // Get holiday name for date
+    // Check if date should be displayed with red/holiday styling
+    const isRedDay = (date) => {
+        const day = date.getDay();
+        // Sunday is always a red day
+        if (day === 0) return true;
+
+        const dateStr = date.toISOString().split('T')[0];
+        // Red if it's a marked red day OR if it has a holiday name
+        return holidays.some(h => h.start === dateStr && (h.isRedDay || h.summary));
+    };
+
+    // Get holiday name for date (only if it's a named holiday, not just weekend)
     const getHolidayName = (date) => {
         const dateStr = date.toISOString().split('T')[0];
-        const holiday = holidays.find(h => h.date === dateStr);
-        return holiday ? holiday.name : null;
+        // Holidays have 'summary' field (not 'name')
+        const holiday = holidays.find(h => h.start === dateStr && h.summary);
+        return holiday ? holiday.summary : null;
     };
 
     // AI suggest meals (Updated)
-    const suggestMeals = async (targetDateStr = null) => {
+    // AI suggest meals (Updated)
+    const suggestMeals = async (targetDateStr = null, types = ['dinner']) => {
         if (targetDateStr) {
             setRegeneratingDay(targetDateStr);
+            setRegenModalOpen(false); // Close modal if open
         } else {
             setSuggesting(true);
         }
@@ -151,7 +287,10 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                 })
                 .map(e => ({
                     date: new Date(e.start).toISOString().split('T')[0],
-                    summary: e.summary
+                    summary: e.summary,
+                    start: e.start,
+                    end: e.end,
+                    allDay: e.allDay
                 }));
 
             const response = await fetch(getApiUrl('api/meals/suggest'), {
@@ -159,103 +298,130 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     recentMeals: recentDinners,
-                    weekEvents: weekEvents,
-                    dates: dateStrings,
-                    customInstructions: aiInstructions, // Pass instructions
-                    targetDate: targetDateStr // Pass target date if specific day
+                    preferences: 'Barnvänligt, varierat',
+                    weekEvents,
+                    dates: targetDateStr ? [targetDateStr] : dateStrings,
+                    customInstructions: targetDateStr ? regenInstruction : aiInstructions,
+                    targetDate: targetDateStr,
+                    targetTypes: types
                 })
             });
 
-            if (!response.ok) {
-                const errData = await response.json();
-                console.error('AI Error:', errData);
-                if (response.status === 500 && errData.error?.includes('429')) {
-                    alert('AI:n är lite upptagen (Rate Limit). Vänta en minut och försök igen! 🕒');
-                } else {
-                    alert('Kunde inte hämta förslag. ' + (errData.error || 'Okänt fel'));
-                }
-            } else {
-                const data = await response.json();
+            if (response.status === 429) {
+                alert("AI-tjänsten är lite upptagen just nu. Prova igen om en stund!");
+                return;
+            }
 
-                // Handle different response types based on request logic
-                // If single string (single day) or array (full week)
+            const data = await response.json();
+            console.log('[MealPlanner] API Response:', JSON.stringify(data, null, 2));
+            console.log('[MealPlanner] targetDateStr:', targetDateStr, 'types:', types);
 
-                // Note: Backend logic for single day returns { suggestions: ["Meal Name"], ... } ? 
-                // Wait, my backend implementation for single day returned just a string?
-                // Let's check: "res.json({ suggestions, busyDays: ... })" is for the main block.
-                // The SINGLE DAY block in backend currently returns TEXT directly via res.send?
-                // No, I updated backend to use `res.json({ suggestions, ... })` for the main block.
-                // But for the `if (targetDate)` block in backend, I need to make sure I return JSON format!
-                // Ah, looking at my backend update: 
-                // `const jsonMatch = text.match(/\[[\s\S]*\]/);` -> This expects an ARRAY.
-                // My single day prompt says: "Svara ENDAST med en sträng (namnet på maträtten)".
-                // That regex won't match a simple string! 
-                // I need to fix backend to handle single string response or prompt for array of 1.
-                // Let's assume for now I will fix backend in next step or adjust prompt there.
-                // Actually, I should probably adjust the frontend to handle what the backend currently does,
-                // OR fix the backend.
-                // The backend currently tries to match `[`...`]`.
-                // Single day prompt: "Svara ENDAST med en sträng".
-                // This means backend will FAIL to parse JSON and error out.
-                // I MUST FIX BACKEND FIRST or adjust frontend call.
-                // But since I'm in frontend edit, I will write frontend expecting a proper response,
-                // and then I will go back to backend to ensure it returns { suggestions: ["Meal"] } for single day too.
+            if (data.suggestions) {
+                const newMeals = { ...meals };
 
                 if (targetDateStr) {
-                    // Start of single day handling
-                    // Assuming backend returns { suggestions: ["Meal Name"] }
-                    if (data.suggestions && data.suggestions.length > 0) {
-                        const newMeals = { ...meals };
-                        if (!newMeals[targetDateStr]) newMeals[targetDateStr] = {};
+                    // Single day update - ensure proper deep clone
+                    console.log('[MealPlanner] Single day update for:', targetDateStr);
+                    console.log('[MealPlanner] Suggestions:', data.suggestions);
 
-                        // Backend for single day might return just a string if I fix it, 
-                        // or an array of 1 if I fix prompt.
-                        // Let's handle array as standard.
-                        const mealName = Array.isArray(data.suggestions) ? data.suggestions[0] : data.suggestions;
-                        newMeals[targetDateStr].dinner = mealName;
-                        setMeals(newMeals);
-                        saveMeals(newMeals);
+                    newMeals[targetDateStr] = {
+                        ...newMeals[targetDateStr],
+                        times: { ...newMeals[targetDateStr]?.times },
+                        authors: { ...newMeals[targetDateStr]?.authors }
+                    };
+
+                    if (data.suggestions.lunch) {
+                        newMeals[targetDateStr].lunch = data.suggestions.lunch.meal;
+                        newMeals[targetDateStr].times.lunch = data.suggestions.lunch.time;
+                        newMeals[targetDateStr].authors.lunch = 'AI';
                     }
+                    if (data.suggestions.dinner) {
+                        newMeals[targetDateStr].dinner = data.suggestions.dinner.meal;
+                        newMeals[targetDateStr].times.dinner = data.suggestions.dinner.time;
+                        newMeals[targetDateStr].authors.dinner = 'AI';
+                    }
+
                 } else {
-                    // Full week handling
-                    if (data.suggestions) {
-                        const newMeals = { ...meals };
-                        let suggestionIndex = 0;
-                        weekDates.forEach(date => {
-                            const dateStr = date.toISOString().split('T')[0];
-                            if (!newMeals[dateStr]) newMeals[dateStr] = {};
-                            // Only overwrite empty or if user specifically asked for full regen?
-                            // Logic: For full week gen, we overwrite EMPTY slots, OR if we force it?
-                            // Current logic only overwrote empty.
-                            // User request: "Generera en hel vecka". Usually implies filling gaps or potentially overwriting.
-                            // Let's stick to filling gaps for safety unless we add a "Force overwrite" toggle.
-                            // But usually if you type instructions you expect results.
-                            // Let's allow overwriting if instructions are present? No, that's risky.
-                            // Let's keep filling gaps for now, maybe clear week first?
-                            // Let's stick to filling gaps to be safe.
-                            if (!newMeals[dateStr].dinner && suggestionIndex < data.suggestions.length) {
-                                newMeals[dateStr].dinner = data.suggestions[suggestionIndex];
-                                suggestionIndex++;
+                    // Full week update - skip manually entered meals
+                    data.suggestions.forEach((suggestion, index) => {
+                        const dateStr = dateStrings[index];
+                        if (!dateStr) return;
+
+                        // Deep clone or create new object for the day
+                        newMeals[dateStr] = { ...newMeals[dateStr] };
+                        if (!newMeals[dateStr].authors) newMeals[dateStr].authors = {};
+                        if (!newMeals[dateStr].times) newMeals[dateStr].times = {};
+
+                        // Check if dinner was manually entered (not AI) - if so, skip it
+                        const existingAuthor = newMeals[dateStr].authors?.dinner;
+                        const isManualEntry = existingAuthor && existingAuthor !== 'AI' && newMeals[dateStr].dinner;
+
+                        if (!isManualEntry) {
+                            if (typeof suggestion === 'object' && suggestion.meal) {
+                                newMeals[dateStr].dinner = suggestion.meal;
+                                newMeals[dateStr].times.dinner = suggestion.time;
+                                newMeals[dateStr].authors.dinner = 'AI';
+                            } else {
+                                // Fallback for string response
+                                newMeals[dateStr].dinner = suggestion;
+                                newMeals[dateStr].times.dinner = null;
+                                newMeals[dateStr].authors.dinner = 'AI';
                             }
-                        });
-                        setMeals(newMeals);
-                        saveMeals(newMeals);
-                    }
+                        }
+                    });
                 }
+                setMeals(newMeals);
+                saveMeals(newMeals);
             }
+
         } catch (error) {
             console.error('Error suggesting meals:', error);
-            alert('Ett fel uppstod vid kontakt med servern.');
+            alert("Kunde inte hämta förslag. Kontrollera din internetanslutning.");
+        } finally {
+            setSuggesting(false);
+            setRegeneratingDay(null);
         }
-        setSuggesting(false);
-        setRegeneratingDay(null);
     };
 
     const weekDates = getWeekDates(currentWeek.year, currentWeek.week);
     const dayNames = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
 
+    // Show saved recipes view
+    if (showSavedRecipes) {
+        return (
+            <SavedRecipes
+                darkMode={darkMode}
+                getApiUrl={getApiUrl}
+                onBack={() => setShowSavedRecipes(false)}
+            />
+        );
+    }
+
     return (
         <div style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto' }}>
+            {/* Saved Recipes Button */}
+            <button
+                onClick={() => setShowSavedRecipes(true)}
+                style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    marginBottom: '1rem',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    fontSize: '1rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem'
+                }}
+            >
+                📚 Sparade recept
+            </button>
+
             {/* Header (unchanged) */}
             <div style={{
                 display: 'flex',
@@ -396,7 +562,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                     <div style={{ display: 'flex', alignItems: 'center' }}>
                                         <span style={{
                                             fontWeight: 'bold',
-                                            color: isSpecialDay ? theme.accent : theme.text,
+                                            color: isRedDay(date) ? theme.accent : theme.text,
                                             fontSize: '1.1rem'
                                         }}>
                                             {dayNames[index]} {date.getDate()}/{date.getMonth() + 1}
@@ -407,27 +573,43 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                                 color: theme.accent,
                                                 fontSize: '0.85rem'
                                             }}>
-                                                🔴 {holidayName}
+                                                {holidayName}
                                             </span>
                                         )}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         {/* Events Indicator */}
                                         {(() => {
-                                            const dayEvents = events.filter(e => e.start.startsWith(dateStr));
-                                            if (dayEvents.length === 0) return null;
+                                            // Sort events by time
+                                            const dayEvents = events
+                                                .filter(e => e.start.startsWith(dateStr))
+                                                .sort((a, b) => a.start.localeCompare(b.start));
+
+                                            if (dayEvents.length === 0) {
+                                                return (
+                                                    <div style={{ fontSize: '0.7rem', color: theme.textMuted, opacity: 0.5, fontStyle: 'italic' }}>
+                                                        Inga händelser
+                                                    </div>
+                                                );
+                                            }
+
                                             return (
                                                 <div
                                                     onClick={(e) => { e.stopPropagation(); onNavigateToCalendar && onNavigateToCalendar(dateStr); }}
-                                                    style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginRight: '0.5rem', cursor: 'pointer' }}
+                                                    style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginRight: '0.5rem', cursor: 'pointer', maxWidth: '200px' }}
                                                     title="Klicka för att se i kalendern"
                                                 >
-                                                    {dayEvents.slice(0, 3).map((ev, i) => (
-                                                        <div key={i} style={{ fontSize: '0.65rem', color: theme.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', maxWidth: '80px', textOverflow: 'ellipsis' }}>
-                                                            • {ev.summary}
-                                                        </div>
-                                                    ))}
-                                                    {dayEvents.length > 3 && <div style={{ fontSize: '0.65rem', color: theme.textMuted }}>+ {dayEvents.length - 3} till...</div>}
+                                                    {dayEvents.map((ev, i) => {
+                                                        const startTime = ev.start.split('T')[1]?.substring(0, 5);
+                                                        const endTime = ev.end ? ev.end.split('T')[1]?.substring(0, 5) : null;
+                                                        const timeStr = endTime ? `${startTime}-${endTime}` : startTime;
+
+                                                        return (
+                                                            <div key={i} style={{ fontSize: '0.7rem', color: theme.textMuted, lineHeight: '1.2' }}>
+                                                                <span style={{ fontWeight: 500, opacity: 0.8 }}>{timeStr}</span> <span style={{ opacity: 1 }}>{ev.summary}</span>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             );
                                         })()}
@@ -446,21 +628,25 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                         )}
                                         {/* Regenerate button */}
                                         <button
-                                            onClick={() => suggestMeals(dateStr)}
+                                            onClick={() => openRegenModal(dateStr)}
                                             disabled={isRegeneratingThis || suggesting}
-                                            title="Generera nytt förslag för denna dag (använder instruktioner ovan)"
+                                            title="Generera nytt förslag för denna dag"
                                             style={{
-                                                background: 'transparent',
-                                                border: 'none',
+                                                background: theme.cardBg,
+                                                border: `1px solid ${theme.border}`,
+                                                borderRadius: '6px',
                                                 cursor: isRegeneratingThis ? 'wait' : 'pointer',
-                                                fontSize: '1rem',
-                                                opacity: 0.7,
-                                                padding: '0.2rem',
-                                                transition: 'opacity 0.2s',
-                                                animation: isRegeneratingThis ? 'spin 1s linear infinite' : 'none'
+                                                fontSize: '0.8rem',
+                                                padding: '0.2rem 0.5rem',
+                                                marginLeft: 'auto',
+                                                color: theme.textMuted,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.3rem'
                                             }}
                                         >
-                                            {isRegeneratingThis ? '⏳' : '✨'}
+                                            <span style={{ fontSize: '1rem' }}>{isRegeneratingThis ? '⏳' : '✨'}</span>
+                                            <span>Ändra</span>
                                         </button>
                                         <style>{`
                                             @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -468,85 +654,382 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                     </div>
                                 </div>
 
-                                {/* Meal inputs (unchanged structure) */}
+                                {/* Meal inputs */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     {/* Lunch */}
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        <span style={{
-                                            width: '70px',
-                                            color: theme.textMuted,
-                                            fontSize: '0.9rem'
-                                        }}>
-                                            Lunch
-                                        </span>
-                                        {isSpecialDay ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', width: '80px', minHeight: '38px', alignItems: 'flex-start' }}>
+                                            <span style={{ color: theme.textMuted, fontSize: '0.9rem' }}>
+                                                Lunch
+                                                {dayMeals.authors?.lunch && (
+                                                    <span style={{ marginLeft: '0.3rem', fontSize: '0.7rem' }} title={dayMeals.authors.lunch}>
+                                                        {dayMeals.authors.lunch === 'AI' ? '🤖' : dayMeals.authors.lunch === 'Svante' ? '👨' : dayMeals.authors.lunch === 'Sarah' ? '👩' : '✏️'}
+                                                    </span>
+                                                )}
+                                            </span>
+                                            <span style={{ color: theme.text, fontSize: '0.7rem', fontWeight: 'bold', minHeight: '1rem' }}>
+                                                {dayMeals.times?.lunch ? `🕒 ${dayMeals.times.lunch}` : ''}
+                                            </span>
+                                        </div>
+                                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <input
                                                 type="text"
                                                 value={dayMeals.lunch || ''}
                                                 onChange={(e) => updateMeal(dateStr, 'lunch', e.target.value)}
-                                                placeholder="Lunch?"
+                                                placeholder={isSpecialDay ? "Lunch?" : "Skola/Jobb"}
                                                 style={{
                                                     flex: 1,
                                                     background: theme.inputBg,
                                                     border: `1px solid ${theme.border}`,
                                                     borderRadius: '8px',
                                                     padding: '0.6rem 0.8rem',
-                                                    color: theme.text,
-                                                    fontSize: '0.95rem'
+                                                    color: dayMeals.lunch ? theme.text : theme.textMuted,
+                                                    fontSize: '0.95rem',
+                                                    textOverflow: 'ellipsis',
+                                                    overflow: 'hidden',
+                                                    whiteSpace: 'nowrap'
                                                 }}
                                             />
-                                        ) : (
-                                            <input
-                                                type="text"
-                                                value={dayMeals.lunch || ''}
-                                                onChange={(e) => updateMeal(dateStr, 'lunch', e.target.value)}
-                                                placeholder="Skola/arbete"
+                                            <button
+                                                onClick={() => dayMeals.lunch && openMealDetail(dateStr, 'lunch', dayMeals.lunch, dayMeals.times?.lunch, dayMeals.authors?.lunch)}
                                                 style={{
-                                                    flex: 1,
-                                                    background: theme.inputBg,
-                                                    border: `1px solid ${theme.border}`,
-                                                    borderRadius: '8px',
-                                                    padding: '0.6rem 0.8rem',
-                                                    color: theme.text,
-                                                    fontSize: '0.95rem'
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    fontSize: '1.2rem',
+                                                    cursor: dayMeals.lunch ? 'pointer' : 'default',
+                                                    padding: '0.3rem',
+                                                    opacity: dayMeals.lunch ? 0.7 : 0,
+                                                    width: '1.8rem'
                                                 }}
-                                            />
-                                        )}
+                                                title={dayMeals.lunch ? "Visa recept" : ""}
+                                                disabled={!dayMeals.lunch}
+                                            >
+                                                📖
+                                            </button>
+                                        </div>
                                     </div>
 
                                     {/* Dinner */}
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        <span style={{
-                                            width: '70px',
-                                            color: theme.textMuted,
-                                            fontSize: '0.9rem'
-                                        }}>
-                                            Middag
-                                        </span>
-                                        <input
-                                            type="text"
-                                            value={dayMeals.dinner || ''}
-                                            onChange={(e) => updateMeal(dateStr, 'dinner', e.target.value)}
-                                            placeholder="Middag?"
-                                            style={{
-                                                flex: 1,
-                                                background: theme.inputBg,
-                                                border: `1px solid ${theme.border}`,
-                                                borderRadius: '8px',
-                                                padding: '0.6rem 0.8rem',
-                                                color: theme.text,
-                                                fontSize: '0.95rem'
-                                            }}
-                                        />
+                                        <div style={{ display: 'flex', flexDirection: 'column', width: '80px', minHeight: '38px', alignItems: 'flex-start' }}>
+                                            <span style={{ color: theme.textMuted, fontSize: '0.9rem' }}>
+                                                Middag
+                                                {dayMeals.authors?.dinner && (
+                                                    <span style={{ marginLeft: '0.3rem', fontSize: '0.7rem' }} title={dayMeals.authors.dinner}>
+                                                        {dayMeals.authors.dinner === 'AI' ? '🤖' : dayMeals.authors.dinner === 'Svante' ? '👨' : dayMeals.authors.dinner === 'Sarah' ? '👩' : '✏️'}
+                                                    </span>
+                                                )}
+                                            </span>
+                                            <span style={{ color: theme.text, fontSize: '0.7rem', fontWeight: 'bold', minHeight: '1rem' }}>
+                                                {dayMeals.times?.dinner ? `🕒 ${dayMeals.times.dinner}` : ''}
+                                            </span>
+                                        </div>
+                                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <input
+                                                type="text"
+                                                value={dayMeals.dinner || ''}
+                                                onChange={(e) => updateMeal(dateStr, 'dinner', e.target.value)}
+                                                placeholder="Middag?"
+                                                disabled={!isAdmin}
+                                                style={{
+                                                    flex: 1,
+                                                    background: theme.inputBg,
+                                                    border: `1px solid ${theme.border}`,
+                                                    borderRadius: '8px',
+                                                    padding: '0.6rem 0.8rem',
+                                                    color: theme.text,
+                                                    fontSize: '0.95rem',
+                                                    opacity: isAdmin ? 1 : 0.7,
+                                                    cursor: isAdmin ? 'text' : 'not-allowed',
+                                                    textOverflow: 'ellipsis',
+                                                    overflow: 'hidden',
+                                                    whiteSpace: 'nowrap'
+                                                }}
+                                            />
+                                            <button
+                                                onClick={() => dayMeals.dinner && openMealDetail(dateStr, 'dinner', dayMeals.dinner, dayMeals.times?.dinner, dayMeals.authors?.dinner)}
+                                                style={{
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    fontSize: '1.2rem',
+                                                    cursor: dayMeals.dinner ? 'pointer' : 'default',
+                                                    padding: '0.3rem',
+                                                    opacity: dayMeals.dinner ? 0.7 : 0,
+                                                    width: '1.8rem'
+                                                }}
+                                                title={dayMeals.dinner ? "Visa recept" : ""}
+                                                disabled={!dayMeals.dinner}
+                                            >
+                                                📖
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         );
                     })}
                 </div>
-            )
-            }
-        </div >
+            )}
+
+            {/* Regeneration Modal */}
+            {regenModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999
+                }}>
+                    <div style={{
+                        background: theme.bg,
+                        padding: '1.5rem',
+                        borderRadius: '12px',
+                        border: '1px solid ' + theme.border,
+                        width: '90%',
+                        maxWidth: '400px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+                    }}>
+                        <h3 style={{ margin: '0 0 1rem 0', color: theme.text }}>Generera förslag för {regenTargetDate}</h3>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', color: theme.textMuted, marginBottom: '0.5rem', fontSize: '0.9rem' }}>Vad är ni sugna på?</label>
+                            <input
+                                type="text"
+                                autoFocus
+                                value={regenInstruction}
+                                onChange={(e) => setRegenInstruction(e.target.value)}
+                                placeholder="T.ex. Nåt med kyckling, italienskt..."
+                                style={{
+                                    width: '100%', padding: '0.75rem', borderRadius: '8px',
+                                    border: `1px solid ${theme.border}`, background: theme.inputBg,
+                                    color: theme.text, fontSize: '1rem'
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: theme.text, cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={regenTypes.lunch}
+                                    onChange={e => setRegenTypes({ ...regenTypes, lunch: e.target.checked })}
+                                    style={{ transform: 'scale(1.2)' }}
+                                />
+                                Lunch
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: theme.text, cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={regenTypes.dinner}
+                                    onChange={e => setRegenTypes({ ...regenTypes, dinner: e.target.checked })}
+                                    style={{ transform: 'scale(1.2)' }}
+                                />
+                                Middag
+                            </label>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => setRegenModalOpen(false)}
+                                style={{
+                                    padding: '0.75rem 1rem', background: 'transparent',
+                                    border: `1px solid ${theme.textMuted}`, borderRadius: '8px',
+                                    color: theme.text, cursor: 'pointer'
+                                }}
+                            >
+                                Avbryt
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const types = [];
+                                    if (regenTypes.lunch) types.push('lunch');
+                                    if (regenTypes.dinner) types.push('dinner');
+                                    if (types.length === 0) types.push('dinner'); // Fallback
+                                    suggestMeals(regenTargetDate, types);
+                                }}
+                                style={{
+                                    padding: '0.75rem 1.5rem', background: theme.accent,
+                                    border: 'none', borderRadius: '8px',
+                                    color: '#fff', fontWeight: 'bold', cursor: 'pointer'
+                                }}
+                            >
+                                ✨ Generera
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Meal Detail Modal */}
+            {mealDetailOpen && selectedMeal && (
+                <div
+                    onClick={() => setMealDetailOpen(false)}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.7)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 10000,
+                        padding: '1rem'
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: theme.bg,
+                            padding: '1.5rem',
+                            borderRadius: '16px',
+                            border: '1px solid ' + theme.border,
+                            width: '100%',
+                            maxWidth: '500px',
+                            maxHeight: '80vh',
+                            overflowY: 'auto',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
+                        }}
+                    >
+                        {/* Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <h3 style={{ margin: 0, color: theme.text, fontSize: '1.2rem' }}>
+                                {selectedMeal.type === 'lunch' ? '🍽️ Lunch' : '🍽️ Middag'}
+                                {selectedMeal.authors && (
+                                    <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem' }}>
+                                        {selectedMeal.author === 'AI' ? '🤖' : selectedMeal.author === 'Svante' ? '👨' : selectedMeal.author === 'Sarah' ? '👩' : '✏️'}
+                                    </span>
+                                )}
+                            </h3>
+                            <button
+                                onClick={() => setMealDetailOpen(false)}
+                                style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: theme.textMuted }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Meal Name */}
+                        <div style={{
+                            background: theme.cardBg,
+                            padding: '1rem',
+                            borderRadius: '12px',
+                            marginBottom: '1rem',
+                            border: '1px solid ' + theme.border
+                        }}>
+                            <div style={{ fontSize: '1.1rem', color: theme.text, fontWeight: 'bold' }}>
+                                {selectedMeal.name}
+                            </div>
+                            {selectedMeal.time && (
+                                <div style={{ fontSize: '0.9rem', color: theme.textMuted, marginTop: '0.5rem' }}>
+                                    🕒 {selectedMeal.time}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Recipe Section */}
+                        {!recipe ? (
+                            <button
+                                onClick={() => fetchRecipe()}
+                                disabled={loadingRecipe}
+                                style={{
+                                    width: '100%',
+                                    padding: '1rem',
+                                    background: loadingRecipe ? theme.cardBg : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    color: '#fff',
+                                    fontSize: '1rem',
+                                    fontWeight: 'bold',
+                                    cursor: loadingRecipe ? 'wait' : 'pointer'
+                                }}
+                            >
+                                {loadingRecipe ? '⏳ Hämtar recept...' : '📖 Visa receptförslag'}
+                            </button>
+                        ) : (
+                            <>
+                                {/* Recipe Display */}
+                                <div style={{
+                                    background: theme.cardBg,
+                                    padding: '1rem',
+                                    borderRadius: '12px',
+                                    border: '1px solid ' + theme.border,
+                                    whiteSpace: 'pre-wrap',
+                                    fontSize: '0.9rem',
+                                    color: theme.text,
+                                    lineHeight: '1.6',
+                                    marginBottom: '1rem'
+                                }}>
+                                    {recipe}
+                                </div>
+
+                                {/* Refinement Input */}
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <input
+                                        type="text"
+                                        value={recipeRefinement}
+                                        onChange={(e) => setRecipeRefinement(e.target.value)}
+                                        placeholder="T.ex. 'Byt ut laxen mot kyckling...'"
+                                        style={{
+                                            width: '100%',
+                                            background: theme.inputBg,
+                                            border: `1px solid ${theme.border}`,
+                                            borderRadius: '8px',
+                                            padding: '0.75rem',
+                                            color: theme.text,
+                                            fontSize: '0.9rem',
+                                            marginBottom: '0.5rem'
+                                        }}
+                                    />
+                                    <button
+                                        onClick={() => fetchRecipe(recipeRefinement)}
+                                        disabled={loadingRecipe || !recipeRefinement.trim()}
+                                        style={{
+                                            width: '100%',
+                                            padding: '0.75rem',
+                                            background: recipeRefinement.trim() ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' : theme.cardBg,
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            color: '#fff',
+                                            fontSize: '0.9rem',
+                                            fontWeight: 'bold',
+                                            cursor: recipeRefinement.trim() ? 'pointer' : 'not-allowed',
+                                            opacity: recipeRefinement.trim() ? 1 : 0.5
+                                        }}
+                                    >
+                                        {loadingRecipe ? '⏳ Uppdaterar...' : '✨ Anpassa receptet'}
+                                    </button>
+                                </div>
+
+                                {/* Save Button */}
+                                <button
+                                    onClick={saveRecipe}
+                                    style={{
+                                        width: '100%',
+                                        padding: '1rem',
+                                        background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                                        border: 'none',
+                                        borderRadius: '12px',
+                                        color: '#fff',
+                                        fontSize: '1rem',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    💾 Spara recept
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 

@@ -2332,29 +2332,12 @@ function App() {
       {
         activeTab === 'matsedel' && (
           <div className="tab-content" style={{ padding: '0' }}>
-            <div style={{ padding: '1rem 1rem 0 1rem' }}>
-              <button
-                onClick={() => setActiveTab('new-home')}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.3rem',
-                  padding: 0,
-                  marginBottom: '0.5rem'
-                }}
-              >
-                ‹ Tillbaka till start
-              </button>
-            </div>
             <MealPlanner
               holidays={holidays}
               darkMode={darkMode}
               events={events}
+              username={currentUser?.name || 'unknown'}
+              isAdmin={isAdmin}
               onNavigateToCalendar={(dateStr) => {
                 const d = new Date(dateStr);
                 // Adjust for timezone if needed, but dateStr is usually YYYY-MM-DD

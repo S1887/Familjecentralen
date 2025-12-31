@@ -834,91 +834,260 @@ app.post('/api/meals/suggest', async (req, res) => {
     }
 
     try {
-        const { recentMeals = [], preferences = '', weekEvents = [], dates = [], customInstructions = '', targetDate = null } = req.body;
+        const {
+            recentMeals = [],
+            preferences = '',
+            weekEvents = [],
+            dates = [],
+            customInstructions = '',
+            targetDate = null,
+            targetTypes = ['dinner'] // ['lunch', 'dinner'] or just ['dinner']
+        } = req.body;
 
         const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-        // Analyze busy days from calendar
-        const busyDaysInfo = dates.map((date, i) => {
-            const dayEvents = weekEvents.filter(e => e.date === date);
-            const eventCount = dayEvents.length;
-            const activities = dayEvents.map(e => e.summary).join(', ');
-            const isBusy = eventCount >= 2;
-            return { date, isBusy, eventCount, activities };
+        // Use gemini-2.5-flash for better rate limits
+        const model = genAI.getGenerativeModel({
+            model: 'gemini-2.5-flash',
+            generationConfig: { responseMimeType: "application/json" }
         });
 
-        const busyDaysText = busyDaysInfo
-            .filter(d => d.isBusy)
-            .map(d => `${d.date}: ${d.eventCount} aktiviteter (${d.activities})`)
-            .join('\n');
+        // Helper to find free slots
+        const findFreeSlot = (dateStr, startHour, endHour, events) => {
+            // Very simple slot finder: look for gaps
+            // This is a naive implementation passed to AI context
+            return `Mellan ${startHour}:00 och ${endHour}:00`;
+        };
+
+        // Prepare schedule context for AI
+        const scheduleContext = dates.map(date => {
+            const dayEvents = weekEvents.filter(e => {
+                const s = new Date(e.start);
+                const dStr = s.toISOString().split('T')[0];
+                return dStr === date;
+            });
+
+            // Format events for AI
+            const eventsList = dayEvents.map(e => {
+                const start = new Date(e.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+                const end = new Date(e.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+                return `${start}-${end} ${e.summary}`;
+            }).join(', ');
+
+            return { date, events: eventsList };
+        });
+
+        const scheduleText = scheduleContext.map(d => `${d.date}: ${d.events || 'Inga bokade aktiviteter'}`).join('\n');
 
         let prompt = '';
 
         if (targetDate) {
             // SINGLE DAY PROMPT
-            const dayInfo = busyDaysInfo.find(d => d.date === targetDate);
-            const dayBusyText = dayInfo && dayInfo.isBusy ? `(UPPTAGEN DAG: ${dayInfo.activities})` : '';
+            const daySchedule = scheduleContext.find(d => d.date === targetDate);
+            prompt = `Du är en smart matplanerare för familjen Örtendahl.
+Datum: ${targetDate}
+Schema: ${daySchedule ? daySchedule.events : 'Tomt'}
 
-            prompt = `Du är en svensk familjs matplanerare.
-Föreslå EN middagsrätt för ${targetDate}.
+UPPGIFT:
+Generera matförslag för följande måltider: ${targetTypes.join(', ')}.
 
-KALENDERINFO: ${dayBusyText}
 REGLER:
-- Svara ENDAST med en JSON-array innehållande en sträng, t.ex. ["Köttbullar"].
-- ${customInstructions ? `INSTRUKTION FRÅN ANVÄNDAREN: ${customInstructions}` : 'Ge ett passande förslag baserat på veckodag.'}
-- Ta hänsyn till att det är en barnfamilj.
+1. Måltider tar ca 30 minuter att laga/äta.
+2. Föreslå en TID (time) för varje måltid.
+   - Lunch: Mellan 11:30 - 14:00.
+   - Middag: Mellan 17:00 - 20:00.
+   - VIKTIGT: Tiden får INTE krocka med aktiviteter i schemat.
+   - Om en aktivitet slutar 17:00, föreslå middag 17:30 eller 18:00.
+3. Lunch: Enklare mat (rester, soppa, sallad, lättlagat).
+4. Middag: Varierad husmanskost/varmrätt.
+5. VIKTIGT: ${customInstructions ? `INSTRUKTION: ${customInstructions}` : 'Ge bra, vardagliga förslag.'}
 
-Svara ENDAST med JSON-array.`;
+Svara ENDAST med JSON i detta format (inga code blocks):
+{
+  ${targetTypes.map(type => `"${type}": { "meal": "Maträttens namn", "time": "HH:MM" }`).join(',\n  ')}
+}`;
+
         } else {
-            // FULL WEEK PROMPT
-            prompt = `Du är en svensk familjs matplanerare för familjen Örtendahl i Lidköping. 
-Föreslå ${dates.length} middagsrätter för en familj med 3 barn (8, 11, 14 år).
+            // FULL WEEK PROMPT (Updated for v3.1.0)
+            prompt = `Du är en svensk familjs matplanerare.
+Föreslå ${dates.length} middagsrätter för datumen: ${dates.join(', ')}.
 
-BUTIK: ICA Kvantum Hjertberg, Lidköping
-Ta gärna hänsyn till typiska veckans erbjudanden på ICA (färs, kyckling, lax brukar ofta vara på rea).
-
-FAMILJEKALENDER DENNA VECKA:
-${busyDaysText || 'Ingen speciellt upptagen dag'}
+SCHEMA:
+${scheduleText}
 
 REGLER:
-- Svara ENDAST med en JSON-array med ${dates.length} rätter, inget annat
-- Variera mellan kött, kyckling, fisk och vegetariskt
-- På upptagna dagar (2+ aktiviteter): föreslå snabblagade rätter (under 30 min)
-- Fredag = Mysigt (tacos, pizza, hamburgare ok)
-- Lördag/Söndag = Lite finare/mer tid
-- Undvik upprepning från senaste 2 veckorna
-- Gärna säsongsanpassat (nu är det vinter)
+1. Svara ENDAST med en JSON-array.
+2. Varje objekt i arrayen ska innehålla:
+   - "meal": Maträttens namn.
+   - "time": Förslag på tid (ca kl 17-20, anpassat efter schemat så det ej krockar).
+3. Maten ska vara varierad och barnvänlig.
+4. ${customInstructions}
 
-${recentMeals.length > 0 ? `NYLIGEN ÄTIT (undvik):\n${recentMeals.slice(-10).join(', ')}` : ''}
-
-${preferences ? `GENERALLA ÖNSKEMÅL: ${preferences}` : ''}
-${customInstructions ? `\nVIKTIG INSTRUKTION DENNA VECKA:\n${customInstructions.toUpperCase()}` : ''}
-
-Svara ENDAST med JSON-array, exempel:
-["Köttbullar med potatismos", "Tacos", "Laxpasta med spenat", "Kycklinggryta", "Pannkakor", "Lasagne", "Pulled pork"]`;
+Exempel på format:
+[
+  { "meal": "Köttbullar", "time": "17:30" },
+  { "meal": "Lax", "time": "18:00" }
+]`;
         }
 
-        console.log('[AI] Generating suggestions with prompt length:', prompt.length);
-
+        console.log('[AI] Sending prompt:', prompt.substring(0, 200) + '...');
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const text = response.text();
+        const text = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
 
-        // Parse JSON from response
-        const jsonMatch = text.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-            const suggestions = JSON.parse(jsonMatch[0]);
-            console.log('[AI] Generated meal suggestions:', suggestions);
-            res.json({ suggestions, busyDays: busyDaysInfo.filter(d => d.isBusy) });
+        console.log('[AI] Response:', text);
+        const json = JSON.parse(text);
+
+        res.json({ suggestions: json });
+
+    } catch (error) {
+        console.error('Gemini API Error:', error);
+        // Fallback or nice error
+        if (error.status === 429) {
+            res.status(429).json({ error: 'AI-tjänsten är överbelastad. Försök igen om en stund.' });
         } else {
-            console.error('[AI] Could not parse response:', text);
-            res.status(500).json({ error: 'Could not parse AI response', raw: text });
+            res.status(500).json({ error: 'Kunde inte generera förslag' });
+        }
+    }
+});
+
+// ============ AI RECIPE GENERATION ============
+app.post('/api/meals/recipe', async (req, res) => {
+    if (!GEMINI_API_KEY) {
+        return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
+    }
+
+    try {
+        const { meal, currentRecipe, refinement } = req.body;
+        if (!meal) {
+            return res.status(400).json({ error: 'Meal name required' });
+        }
+
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+        let prompt;
+        if (refinement && currentRecipe) {
+            // Refinement mode - modify existing recipe
+            prompt = `Du är en svensk familjekock. Användaren vill anpassa detta recept:
+
+NUVARANDE RECEPT:
+${currentRecipe}
+
+ANVÄNDARENS ÖNSKEMÅL: "${refinement}"
+
+Skapa ett uppdaterat recept baserat på användarens önskemål. 
+VIKTIGT: Om en huvudingrediens byts ut (t.ex. lax → kyckling, potatis → pasta), UPPDATERA ÄVEN RÄTTENS NAMN i rubriken!
+
+Format:
+## [Uppdaterat rättnamn]
+
+INGREDIENSER:
+- Ingredient 1
+...
+
+TILLAGNING:
+1. Steg 1 (X min)
+...
+
+TIPS: Ett kort tips`;
+        } else {
+            // Initial recipe generation
+            prompt = `Du är en svensk familjekock. Ge ett enkelt recept för: "${meal}"
+
+REGLER:
+1. Max 6 ingredienser
+2. Max 5 steg
+3. Skriv på svenska
+4. Inkludera ungefärliga tider
+5. Gör det barnvänligt
+
+Format:
+INGREDIENSER:
+- Ingredient 1
+- Ingredient 2
+...
+
+TILLAGNING:
+1. Steg 1 (X min)
+2. Steg 2 (X min)
+...
+
+TIPS: Ett kort tips`;
+        }
+
+        console.log('[AI] Recipe request for:', meal, refinement ? `(refinement: ${refinement})` : '');
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const recipe = response.text();
+
+        console.log('[AI] Recipe generated');
+        res.json({ recipe });
+
+    } catch (error) {
+        console.error('Recipe API Error:', error);
+        if (error.status === 429) {
+            res.status(429).json({ error: 'AI-tjänsten är överbelastad.' });
+        } else {
+            res.status(500).json({ error: 'Kunde inte generera recept' });
+        }
+    }
+});
+
+// ============ SAVED RECIPES COLLECTION ============
+const recipesFilePath = path.join(DATA_DIR, 'recipes.json');
+
+const loadRecipes = () => {
+    try {
+        if (fs.existsSync(recipesFilePath)) {
+            return JSON.parse(fs.readFileSync(recipesFilePath, 'utf8'));
         }
     } catch (error) {
-        console.error('[AI] Error generating suggestions:', error);
-        res.status(500).json({ error: error.message });
+        console.error('Error loading recipes:', error);
     }
+    return [];
+};
+
+const saveRecipesToFile = (recipes) => {
+    try {
+        fs.writeFileSync(recipesFilePath, JSON.stringify(recipes, null, 2));
+    } catch (error) {
+        console.error('Error saving recipes:', error);
+    }
+};
+
+// Get all saved recipes
+app.get('/api/recipes', (req, res) => {
+    const recipes = loadRecipes();
+    res.json(recipes);
+});
+
+// Save new recipe
+app.post('/api/recipes', (req, res) => {
+    const { mealName, recipe, date, type } = req.body;
+    const recipes = loadRecipes();
+
+    const newRecipe = {
+        id: Date.now().toString(),
+        mealName,
+        recipe,
+        date,
+        type,
+        savedAt: new Date().toISOString()
+    };
+
+    recipes.push(newRecipe);
+    saveRecipesToFile(recipes);
+
+    console.log('[Recipes] Saved:', mealName);
+    res.json(newRecipe);
+});
+
+// Delete recipe
+app.delete('/api/recipes/:id', (req, res) => {
+    const recipes = loadRecipes();
+    const filtered = recipes.filter(r => r.id !== req.params.id);
+    saveRecipesToFile(filtered);
+    res.json({ success: true });
 });
 
 app.post('/api/refresh-calendars', async (req, res) => {
