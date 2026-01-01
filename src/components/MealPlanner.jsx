@@ -96,6 +96,13 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
             });
             const data = await response.json();
             setRecipe(data.recipe || 'Kunde inte hämta recept.');
+
+            // If AI returned a new title, update the UI immediately
+            if (data.title && data.title !== selectedMeal.name) {
+                console.log('[MealPlanner] Updating title from AI:', data.title);
+                setSelectedMeal(prev => ({ ...prev, name: data.title }));
+            }
+
             setRecipeRefinement(''); // Clear prompt after use
         } catch (error) {
             console.error('Error fetching recipe:', error);
@@ -497,57 +504,60 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
             </div>
 
             {/* AI Controls */}
-            <div style={{
-                background: theme.cardBg,
-                padding: '1rem',
-                borderRadius: '12px',
-                marginBottom: '1.5rem',
-                border: `1px solid ${theme.border}`
-            }}>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <span style={{ fontSize: '1.2rem' }}>👩‍🍳</span>
-                    <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>AI-Kock</span>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <input
-                        type="text"
-                        value={aiInstructions}
-                        onChange={(e) => setAiInstructions(e.target.value)}
-                        placeholder="T.ex. 'Vi har mycket kyckling', 'Vegetariskt hela veckan'..."
-                        style={{
-                            flex: '1 1 200px', // Allow grow/shrink, min-basis 200px
-                            background: theme.inputBg,
-                            border: `1px solid ${theme.border}`,
-                            borderRadius: '8px',
-                            padding: '0.6rem 0.8rem',
-                            color: theme.text,
-                            fontSize: '0.9rem'
-                        }}
-                    />
-                    <button
-                        onClick={() => suggestMeals(null)}
-                        disabled={suggesting}
-                        style={{
-                            background: suggesting ? theme.cardBg : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            border: 'none',
-                            borderRadius: '8px',
-                            padding: '0.5rem 1rem',
-                            color: '#fff',
-                            cursor: suggesting ? 'wait' : 'pointer',
-                            fontSize: '0.9rem',
-                            fontWeight: '600',
-                            whiteSpace: 'nowrap'
-                        }}
-                    >
-                        {suggesting ? '...Tänker' : '✨ Förslag'}
-                    </button>
-                </div>
-                {aiInstructions && (
-                    <div style={{ fontSize: '0.75rem', color: theme.textMuted, marginTop: '0.4rem', fontStyle: 'italic' }}>
-                        Din instruktion tas med när du trycker på "Förslag" eller regenererar en dag.
+            {/* AI Chef Section - Only visible for admins */}
+            {isAdmin && (
+                <div style={{
+                    background: theme.cardBg,
+                    padding: '1rem',
+                    borderRadius: '12px',
+                    marginBottom: '1.5rem',
+                    border: `1px solid ${theme.border}`
+                }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>👩‍🍳</span>
+                        <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>AI-Kock</span>
                     </div>
-                )}
-            </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <input
+                            type="text"
+                            value={aiInstructions}
+                            onChange={(e) => setAiInstructions(e.target.value)}
+                            placeholder="T.ex. 'Vi har mycket kyckling', 'Vegetariskt hela veckan'..."
+                            style={{
+                                flex: '1 1 200px', // Allow grow/shrink, min-basis 200px
+                                background: theme.inputBg,
+                                border: `1px solid ${theme.border}`,
+                                borderRadius: '8px',
+                                padding: '0.6rem 0.8rem',
+                                color: theme.text,
+                                fontSize: '0.9rem'
+                            }}
+                        />
+                        <button
+                            onClick={() => suggestMeals(null)}
+                            disabled={suggesting}
+                            style={{
+                                background: suggesting ? theme.cardBg : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '0.5rem 1rem',
+                                color: '#fff',
+                                cursor: suggesting ? 'wait' : 'pointer',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            {suggesting ? '...Tänker' : '✨ Förslag'}
+                        </button>
+                    </div>
+                    {aiInstructions && (
+                        <div style={{ fontSize: '0.75rem', color: theme.textMuted, marginTop: '0.4rem', fontStyle: 'italic' }}>
+                            Din instruktion tas med när du trycker på "Förslag" eller regenererar en dag.
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Week grid */}
             {loading ? (
@@ -651,28 +661,30 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                                 IDAG
                                             </span>
                                         )}
-                                        {/* Regenerate button */}
-                                        <button
-                                            onClick={() => openRegenModal(dateStr)}
-                                            disabled={isRegeneratingThis || suggesting}
-                                            title="Generera nytt förslag för denna dag"
-                                            style={{
-                                                background: theme.cardBg,
-                                                border: `1px solid ${theme.border}`,
-                                                borderRadius: '6px',
-                                                cursor: isRegeneratingThis ? 'wait' : 'pointer',
-                                                fontSize: '0.8rem',
-                                                padding: '0.2rem 0.5rem',
-                                                marginLeft: 'auto',
-                                                color: theme.textMuted,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.3rem'
-                                            }}
-                                        >
-                                            <span style={{ fontSize: '1rem' }}>{isRegeneratingThis ? '⏳' : '✨'}</span>
-                                            <span>Ändra</span>
-                                        </button>
+                                        {/* Regenerate button - Only for admins */}
+                                        {isAdmin && (
+                                            <button
+                                                onClick={() => openRegenModal(dateStr)}
+                                                disabled={isRegeneratingThis || suggesting}
+                                                title="Generera nytt förslag för denna dag"
+                                                style={{
+                                                    background: theme.cardBg,
+                                                    border: `1px solid ${theme.border}`,
+                                                    borderRadius: '6px',
+                                                    cursor: isRegeneratingThis ? 'wait' : 'pointer',
+                                                    fontSize: '0.8rem',
+                                                    padding: '0.2rem 0.5rem',
+                                                    marginLeft: 'auto',
+                                                    color: theme.textMuted,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.3rem'
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '1rem' }}>{isRegeneratingThis ? '⏳' : '✨'}</span>
+                                                <span>Ändra</span>
+                                            </button>
+                                        )}
                                         <style>{`
                                             @keyframes spin { 100% { transform: rotate(360deg); } }
                                         `}</style>
@@ -700,8 +712,9 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                             <input
                                                 type="text"
                                                 value={dayMeals.lunch || ''}
-                                                onChange={(e) => updateMeal(dateStr, 'lunch', e.target.value)}
+                                                onChange={(e) => isAdmin && updateMeal(dateStr, 'lunch', e.target.value)}
                                                 placeholder={isSpecialDay ? "Lunch?" : "Skola/Jobb"}
+                                                disabled={!isAdmin}
                                                 style={{
                                                     flex: 1,
                                                     minWidth: 0,
@@ -713,7 +726,9 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                                     fontSize: '0.95rem',
                                                     textOverflow: 'ellipsis',
                                                     overflow: 'hidden',
-                                                    whiteSpace: 'nowrap'
+                                                    whiteSpace: 'nowrap',
+                                                    opacity: isAdmin ? 1 : 0.7,
+                                                    cursor: isAdmin ? 'text' : 'not-allowed'
                                                 }}
                                             />
                                             <button
@@ -798,8 +813,8 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                 </div>
             )}
 
-            {/* Regeneration Modal */}
-            {regenModalOpen && (
+            {/* Regeneration Modal - Only for admins */}
+            {isAdmin && regenModalOpen && (
                 <div style={{
                     position: 'fixed',
                     top: 0,

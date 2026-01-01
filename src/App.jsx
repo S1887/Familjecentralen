@@ -25,6 +25,17 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// Subscription calendars that belong to specific children
+// Events from these sources will automatically show in that child's filtered view
+const CHILD_SUBSCRIPTIONS = {
+  'Algot': ['Villa Lidköping', 'HK Lidköping P10', 'HK Lidköping P11', 'Råda BK P10', 'Råda P10', 'HKL P10', 'HKL P11'],
+  'Tuva': ['HK Lidköping Handbollskola', 'HK Lidköping handboll', 'Råda BK F7', 'Råda F7', 'HKL Handbollskola'],
+  'Leon': [] // No subscriptions yet
+};
+
+// Shared calendar that everyone should see
+const SHARED_FAMILY_CALENDAR = 'Örtendahls familjekalender';
+
 // Helper Component for Autocomplete
 const LocationAutocomplete = ({ value, onChange, placeholder, ...props }) => {
   const [suggestions, setSuggestions] = useState([]);
@@ -68,15 +79,26 @@ const LocationAutocomplete = ({ value, onChange, placeholder, ...props }) => {
           type="text"
           placeholder={placeholder}
           value={value}
+          disabled={props.disabled}
           onChange={(e) => {
-            onChange(e.target.value);
-            // Hide suggestions if user keeps typing manually to avoid annoyance, 
-            // but our effect will show them again.
+            if (!props.disabled) {
+              onChange(e.target.value);
+            }
           }}
-          onFocus={() => value && value.length > 2 && setShowSuggestions(true)}
+          onFocus={() => !props.disabled && value && value.length > 2 && setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Delay to allow click
 
-          style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', flex: 1, background: 'var(--input-bg)', color: 'var(--text-main)' }}
+          style={{
+            width: '100%',
+            padding: '0.5rem',
+            borderRadius: '4px',
+            border: '1px solid var(--input-border)',
+            flex: 1,
+            background: props.disabled ? '#555' : 'var(--input-bg)',
+            color: props.disabled ? 'white' : 'var(--text-main)',
+            cursor: props.disabled ? 'not-allowed' : 'text',
+            ...props.style
+          }}
         />
         <a
           href={value
@@ -95,7 +117,7 @@ const LocationAutocomplete = ({ value, onChange, placeholder, ...props }) => {
         </a>
       </div>
 
-      {showSuggestions && suggestions.length > 0 && (
+      {showSuggestions && !props.disabled && suggestions.length > 0 && (
         <ul style={{
           position: 'absolute', top: '100%', left: 0, right: 0,
           background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '4px',
@@ -106,9 +128,9 @@ const LocationAutocomplete = ({ value, onChange, placeholder, ...props }) => {
             <li
               key={idx}
               onClick={() => handleSelect(s)}
-              style={{ padding: '0.5rem', cursor: 'pointer', borderBottom: '1px solid #eee' }}
-              onMouseEnter={(e) => e.target.style.background = '#f0f0f0'}
-              onMouseLeave={(e) => e.target.style.background = 'white'}
+              style={{ padding: '0.5rem', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', color: 'var(--text-main)', background: 'var(--card-bg)' }}
+              onMouseEnter={(e) => e.target.style.background = 'var(--input-bg)'}
+              onMouseLeave={(e) => e.target.style.background = 'var(--card-bg)'}
             >
               {s.display_name}
             </li>
@@ -448,7 +470,7 @@ function App() {
   // State för att skapa nytt event
 
   const [newEvent, setNewEvent] = useState({
-    summary: '', date: '', time: '', endTime: '', location: '', description: '',
+    summary: '', date: '', endDate: '', time: '', endTime: '', location: '', description: '',
     assignments: { driver: null, packer: null },
     todoList: [],
     assignees: [], // Array for multiple selection
@@ -851,18 +873,55 @@ function App() {
     // Check if child/person is mentioned in summary OR is assigned as driver OR packer OR is in assignee list OR matches source (Google Calendar name)
     const summary = event.summary || '';
     const assignee = event.assignee || '';
+    const assigneesArray = event.assignees || [];
     const source = event.source || '';
+    const sourceLower = source.toLowerCase();
 
     const isAssigned = event.assignments && (event.assignments.driver === effectiveFilter || event.assignments.packer === effectiveFilter);
-    const isInAssigneeList = assignee.includes && assignee.includes(effectiveFilter);
+    // Check both singular assignee string AND plural assignees array
+    const isInAssigneeList = (assignee.includes && assignee.includes(effectiveFilter)) ||
+      assigneesArray.includes(effectiveFilter);
     const isNameInSummary = summary.includes(effectiveFilter);
+
+    // Parents (Svante, Sarah) see everything
+    const isParent = effectiveFilter === 'Svante' || effectiveFilter === 'Sarah';
+    if (isParent) return true;
+
+    // Check if filtering for a child with subscribed calendars
+    const childSubscriptions = CHILD_SUBSCRIPTIONS[effectiveFilter] || [];
+    const isChildSubscriptionMatch = childSubscriptions.some(sub =>
+      sourceLower.includes(sub.toLowerCase())
+    );
+
+    // IMPORTANT: Check if this event belongs to ANOTHER child's subscription (exclude it!)
+    const otherChildren = Object.keys(CHILD_SUBSCRIPTIONS).filter(child => child !== effectiveFilter);
+    const isOtherChildSubscription = otherChildren.some(otherChild => {
+      const otherSubs = CHILD_SUBSCRIPTIONS[otherChild] || [];
+      return otherSubs.some(sub => sourceLower.includes(sub.toLowerCase()));
+    });
+
+    // Check if event is TAGGED for another child (via assignees array) but NOT the current filter
+    const childrenNames = ['Algot', 'Tuva', 'Leon'];
+    const isTaggedForOtherChild = childrenNames.some(child =>
+      child !== effectiveFilter && assigneesArray.includes(child)
+    );
+
+    // If it's another child's subscription OR tagged for another child, hide it unless current filter is mentioned
+    if ((isOtherChildSubscription || isTaggedForOtherChild) && !isNameInSummary && !isAssigned && !isInAssigneeList) {
+      return false;
+    }
+
+    // Check if event is from shared family calendar (everyone should see these)
+    // Be strict: only match "Örtendahls familjekalender" or "Familjen", not partial matches
+    const isSharedFamilyEvent = source === SHARED_FAMILY_CALENDAR ||
+      source === 'Familjen' ||
+      source.includes('Örtendahls familjekalender');
 
     // Source match logic with Parent/Child override
     let isSourceMatch = source.includes(effectiveFilter);
 
     if (isSourceMatch) {
       // Check if event belongs to a child (contains child name) - Case insensitive
-      const childrenNames = ['Algot', 'Tuva', 'Leon'];
       const summaryLower = summary.toLowerCase();
       const containsChildName = childrenNames.some(child => summaryLower.includes(child.toLowerCase()));
 
@@ -876,7 +935,7 @@ function App() {
     // Always show Holidays regardless of person filter (since they apply to everyone)
     if (event.source === 'Helgdag' || event.category === 'Helgdag') return true;
 
-    return isNameInSummary || isAssigned || isInAssigneeList || isSourceMatch;
+    return isNameInSummary || isAssigned || isInAssigneeList || isSourceMatch || isChildSubscriptionMatch || isSharedFamilyEvent;
   };
 
   // Combine remote events and holidays
@@ -1112,7 +1171,9 @@ function App() {
     // Google Calendar saving is handled by the separate <a> tag button
 
     const startDateTime = new Date(`${newEvent.date}T${newEvent.time}`);
-    const endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
+    // Use endDate if set, otherwise fall back to start date
+    const effectiveEndDate = newEvent.endDate || newEvent.date;
+    const endDateTime = new Date(`${effectiveEndDate}T${newEvent.endTime}`);
 
     try {
       await fetch(getApiUrl('api/events'), {
@@ -1447,8 +1508,8 @@ function App() {
                       onChange={e => isAdmin && !editEventData.isExternalSource && setEditEventData({ ...editEventData, summary: e.target.value })}
                       readOnly={editEventData.isExternalSource || !isAdmin}
                       style={(editEventData.isExternalSource || !isAdmin)
-                        ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
-                        : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
+                        ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
+                        : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
                       }
                     />
                   </div>
@@ -1463,8 +1524,8 @@ function App() {
                         onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, date: e.target.value })}
                         readOnly={editEventData.isExternalSource}
                         style={editEventData.isExternalSource
-                          ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
-                          : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
+                          ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
+                          : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
                         }
                       />
                     </div>
@@ -1477,8 +1538,8 @@ function App() {
                         onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, time: e.target.value })}
                         readOnly={editEventData.isExternalSource}
                         style={editEventData.isExternalSource
-                          ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
-                          : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
+                          ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
+                          : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
                         }
                       />
                     </div>
@@ -1494,19 +1555,19 @@ function App() {
                         onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, endTime: e.target.value })}
                         readOnly={editEventData.isExternalSource}
                         style={editEventData.isExternalSource
-                          ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', background: '#f0f0f0', color: '#888', cursor: 'not-allowed' }
-                          : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }
+                          ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
+                          : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
                         }
                       />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <label>Plats</label>
+                      <label>Plats {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
                       <LocationAutocomplete
                         placeholder="T.ex. Valhalla IP"
                         value={editEventData.location}
-                        onChange={val => isAdmin && setEditEventData({ ...editEventData, location: val })}
-                        onSelect={coords => isAdmin && setEditEventData({ ...editEventData, coords })}
-                        disabled={!isAdmin}
+                        onChange={val => !editEventData.isExternalSource && isAdmin && setEditEventData({ ...editEventData, location: val })}
+                        onSelect={coords => !editEventData.isExternalSource && isAdmin && setEditEventData({ ...editEventData, coords })}
+                        disabled={!isAdmin || editEventData.isExternalSource}
                       />
                     </div>
                   </div>
@@ -1608,9 +1669,10 @@ function App() {
                         width: '100%',
                         padding: '0.5rem',
                         borderRadius: '4px',
-                        border: '1px solid #ddd',
+                        border: '1px solid var(--input-border)',
                         minHeight: '80px',
-                        background: (editEventData.isExternalSource || !isAdmin) ? '#f0f0f0' : 'white',
+                        background: (editEventData.isExternalSource || !isAdmin) ? '#555' : 'var(--input-bg)',
+                        color: (editEventData.isExternalSource || !isAdmin) ? 'white' : 'var(--text-main)',
                         cursor: (editEventData.isExternalSource || !isAdmin) ? 'not-allowed' : 'text',
                         opacity: (editEventData.isExternalSource || !isAdmin) ? 0.7 : 1
                       }}
@@ -1632,8 +1694,9 @@ function App() {
                           width: '100%',
                           padding: '0.5rem',
                           borderRadius: '4px',
-                          border: '1px solid #ddd',
-                          background: isAdmin ? 'white' : '#f0f0f0',
+                          border: '1px solid var(--input-border)',
+                          background: isAdmin ? 'var(--input-bg)' : '#555',
+                          color: 'var(--text-main)',
                           cursor: isAdmin ? 'pointer' : 'not-allowed',
                           opacity: isAdmin ? 1 : 0.7
                         }}
@@ -1656,8 +1719,9 @@ function App() {
                           width: '100%',
                           padding: '0.5rem',
                           borderRadius: '4px',
-                          border: '1px solid #ddd',
-                          background: isAdmin ? 'white' : '#f0f0f0',
+                          border: '1px solid var(--input-border)',
+                          background: isAdmin ? 'var(--input-bg)' : '#555',
+                          color: 'var(--text-main)',
                           cursor: isAdmin ? 'pointer' : 'not-allowed',
                           opacity: isAdmin ? 1 : 0.7
                         }}
@@ -1679,7 +1743,7 @@ function App() {
                         type="text"
                         placeholder="Lägg till uppgift..."
                         id="newTodoInput"
-                        style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                        style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
@@ -2422,15 +2486,37 @@ function App() {
 
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
-                  <label>När?</label>
+                  <label>Startdatum</label>
                   <input
                     type="date"
                     required
                     value={newEvent.date}
-                    onChange={e => setNewEvent({ ...newEvent, date: e.target.value })}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                    onChange={e => {
+                      const newDate = e.target.value;
+                      // Auto-sync end date if it's empty or before new start date
+                      const shouldSyncEndDate = !newEvent.endDate || newEvent.endDate < newDate;
+                      setNewEvent({
+                        ...newEvent,
+                        date: newDate,
+                        endDate: shouldSyncEndDate ? newDate : newEvent.endDate
+                      });
+                    }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
                   />
                 </div>
+                <div style={{ flex: 1 }}>
+                  <label>Slutdatum <span style={{ fontSize: '0.75rem', color: '#888' }}>(för flerdagarshändelser)</span></label>
+                  <input
+                    type="date"
+                    value={newEvent.endDate || newEvent.date}
+                    min={newEvent.date}
+                    onChange={e => setNewEvent({ ...newEvent, endDate: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label>Tid start</label>
                   <input
@@ -2438,12 +2524,9 @@ function App() {
                     required
                     value={newEvent.time}
                     onChange={e => setNewEvent({ ...newEvent, time: e.target.value })}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
                   />
                 </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label>Tid slut</label>
                   <input
@@ -2451,7 +2534,7 @@ function App() {
                     required
                     value={newEvent.endTime}
                     onChange={e => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
                   />
                 </div>
                 <div style={{ flex: 1 }}>
@@ -2547,7 +2630,7 @@ function App() {
                   placeholder="Mer information om händelsen..."
                   value={newEvent.description}
                   onChange={e => setNewEvent({ ...newEvent, description: e.target.value })}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd', minHeight: '80px' }}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)', minHeight: '80px' }}
                 ></textarea>
               </div>
 

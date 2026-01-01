@@ -963,7 +963,10 @@ app.post('/api/meals/recipe', async (req, res) => {
         }
 
         const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const model = genAI.getGenerativeModel({
+            model: 'gemini-2.5-flash',
+            generationConfig: { responseMimeType: "application/json" }
+        });
 
         let prompt;
         if (refinement && currentRecipe) {
@@ -975,53 +978,60 @@ ${currentRecipe}
 
 ANVÄNDARENS ÖNSKEMÅL: "${refinement}"
 
-Skapa ett uppdaterat recept baserat på användarens önskemål. 
-VIKTIGT: Om en huvudingrediens byts ut (t.ex. lax → kyckling, potatis → pasta), UPPDATERA ÄVEN RÄTTENS NAMN i rubriken!
+UPPGIFT:
+1. Skapa ett uppdaterat recept baserat på önskemålet.
+2. UPPDATERA RÄTTENS NAMN (titeln) om huvudingredienser eller karaktär ändras (t.ex. Lax -> Kyckling).
+3. Returnera svaret som strikt JSON.
 
-Format:
-## [Uppdaterat rättnamn]
+JSON Format:
+{
+  "title": "Namnet på rätten (uppdaterat om nödvändigt)",
+  "recipe": "Hela recepttexten i markdown format (Ingredienser, Tillagning, Tips)"
+}
 
-INGREDIENSER:
-- Ingredient 1
-...
-
-TILLAGNING:
-1. Steg 1 (X min)
-...
-
-TIPS: Ett kort tips`;
+Recept-texten ska vara snyggt formatterad med markdown (utan # rubrik för titeln då den ligger separat).
+`;
         } else {
             // Initial recipe generation
-            prompt = `Du är en svensk familjekock. Ge ett enkelt recept för: "${meal}"
+            prompt = `Du är en svensk familjekock. Skapa ett recept för: "${meal}"
 
 REGLER:
 1. Max 6 ingredienser
 2. Max 5 steg
 3. Skriv på svenska
-4. Inkludera ungefärliga tider
-5. Gör det barnvänligt
+4. Barnvänligt
+5. Returnera svaret som strikt JSON.
 
-Format:
-INGREDIENSER:
-- Ingredient 1
-- Ingredient 2
-...
-
-TILLAGNING:
-1. Steg 1 (X min)
-2. Steg 2 (X min)
-...
-
-TIPS: Ett kort tips`;
+JSON Format:
+{
+  "title": "${meal}",
+  "recipe": "Hela recepttexten i markdown format (Ingredienser, Tillagning, Tips)"
+}
+`;
         }
 
         console.log('[AI] Recipe request for:', meal, refinement ? `(refinement: ${refinement})` : '');
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const recipe = response.text();
+        const textResponse = response.text();
 
-        console.log('[AI] Recipe generated');
-        res.json({ recipe });
+        let jsonResponse;
+        try {
+            jsonResponse = JSON.parse(textResponse);
+        } catch (e) {
+            console.error('Failed to parse AI JSON response:', textResponse);
+            // Fallback if AI fails valid JSON for some reason
+            jsonResponse = {
+                title: meal,
+                recipe: textResponse
+            };
+        }
+
+        console.log('[AI] Recipe generated for:', jsonResponse.title);
+        res.json({
+            recipe: jsonResponse.recipe,
+            title: jsonResponse.title
+        });
 
     } catch (error) {
         console.error('Recipe API Error:', error);
