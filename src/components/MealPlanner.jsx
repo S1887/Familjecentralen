@@ -182,7 +182,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
 
     // Theme (unchanged)
     const theme = {
-        bg: darkMode ? '#1a1a2e' : '#f8f9fa',
+        bg: darkMode ? '#121212' : '#f8f9fa',
         cardBg: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.03)',
         text: darkMode ? '#fff' : '#2d3436',
         textMuted: darkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)',

@@ -1100,6 +1100,29 @@ app.delete('/api/recipes/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// Update recipe (edit content and notes)
+app.put('/api/recipes/:id', (req, res) => {
+    const { recipe, notes, category } = req.body;
+    const recipes = loadRecipes();
+    const index = recipes.findIndex(r => r.id === req.params.id);
+
+    if (index === -1) {
+        return res.status(404).json({ error: 'Recipe not found' });
+    }
+
+    recipes[index] = {
+        ...recipes[index],
+        recipe: recipe !== undefined ? recipe : recipes[index].recipe,
+        notes: notes !== undefined ? notes : recipes[index].notes,
+        category: category !== undefined ? category : recipes[index].category,
+        updatedAt: new Date().toISOString()
+    };
+
+    saveRecipesToFile(recipes);
+    console.log('[Recipes] Updated:', recipes[index].mealName);
+    res.json(recipes[index]);
+});
+
 app.post('/api/refresh-calendars', async (req, res) => {
     console.log('[API] Manual calendar refresh triggered');
     try {
