@@ -57,6 +57,34 @@ const SavedRecipes = ({ darkMode, getApiUrl, onBack }) => {
         return date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
     };
 
+    // Format recipe text - clean up escape sequences and markdown artifacts
+    const formatRecipeText = (text) => {
+        if (!text) return '';
+
+        let formatted = text;
+
+        // If it looks like JSON, try to parse it and extract recipe field
+        if (formatted.trim().startsWith('{') && formatted.includes('"recipe"')) {
+            try {
+                const parsed = JSON.parse(formatted);
+                formatted = parsed.recipe || formatted;
+            } catch (e) {
+                // Not valid JSON, continue with original
+            }
+        }
+
+        // Convert literal \n to actual newlines
+        formatted = formatted.replace(/\\n/g, '\n');
+
+        // Remove markdown headers (##, ###, etc.) and make them plain text
+        formatted = formatted.replace(/^#{1,6}\s*/gm, '');
+
+        // Clean up excessive asterisks from markdown bold
+        formatted = formatted.replace(/\*\*/g, '');
+
+        return formatted.trim();
+    };
+
     return (
         <div style={{ padding: '1rem', minHeight: '100vh', background: theme.bg }}>
             {/* Header */}
@@ -226,7 +254,7 @@ const SavedRecipes = ({ darkMode, getApiUrl, onBack }) => {
                                         color: theme.text,
                                         lineHeight: '1.6'
                                     }}>
-                                        {recipe.recipe}
+                                        {formatRecipeText(recipe.recipe)}
                                     </div>
                                 </div>
                             )}
