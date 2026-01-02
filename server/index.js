@@ -561,6 +561,53 @@ function startScheduledRefresh() {
     }, CACHE_DURATION_MS);
 }
 
+// Schedule daily cache reset at 03:00 to prevent stale data buildup
+function scheduleDailyCacheReset() {
+    const now = new Date();
+    const resetHour = 3; // 03:00
+
+    // Calculate next 03:00
+    let nextReset = new Date(now);
+    nextReset.setHours(resetHour, 0, 0, 0);
+
+    // If it's already past 03:00 today, schedule for tomorrow
+    if (now >= nextReset) {
+        nextReset.setDate(nextReset.getDate() + 1);
+    }
+
+    const msUntilReset = nextReset - now;
+    console.log(`[Scheduler] Daily cache reset scheduled for ${nextReset.toLocaleString('sv-SE')} (in ${Math.round(msUntilReset / 1000 / 60)} min)`);
+
+    setTimeout(() => {
+        console.log('[Scheduler] Running daily cache reset...');
+
+        // Clear in-memory cache
+        cachedCalendarEvents = [];
+        cacheTimestamp = 0;
+
+        // Delete cache file
+        if (fs.existsSync(CACHE_FILE)) {
+            try {
+                fs.unlinkSync(CACHE_FILE);
+                console.log('[Scheduler] Cache file deleted');
+            } catch (e) {
+                console.error('[Scheduler] Failed to delete cache file:', e.message);
+            }
+        }
+
+        // Fetch fresh data
+        fetchCalendarsFromGoogle().then(() => {
+            console.log('[Scheduler] Fresh data fetched after reset');
+        });
+
+        // Schedule next reset (24 hours from now)
+        scheduleDailyCacheReset();
+    }, msUntilReset);
+}
+
+// Start the daily reset scheduler
+scheduleDailyCacheReset();
+
 // Load cache from disk on startup
 loadCacheFromDisk();
 
