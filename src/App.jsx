@@ -806,6 +806,30 @@ function App() {
       date1.getFullYear() === date2.getFullYear();
   };
 
+  // Check if an event spans a given date (for multi-day events)
+  const isEventOnDate = (event, targetDate) => {
+    const target = new Date(targetDate);
+    target.setHours(0, 0, 0, 0);
+
+    const start = new Date(event.start);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(event.end);
+    end.setHours(0, 0, 0, 0);
+
+    // Event spans this date if target is between start and end (inclusive)
+    return target >= start && target <= end;
+  };
+
+  // Check if an event is multi-day (spans more than one calendar day)
+  const isMultiDayEvent = (event) => {
+    const start = new Date(event.start);
+    const end = new Date(event.end);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    return end > start;
+  };
+
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const [showHeroDetails, setShowHeroDetails] = useState(false);
@@ -1085,6 +1109,7 @@ function App() {
       ...event,
       // Ensure we have correct date inputs format
       date: new Date(event.start).toISOString().split('T')[0],
+      endDate: new Date(event.end).toISOString().split('T')[0],
       time: new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
       endTime: new Date(event.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
       todoList: event.todoList || [],
@@ -1098,7 +1123,8 @@ function App() {
     if (!editEventData) return;
 
     const startDateTime = new Date(`${editEventData.date}T${editEventData.time}`);
-    const endDateTime = new Date(`${editEventData.date}T${editEventData.endTime}`);
+    const effectiveEndDate = editEventData.endDate || editEventData.date;
+    const endDateTime = new Date(`${effectiveEndDate}T${editEventData.endTime}`);
 
     // Auto-save any text remaining in the todo input field
     let finalTodoList = editEventData.todoList || [];
@@ -1516,7 +1542,7 @@ function App() {
 
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
-                      <label>När? {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
+                      <label>Startdatum {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
                       <input
                         type="date"
                         required
@@ -1529,6 +1555,23 @@ function App() {
                         }
                       />
                     </div>
+                    <div style={{ flex: 1 }}>
+                      <label>Slutdatum {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
+                      <input
+                        type="date"
+                        required
+                        value={editEventData.endDate}
+                        onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, endDate: e.target.value })}
+                        readOnly={editEventData.isExternalSource}
+                        style={editEventData.isExternalSource
+                          ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
+                          : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
                       <label>Tid start {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
                       <input
@@ -1543,9 +1586,6 @@ function App() {
                         }
                       />
                     </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
                       <label>Tid slut {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
                       <input
@@ -1560,6 +1600,9 @@ function App() {
                         }
                       />
                     </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '1rem' }}>
                     <div style={{ flex: 1 }}>
                       <label>Plats {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
                       <LocationAutocomplete
@@ -3518,7 +3561,7 @@ function App() {
                     }
 
                     return days.map((d, idx) => {
-                      const dayEvents = filteredEventsList.filter(e => isSameDay(e.start, d.date));
+                      const dayEvents = filteredEventsList.filter(e => isEventOnDate(e, d.date));
                       const isTodayCell = isSameDay(d.date, new Date());
                       return (
                         <div key={idx}
@@ -3575,7 +3618,7 @@ function App() {
 
                     return days.map(d => {
                       const dayEvents = filteredEventsList
-                        .filter(e => isSameDay(e.start, d))
+                        .filter(e => isEventOnDate(e, d))
                         .sort((a, b) => new Date(a.start) - new Date(b.start));
                       const isTodayHeader = isSameDay(d, new Date());
                       return (
@@ -3651,8 +3694,19 @@ function App() {
                                   }}
                                   onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                                 >
-                                  <div style={{ fontWeight: 'bold', opacity: 0.9 }}>
+                                  <div style={{ fontWeight: 'bold', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                                     {isAllDayEvent(ev) ? 'Heldag' : new Date(ev.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                    {isMultiDayEvent(ev) && (
+                                      <span style={{
+                                        fontSize: '0.65rem',
+                                        background: 'rgba(100, 108, 255, 0.3)',
+                                        padding: '1px 6px',
+                                        borderRadius: '4px',
+                                        color: '#a5b4fc'
+                                      }}>
+                                        📅 {new Date(ev.start).getDate()}-{new Date(ev.end).getDate()}/{new Date(ev.end).getMonth() + 1}
+                                      </span>
+                                    )}
                                   </div>
                                   <div style={{ fontWeight: 600, fontSize: '0.9rem', textDecoration: ev.cancelled ? 'line-through' : 'none' }}>
                                     {ev.cancelled && <span style={{ color: '#ff4757', marginRight: '0.2rem' }}>🚫</span>}

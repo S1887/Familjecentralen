@@ -116,7 +116,7 @@ function LoginPage({ onLogin }) {
     return (
         <div className="login-container">
             <div className="login-card">
-                <h1>🏠 Familjecentralen</h1>
+                <h1>🏠 Örtendahls familjecentral</h1>
                 <p>Vem är du?</p>
 
                 <div className="user-buttons">

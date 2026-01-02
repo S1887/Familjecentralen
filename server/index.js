@@ -1160,9 +1160,57 @@ app.get('/api/events', async (req, res) => {
         // Get events from Google Calendar cache
         const fetchedEvents = await fetchAndCacheCalendars();
 
-        console.log(`[Debug] Events: Fetched=${fetchedEvents.length} from Google Calendar`);
+        // Get LOCAL events (includes shadow edits and locally created events)
+        const localEvents = await readLocalEvents();
 
-        let allEvents = [...fetchedEvents];
+        console.log(`[Debug] Events: Fetched=${fetchedEvents.length} from Google, Local=${localEvents.length}`);
+
+        // Log local events UIDs for debugging
+        if (localEvents.length > 0) {
+            console.log('[Debug] Local event UIDs:', localEvents.map(le => le.uid?.substring(0, 20) + '...'));
+        }
+
+        // Create a map of local events by UID for quick lookup
+        const localEventsMap = {};
+        localEvents.forEach(le => {
+            if (le.uid) localEventsMap[le.uid] = le;
+        });
+
+        // Merge: Apply local overrides to Google events
+        let mergedCount = 0;
+        let allEvents = fetchedEvents.map(googleEvent => {
+            const localOverride = localEventsMap[googleEvent.uid];
+            if (localOverride) {
+                mergedCount++;
+                console.log(`[Debug] Merging override for event: ${googleEvent.summary?.substring(0, 30)}... | assignees: ${JSON.stringify(localOverride.assignees)} | category: ${localOverride.category}`);
+                // Merge local overrides into the Google event
+                return {
+                    ...googleEvent,
+                    // Apply local overrides for editable fields
+                    assignee: localOverride.assignee || googleEvent.assignee,
+                    assignees: localOverride.assignees || googleEvent.assignees || [],
+                    category: localOverride.category || googleEvent.category,
+                    todoList: localOverride.todoList || googleEvent.todoList || [],
+                    cancelled: localOverride.cancelled !== undefined ? localOverride.cancelled : googleEvent.cancelled,
+                    deleted: localOverride.deleted !== undefined ? localOverride.deleted : googleEvent.deleted,
+                    // If this was a shadow edit, mark the source as edited
+                    source: localOverride.source || googleEvent.source
+                };
+            }
+            return googleEvent;
+        });
+
+        console.log(`[Debug] Merged ${mergedCount} events with local overrides`);
+
+        // Add LOCAL-ONLY events (created in FamilyOps, not from Google)
+        localEvents.forEach(le => {
+            // Check if this is a purely local event (not just an override of a Google event)
+            const existsInGoogle = fetchedEvents.some(ge => ge.uid === le.uid);
+            if (!existsInGoogle && le.source && (le.source.includes('FamilyOps') || le.source.includes('Familjen'))) {
+                allEvents.push(le);
+            }
+        });
+
 
         // Filtrera bort gamla events (före datumet vi satte)
         const FILTER_DATE = new Date('2025-11-01');
