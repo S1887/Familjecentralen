@@ -1,0 +1,608 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Sportadmin AB//Sportadmin kalender//SE
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Sportadmin Villa-Lidköping Bandyklubb
+X-WR-TIMEZONE:Europe/Stockholm
+BEGIN:VTIMEZONE
+TZID:Europe/Stockholm
+BEGIN:STANDARD
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+END:STANDARD
+BEGIN:DAYLIGHT
+DTSTART:16010325T020000
+RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+END:DAYLIGHT
+END:VTIMEZONE
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260105T162000
+DTEND;TZID=Europe/Stockholm:20260105T172000
+DTSTAMP:20251222T222428Z
+UID:12335731-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260112T162000
+DTEND;TZID=Europe/Stockholm:20260112T172000
+DTSTAMP:20251222T222428Z
+UID:12335732-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260119T162000
+DTEND;TZID=Europe/Stockholm:20260119T172000
+DTSTAMP:20251222T222428Z
+UID:12335733-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260126T162000
+DTEND;TZID=Europe/Stockholm:20260126T172000
+DTSTAMP:20251222T222428Z
+UID:12335734-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260202T162000
+DTEND;TZID=Europe/Stockholm:20260202T172000
+DTSTAMP:20251222T222428Z
+UID:12335735-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260209T162000
+DTEND;TZID=Europe/Stockholm:20260209T172000
+DTSTAMP:20251222T222428Z
+UID:12335736-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260216T162000
+DTEND;TZID=Europe/Stockholm:20260216T172000
+DTSTAMP:20251222T222428Z
+UID:12335737-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260223T162000
+DTEND;TZID=Europe/Stockholm:20260223T172000
+DTSTAMP:20251222T222428Z
+UID:12335738-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260110T113000
+DTEND;TZID=Europe/Stockholm:20260110T153000
+DTSTAMP:20251222T222428Z
+UID:12695160-2648@sportadmin.se
+CREATED:20251113T170656Z
+SUMMARY:Match: Poolspel - Villa-Lidköping Bandyklubb
+DESCRIPTION:Samling: 09:30\, Lidköping Sparbanken Arena\nVänersborg bjuder in till poolspel.
+LAST-MODIFIED:20251113T170933Z
+LOCATION:Arena Vänersborg
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260125T131500
+DTEND;TZID=Europe/Stockholm:20260125T173000
+DTSTAMP:20251222T222428Z
+UID:12695166-2648@sportadmin.se
+CREATED:20251113T170920Z
+SUMMARY:Match: Poolspel - Villa-Lidköping Bandyklubb
+DESCRIPTION:Samling: 11:15\nGripen bjuder in till poolspel i Slättbergshallen i Trollhättan.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Slättbergshallen Trollhättan
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260214T120000
+DTEND;TZID=Europe/Stockholm:20260214T160000
+DTSTAMP:20251222T222428Z
+UID:12695177-2648@sportadmin.se
+CREATED:20251113T171329Z
+SUMMARY:Match: Poolspel - Villa-Lidköping Bandyklubb
+DESCRIPTION:Samling: 08:30\nBoltic bjuder in till poolspel på Tingvalla isstadion i Karlstad.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Tingvalla isstation Karlstad
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260222T100000
+DTEND;TZID=Europe/Stockholm:20260222T140000
+DTSTAMP:20251222T222428Z
+UID:12695187-2648@sportadmin.se
+CREATED:20251113T171457Z
+SUMMARY:Match: Poolspel - Villa-Lidköping Bandyklubb
+DESCRIPTION:Samling: 09:00\nLAIK bjuder in till poolspel på Isstadion i Lidköping.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260107T180000
+DTEND;TZID=Europe/Stockholm:20260107T190000
+DTSTAMP:20251222T222428Z
+UID:12709609-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260114T180000
+DTEND;TZID=Europe/Stockholm:20260114T190000
+DTSTAMP:20251222T222428Z
+UID:12709610-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260121T180000
+DTEND;TZID=Europe/Stockholm:20260121T190000
+DTSTAMP:20251222T222428Z
+UID:12709611-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260128T180000
+DTEND;TZID=Europe/Stockholm:20260128T190000
+DTSTAMP:20251222T222428Z
+UID:12709612-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260204T180000
+DTEND;TZID=Europe/Stockholm:20260204T190000
+DTSTAMP:20251222T222428Z
+UID:12709613-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260211T180000
+DTEND;TZID=Europe/Stockholm:20260211T190000
+DTSTAMP:20251222T222428Z
+UID:12709614-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260218T180000
+DTEND;TZID=Europe/Stockholm:20260218T190000
+DTSTAMP:20251222T222428Z
+UID:12709615-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260225T180000
+DTEND;TZID=Europe/Stockholm:20260225T190000
+DTSTAMP:20251222T222428Z
+UID:12709616-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20251124T162000
+DTEND;TZID=Europe/Stockholm:20251124T172000
+DTSTAMP:20251222T222428Z
+UID:12335725-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20251126T180000
+DTEND;TZID=Europe/Stockholm:20251126T190000
+DTSTAMP:20251222T222428Z
+UID:12709603-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20251201T162000
+DTEND;TZID=Europe/Stockholm:20251201T172000
+DTSTAMP:20251222T222428Z
+UID:12335726-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20251203T180000
+DTEND;TZID=Europe/Stockholm:20251203T190000
+DTSTAMP:20251222T222428Z
+UID:12709604-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20251207T100000
+DTEND;TZID=Europe/Stockholm:20251207T140000
+DTSTAMP:20251222T222428Z
+UID:12695154-2648@sportadmin.se
+CREATED:20251113T170446Z
+SUMMARY:Match: Villa-Lidköping Bandyklubb - Poolspel
+DESCRIPTION:Samling: 09:00\, Hockeyhallen\nVi annordnar poolspel på issdation. Föräldrar på arbetslista ansluter 08:50 så vi kan sätta igång med de aktiviteter som ska genomföras.
+LAST-MODIFIED:20251206T102408Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20251208T162000
+DTEND;TZID=Europe/Stockholm:20251208T172000
+DTSTAMP:20251222T222428Z
+UID:12335727-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20251210T180000
+DTEND;TZID=Europe/Stockholm:20251210T190000
+DTSTAMP:20251222T222428Z
+UID:12709605-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20251212T190000
+DTEND;TZID=Europe/Stockholm:20251212T210000
+DTSTAMP:20251222T222428Z
+UID:12836852-2648@sportadmin.se
+CREATED:20251208T205207Z
+SUMMARY:Föreningsmatchen - P-2015 (U11)
+DESCRIPTION:Samling: 18:30\, Entrén Hockeyhallen\nPå fredag spelar Villa föreningsmatchen. Den går av stapeln varje år och innebär att Villas ungdomslag står uppställda längs sargerna under introt innan matchen med matchtröjor på.\n\nDenna anmälan är så vi kan få en bild av hur många barn som kommer. Föräldrar får följa med och gå in med sina barn\, men går direkt upp på läktaren och deltar inte vid sidan av isen i samband med introt.\n\nVi samlas 18:30 vid entrén till hockeyhallen och tar på oss matchtröjorna. Vi går sedan in längs isen runt 18:40. Marchordning för vilken ordning lagen går in får vi på plats.\n\nNytt för i år är att vi kommer gå upp på ståplatsläktarn åt två håll där hälften av lagen går upp vid ismaskinernas ingång och redan går upp vid andra sidan ståplatsläktaren. Där tar alla killarna av sig tröjorna så de kan samlas in av ledare innan ketchup\, cola och godis får en chans att komma in i bilden.\n\nEfter det njuter vi tillsammans av bandy tillsammans på läktaren!\n\n// Ledarna U11
+LAST-MODIFIED:20251210T172622Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20251215T162000
+DTEND;TZID=Europe/Stockholm:20251215T172000
+DTSTAMP:20251222T222428Z
+UID:12335728-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20251217T180000
+DTEND;TZID=Europe/Stockholm:20251217T190000
+DTSTAMP:20251222T222428Z
+UID:12709606-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20251222T162000
+DTEND;TZID=Europe/Stockholm:20251222T172000
+DTSTAMP:20251222T222428Z
+UID:12335729-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20251229T162000
+DTEND;TZID=Europe/Stockholm:20251229T172000
+DTSTAMP:20251222T222428Z
+UID:12335730-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260302T162000
+DTEND;TZID=Europe/Stockholm:20260302T172000
+DTSTAMP:20251222T222428Z
+UID:12335739-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260309T162000
+DTEND;TZID=Europe/Stockholm:20260309T172000
+DTSTAMP:20251222T222428Z
+UID:12335740-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260316T162000
+DTEND;TZID=Europe/Stockholm:20260316T172000
+DTSTAMP:20251222T222428Z
+UID:12335741-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260323T162000
+DTEND;TZID=Europe/Stockholm:20260323T172000
+DTSTAMP:20251222T222428Z
+UID:12335742-2648@sportadmin.se
+CREATED:20250929T122140Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Sparbanken Lidköping Arena
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260304T180000
+DTEND;TZID=Europe/Stockholm:20260304T190000
+DTSTAMP:20251222T222428Z
+UID:12709617-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260311T180000
+DTEND;TZID=Europe/Stockholm:20260311T190000
+DTSTAMP:20251222T222428Z
+UID:12709618-2648@sportadmin.se
+CREATED:20251117T121601Z
+SUMMARY:Träning - P-2015 (U11)
+DESCRIPTION:Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+DTSTART;TZID=Europe/Stockholm:20260103T170000
+DTEND;TZID=Europe/Stockholm:20260103T180000
+DTSTAMP:20251222T222428Z
+UID:12881818-2648@sportadmin.se
+CREATED:20251215T115027Z
+SUMMARY:Intresseanmälan Lischcupen - P-2015 (U11)
+DESCRIPTION:Samling: 17:00\nVi vill med denna kallelse kolla intresset kring att delta i Lischcupen. Denna cup ser vi som en extra cup där vi deltar men inte sover över.\n\nCupen är 3-4 januari.\n\nVi samlar in intresset veckan ut och återkommer sedan med ett upplägg för denna cup. Anmält intresse garanterar eventuellt inte ett deltagande då vi kanske måste köra någon sorts lottning om intresset blir för stort.
+LAST-MODIFIED:00010101T010000Z
+LOCATION:Lidköping Isstadion
+PRIORITY:5
+SEQUENCE:0
+TRANSP:OPAQUE
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR
