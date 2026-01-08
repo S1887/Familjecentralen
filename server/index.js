@@ -1350,12 +1350,31 @@ app.get('/api/feed.ics', async (req, res) => {
             if (!ev.deleted) feedEvents.push(ev);
         });
 
-        // Add Auto-Approved External Events (from cache)
-        const inboxSourceIds = ['hkl_p11_p10', 'hkl_handbollsskola', 'rada_bk_p2015', 'rada_bk_f7', 'villa_lidkoping_algot'];
+        // Sport source IDs to include (same as sportochskola.ics)
+        const sportSourceIds = [
+            'villa_lidkoping_algot',
+            'rada_bk_p2015',
+            'rada_bk_f7',
+            'hkl_p11_p10',
+            'hkl_handbollsskola',
+            'arsenal_fc',
+            'ois_fotboll'
+        ];
 
+        // Add Auto-Approved External Events (from cache)
         cachedCalendarEvents.forEach(ev => {
-            const originCal = CALENDARS.find(c => c.name === ev.source);
-            if (originCal && originCal.inboxOnly) {
+            const originCal = CALENDARS.find(c => c.name === ev.source || c.name === ev.originalSource);
+
+            // Check if from sport source
+            const isFromSportSource = originCal && sportSourceIds.includes(originCal.id);
+
+            // Check if from inbox-only source that was auto-approved
+            const isAutoApprovedInbox = originCal && originCal.inboxOnly && !ev.inboxOnly;
+
+            // Include Vklass activities that are NOT lessons
+            const isVklassActivity = (originCal?.id === 'vklass_skola' || originCal?.id === 'vklass_skola_tuva') && !ev.isLesson && !ev.scheduleOnly;
+
+            if (isFromSportSource || isAutoApprovedInbox || isVklassActivity) {
                 if (!ev.inboxOnly) {
                     if (!feedEvents.find(fe => fe.uid === ev.uid)) {
                         feedEvents.push(ev);
