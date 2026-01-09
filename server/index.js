@@ -1701,12 +1701,23 @@ app.post('/api/trash', async (req, res) => {
         if (!uid) return res.status(400).json({ error: 'UID krävs' });
 
         console.log(`[Trash] Adding event ${uid} to trash: "${summary}"`);
+        console.log(`[Trash] DATA_DIR: ${DATA_DIR}, MongoDB: ${isMongoConnected() ? 'connected' : 'not connected'}`);
 
         // Add to ignored_events.json (for feed.ics filtering)
         const ignored = await readIgnoredEvents();
+        console.log(`[Trash] Current ignored count: ${ignored.length}`);
+
         if (!ignored.includes(uid)) {
             ignored.push(uid);
-            writeIgnoredEvents(ignored);
+            try {
+                writeIgnoredEvents(ignored);
+                console.log(`[Trash] Successfully wrote to ${IGNORED_EVENTS_FILE} (now ${ignored.length} events)`);
+            } catch (writeError) {
+                console.error(`[Trash] FAILED to write ignored_events.json:`, writeError);
+                throw writeError;
+            }
+        } else {
+            console.log(`[Trash] Event ${uid} already in ignored list`);
         }
 
         // Add to trash.json with full metadata
@@ -1720,6 +1731,7 @@ app.post('/api/trash', async (req, res) => {
                 trashedAt: new Date().toISOString()
             });
             writeTrashFile(trashItems);
+            console.log(`[Trash] Added to trash.json`);
         }
 
         if (isMongoConnected()) {
@@ -1728,10 +1740,11 @@ app.post('/api/trash', async (req, res) => {
             console.log(`[Trash] Event ${uid} added to MongoDB ignored list`);
         }
 
+        console.log(`[Trash] SUCCESS - Event "${summary}" marked as ej aktuell`);
         res.json({ success: true, message: 'Händelse flyttad till papperskorgen' });
     } catch (error) {
-        console.error('Add to trash error:', error);
-        res.status(500).json({ error: 'Kunde inte ta bort händelse' });
+        console.error('[Trash] ERROR:', error);
+        res.status(500).json({ error: 'Kunde inte ta bort händelse: ' + error.message });
     }
 });
 
