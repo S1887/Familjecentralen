@@ -1297,10 +1297,40 @@ app.get('/api/events', async (req, res) => {
         // Filter out scheduleOnly events (they have their own endpoint)
         allEvents = allEvents.filter(e => !e.scheduleOnly);
 
-        // Filter out ignored/trashed events
+        // Filter out ignored/trashed events - BUT keep subscription events with isTrashed flag
         const ignoredEventIds = await readIgnoredEvents();
         const ignoredSet = new Set(ignoredEventIds);
-        allEvents = allEvents.filter(e => !ignoredSet.has(e.uid));
+
+        // Helper to check if an event is from a subscription source (not personal calendar)
+        const isSubscriptionSource = (source) => {
+            if (!source) return false;
+            const s = source.toLowerCase();
+            return s.includes('arsenal') ||
+                s.includes('öis') ||
+                s.includes('örgryte') ||
+                s.includes('hk lidköping') ||
+                s.includes('villa lidköping') ||
+                s.includes('råda') ||
+                s.includes('vklass') ||
+                s.includes('sportadmin') ||
+                s.includes('laget') ||
+                s.includes('helgdag');
+        };
+
+        // For subscription events: mark as trashed but keep them visible
+        // For personal calendar events: filter them out completely (existing behavior)
+        allEvents = allEvents.map(e => {
+            if (ignoredSet.has(e.uid)) {
+                if (isSubscriptionSource(e.source) || e.isExternalSource) {
+                    // Subscription event - keep it but mark as trashed
+                    return { ...e, isTrashed: true };
+                } else {
+                    // Personal calendar event - mark for removal
+                    return { ...e, _shouldRemove: true };
+                }
+            }
+            return e;
+        }).filter(e => !e._shouldRemove);
 
         // Sortera: Närmast i tid först
         allEvents.sort((a, b) => new Date(a.start) - new Date(b.start));

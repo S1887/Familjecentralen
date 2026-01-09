@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useRef, Fragment } from 'react'
 import './App.css'
 import LoginPage from './components/LoginPage'
 import ScheduleViewer from './components/ScheduleViewer'
+import WeekViewWithSpanning from './components/WeekViewWithSpanning'
+import MonthViewWithSpanning from './components/MonthViewWithSpanning'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -3601,220 +3603,43 @@ function App() {
                 )}
               </h2>
 
+
               {/* MONTH VIEW */}
               {viewMode === 'month' && (
-                <div className="calendar-grid-month">
-                  {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map(d => (
-                    <div key={d} className="calendar-day-header">{d}</div>
-                  ))}
-                  {(() => {
-                    const days = [];
-                    const year = selectedDate.getFullYear();
-                    const month = selectedDate.getMonth();
-                    const firstDayOfMonth = new Date(year, month, 1);
-                    const lastDayOfMonth = new Date(year, month + 1, 0);
-
-                    // Start from Monday (getDay: Sun=0, Mon=1...Sat=6) -> Convert to Mon=0...Sun=6
-                    let startDay = firstDayOfMonth.getDay() - 1;
-                    if (startDay === -1) startDay = 6;
-
-                    // Previous Month Padding
-                    const prevMonthLastDate = new Date(year, month, 0).getDate();
-                    for (let i = 0; i < startDay; i++) {
-                      days.push({ day: prevMonthLastDate - startDay + 1 + i, type: 'prev', date: new Date(year, month - 1, prevMonthLastDate - startDay + 1 + i) });
-                    }
-
-                    // Current Month
-                    for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
-                      days.push({ day: i, type: 'current', date: new Date(year, month, i) });
-                    }
-
-                    // Next Month Padding (to 42 cells grid = 6 rows, or just fill row)
-                    const remaining = 42 - days.length;
-                    for (let i = 1; i <= remaining; i++) {
-                      days.push({ day: i, type: 'next', date: new Date(year, month + 1, i) });
-                    }
-
-                    return days.map((d, idx) => {
-                      const dayEvents = filteredEventsList.filter(e => isEventOnDate(e, d.date));
-                      const isTodayCell = isSameDay(d.date, new Date());
-                      return (
-                        <div key={idx}
-                          className={`calendar-cell ${d.type !== 'current' ? 'different-month' : ''} ${isTodayCell ? 'today' : ''}`}
-                          onClick={() => {
-                            if (window.confirm('Vill du skapa en ny händelse?')) {
-                              changeDay(Math.floor((d.date - selectedDate) / (1000 * 60 * 60 * 24))); // Select this day
-                              setNewEvent({ ...newEvent, date: d.date.toLocaleDateString('sv-SE') }); // Pre-fill date
-                              setActiveTab('create-event'); // Open creator
-                            }
-                          }}
-                        >
-                          {(() => {
-                            const isRed = holidays.some(h => isSameDay(h.start, d.date) && h.isRedDay);
-                            return (
-                              <div style={{ textAlign: 'right', fontWeight: 'bold', marginBottom: '0.2rem', color: isRed ? '#ff4757' : 'inherit' }}>{d.day}</div>
-                            );
-                          })()}
-                          {dayEvents.slice(0, 4).map(ev => {
-                            let sourceClass = '';
-                            if (ev.source.includes('Svante')) sourceClass = 'source-svante';
-                            if (ev.source.includes('Sarah')) sourceClass = 'source-mamma';
-                            return (
-                              <div key={ev.uid}
-                                className={`calendar-event ${ev.date < new Date() ? 'done' : ''} ${sourceClass}`}
-                                style={{ textDecoration: ev.cancelled ? 'line-through' : 'none', opacity: ev.cancelled ? 0.6 : 1 }}
-                                title={ev.summary}
-                                onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}>
-                                {ev.cancelled ? '🚫 ' : ''}{ev.summary}
-                              </div>
-                            )
-                          })}
-                          {dayEvents.length > 4 && <div style={{ fontSize: '0.7rem', color: '#666', textAlign: 'center' }}>+ {dayEvents.length - 4} till</div>}
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
+                <MonthViewWithSpanning
+                  selectedDate={selectedDate}
+                  filteredEventsList={filteredEventsList}
+                  isSameDay={isSameDay}
+                  isEventOnDate={isEventOnDate}
+                  isAllDayEvent={isAllDayEvent}
+                  getEventColorClass={getEventColorClass}
+                  openEditModal={openEditModal}
+                  setSelectedDate={setSelectedDate}
+                  setNewEvent={setNewEvent}
+                  setActiveTab={setActiveTab}
+                  newEvent={newEvent}
+                  holidays={holidays}
+                  changeDay={changeDay}
+                />
               )}
 
               {/* WEEK VIEW */}
               {viewMode === 'week' && (
-                <div className="week-view-container">
-                  {(() => {
-                    const days = [];
-                    const current = new Date(selectedDate);
-                    const dayOfWeek = current.getDay() || 7; // 1-7 (Mon-Sun)
-                    current.setDate(current.getDate() - dayOfWeek + 1); // Go to Monday
-
-                    for (let i = 0; i < 7; i++) {
-                      days.push(new Date(current));
-                      current.setDate(current.getDate() + 1);
-                    }
-
-                    return days.map(d => {
-                      const dayEvents = filteredEventsList
-                        .filter(e => isEventOnDate(e, d))
-                        .sort((a, b) => new Date(a.start) - new Date(b.start));
-                      const isTodayHeader = isSameDay(d, new Date());
-                      return (
-                        <div
-                          key={d.toISOString()}
-                          className="week-column"
-                          id={isTodayHeader ? 'today-column' : undefined}
-                          style={{
-                            flex: 1,
-                            background: 'var(--card-bg)',
-                            borderRadius: '24px',
-                            overflow: 'hidden',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            cursor: 'pointer' // Indicate clickable background
-                          }}
-                          onClick={() => {
-                            // Clicking the column background opens create event for that day
-                            if (window.confirm('Vill du skapa en ny händelse?')) {
-                              setSelectedDate(d);
-                              setNewEvent({ ...newEvent, date: d.toLocaleDateString('sv-SE') });
-                              setActiveTab('create-event');
-                            }
-                          }}
-                        >
-                          <div className="week-column-header" style={{
-                            padding: '1rem',
-                            textAlign: 'center',
-                            background: isTodayHeader ? '#2ed573' : 'rgba(255,255,255,0.03)',
-                            color: isTodayHeader ? 'white' : 'var(--text-main)',
-                            fontWeight: 'bold',
-                            borderBottom: '1px solid rgba(255,255,255,0.05)'
-                          }}>
-                            <div style={{ textTransform: 'capitalize', fontSize: '1.1rem' }}>{d.toLocaleDateString('sv-SE', { weekday: 'short' })}</div>
-                            <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>{d.getDate()}/{d.getMonth() + 1}</div>
-                          </div>
-                          <div className="week-column-body" style={{ padding: '0.5rem', flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {dayEvents.map(ev => {
-                              let sourceClass = '';
-                              if (ev.source.includes('Svante')) sourceClass = 'source-svante';
-                              if (ev.source.includes('Sarah')) sourceClass = 'source-mamma';
-                              const colorClass = getAssignedColorClass(ev);
-
-                              // Get border color based on assignee
-                              const getBorderColor = () => {
-                                const summary = (ev.summary || '').toLowerCase();
-                                const assignees = ev.assignees || [];
-                                const assigneesLower = assignees.map(a => a.toLowerCase()).join(' ');
-
-                                if (assigneesLower.includes('algot') || summary.includes('algot')) return '#3498db'; // Blue
-                                if (assigneesLower.includes('leon') || summary.includes('leon')) return '#2ed573'; // Green
-                                if (assigneesLower.includes('tuva') || summary.includes('tuva')) return '#9b59b6'; // Purple
-                                if (assigneesLower.includes('svante') || summary.includes('svante')) return '#ff7675'; // Red
-                                if (assigneesLower.includes('sarah') || summary.includes('sarah')) return '#f1c40f'; // Yellow
-                                return '#74b9ff'; // Default blue
-                              };
-
-                              return (
-                                <div key={ev.uid}
-                                  className={`card ${sourceClass} ${colorClass}`}
-                                  style={{
-                                    padding: '0.8rem',
-                                    fontSize: '0.8rem',
-                                    marginBottom: '0',
-                                    borderRadius: '16px',
-                                    background: 'rgba(255,255,255,0.08)',
-                                    border: 'none',
-                                    borderLeft: `4px solid ${getBorderColor()}`,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '0.2rem',
-                                    lineHeight: '1.3'
-                                  }}
-                                  onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
-                                >
-                                  <div style={{ fontWeight: 'bold', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                    {isAllDayEvent(ev) ? 'Heldag' : new Date(ev.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                                    {isMultiDayEvent(ev) && (
-                                      <span style={{
-                                        fontSize: '0.65rem',
-                                        background: 'rgba(100, 108, 255, 0.3)',
-                                        padding: '1px 6px',
-                                        borderRadius: '4px',
-                                        color: '#a5b4fc'
-                                      }}>
-                                        📅 {new Date(ev.start).getDate()}-{new Date(ev.end).getDate()}/{new Date(ev.end).getMonth() + 1}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div style={{ fontWeight: 600, fontSize: '0.9rem', textDecoration: ev.cancelled ? 'line-through' : 'none' }}>
-                                    {ev.cancelled && <span style={{ color: '#ff4757', marginRight: '0.2rem' }}>🚫</span>}
-                                    {ev.summary}
-                                  </div>
-                                  {ev.location && ev.location !== 'Okänd plats' && (
-                                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                                      📍 {ev.location}
-                                    </div>
-                                  )}
-
-                                  <div style={{ transform: 'scale(0.9)', transformOrigin: 'top left', marginLeft: '-2px', marginTop: '0.2rem' }}>
-                                    {renderTravelInfo(ev)}
-                                  </div>
-
-                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginTop: '0.2rem' }}>
-                                    {ev.assignments && (ev.assignments.driver || ev.assignments.packer) && (
-                                      <>
-                                        {ev.assignments.driver && <span style={{ fontSize: '0.7em', background: 'rgba(255,255,255,0.15)', padding: '2px 6px', borderRadius: '4px' }}>🚗 {ev.assignments.driver}</span>}
-                                        {ev.assignments.packer && <span style={{ fontSize: '0.7em', background: 'rgba(255,255,255,0.15)', padding: '2px 6px', borderRadius: '4px' }}>🎒 {ev.assignments.packer}</span>}
-                                      </>
-                                    )}
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
+                <WeekViewWithSpanning
+                  selectedDate={selectedDate}
+                  filteredEventsList={filteredEventsList}
+                  isSameDay={isSameDay}
+                  isEventOnDate={isEventOnDate}
+                  isAllDayEvent={isAllDayEvent}
+                  getEventColorClass={getEventColorClass}
+                  openEditModal={openEditModal}
+                  setSelectedDate={setSelectedDate}
+                  setNewEvent={setNewEvent}
+                  setActiveTab={setActiveTab}
+                  newEvent={newEvent}
+                />
               )}
+
 
               {/* DEFAULT LIST VIEW (Upcoming, History, Next 3 Days) */}
               {viewMode !== 'month' && viewMode !== 'week' && (
@@ -3934,11 +3759,12 @@ function App() {
                             </div>
                             {(() => {
                               const isPast = event.end && new Date(event.end) < new Date();
-                              const shouldStrikethrough = event.cancelled || isPast;
+                              const shouldStrikethrough = event.cancelled || event.isTrashed || isPast;
                               return (
-                                <h3 style={{ textDecoration: shouldStrikethrough ? 'line-through' : 'none', color: shouldStrikethrough ? 'var(--text-muted)' : 'var(--card-text)', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.2rem 0', opacity: isPast ? 0.6 : 1 }}>
+                                <h3 style={{ textDecoration: shouldStrikethrough ? 'line-through' : 'none', color: shouldStrikethrough ? 'var(--text-muted)' : 'var(--card-text)', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.2rem 0', opacity: (isPast || event.isTrashed) ? 0.6 : 1 }}>
                                   {event.cancelled && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}
-                                  {isPast && !event.cancelled && <span style={{ color: 'var(--text-muted)', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>PASSERAD</span>}
+                                  {event.isTrashed && !event.cancelled && <span style={{ color: '#9b59b6', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>EJ AKTUELL</span>}
+                                  {isPast && !event.cancelled && !event.isTrashed && <span style={{ color: 'var(--text-muted)', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>PASSERAD</span>}
                                   {event.summary}
                                 </h3>
                               );

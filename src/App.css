@@ -74,6 +74,74 @@
   --next-event-bg: linear-gradient(135deg, #333333 0%, #282828 100%);
 }
 
+/* Event card color classes - applies border-left based on assignee/source */
+.card.assigned-svante,
+.card.source-svante {
+  border-left: 4px solid #ff7675 !important;
+  /* Red for Svante/Arsenal/ÖIS */
+}
+
+.card.assigned-sarah,
+.card.source-sarah {
+  border-left: 4px solid #f1c40f !important;
+  /* Yellow for Sarah */
+}
+
+.card.assigned-algot {
+  border-left: 4px solid #3498db !important;
+  /* Blue for Algot/Lidköping */
+}
+
+.card.assigned-leon {
+  border-left: 4px solid #2ed573 !important;
+  /* Green for Leon */
+}
+
+.card.assigned-tuva {
+  border-left: 4px solid #9b59b6 !important;
+  /* Purple for Tuva */
+}
+
+/* Calendar event color classes (for month/week grid views) */
+.calendar-event.assigned-svante,
+.calendar-event.source-svante,
+.calendar-event-spanning.assigned-svante,
+.calendar-event-spanning.source-svante {
+  border-left: 3px solid #ff7675 !important;
+  background: rgba(255, 118, 117, 0.3) !important;
+  color: var(--text-main) !important;
+}
+
+.calendar-event.assigned-sarah,
+.calendar-event.source-sarah,
+.calendar-event-spanning.assigned-sarah,
+.calendar-event-spanning.source-sarah {
+  border-left: 3px solid #f1c40f !important;
+  background: rgba(241, 196, 15, 0.3) !important;
+  color: var(--text-main) !important;
+}
+
+.calendar-event.assigned-algot,
+.calendar-event-spanning.assigned-algot {
+  border-left: 3px solid #3498db !important;
+  background: rgba(52, 152, 219, 0.3) !important;
+  color: var(--text-main) !important;
+}
+
+.calendar-event.assigned-leon,
+.calendar-event-spanning.assigned-leon {
+  border-left: 3px solid #2ed573 !important;
+  background: rgba(46, 213, 115, 0.3) !important;
+  color: var(--text-main) !important;
+}
+
+.calendar-event.assigned-tuva,
+.calendar-event-spanning.assigned-tuva {
+  border-left: 3px solid #9b59b6 !important;
+  background: rgba(155, 89, 182, 0.3) !important;
+  color: var(--text-main) !important;
+}
+
 /* Global reset for mobile */
 *,
 *::before,
