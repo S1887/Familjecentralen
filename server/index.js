@@ -1724,6 +1724,8 @@ app.post('/api/trash', async (req, res) => {
 
         if (isMongoConnected()) {
             await addToTrash(uid, { summary, start, source });
+            await addIgnoredEvent(uid); // Also add to ignored events in MongoDB
+            console.log(`[Trash] Event ${uid} added to MongoDB ignored list`);
         }
 
         res.json({ success: true, message: 'Händelse flyttad till papperskorgen' });

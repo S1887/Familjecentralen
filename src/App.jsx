@@ -4156,13 +4156,20 @@ function App() {
                   })
                 });
                 if (response.ok) {
-                  // Remove from local state
-                  setEvents(prev => prev.filter(e => e.uid !== event.uid));
-                  console.log(`[Trash] Event "${event.summary}" moved to trash`);
+                  // Mark as trashed in local state (keep visible with strikethrough)
+                  setEvents(prev => prev.map(e =>
+                    e.uid === event.uid ? { ...e, isTrashed: true } : e
+                  ));
+                  setSelectedEventForDetail(null); // Close the modal
+                  console.log(`[Trash] Event "${event.summary}" marked as ej aktuell`);
+                } else {
+                  const errorData = await response.json().catch(() => ({}));
+                  console.error('[Trash] API error:', response.status, errorData);
+                  alert(`Kunde inte markera som ej aktuell: ${errorData.error || response.statusText}`);
                 }
               } catch (error) {
                 console.error('Failed to trash event:', error);
-                alert('Kunde inte ta bort händelsen');
+                alert('Kunde inte markera som ej aktuell - nätverksfel');
               }
             }}
             getGoogleCalendarLink={getGoogleCalendarLink}
