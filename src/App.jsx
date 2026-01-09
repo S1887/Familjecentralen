@@ -467,6 +467,25 @@ function App() {
     }
   }, [viewMode, isMobile]);
 
+  // Helper function to get color class for events based on source or assignees
+  const getEventColorClass = (event) => {
+    const source = (event.source || '').toLowerCase();
+    const assignees = event.assignees || [];
+
+    // Check source first
+    if (source.includes('svante')) return 'source-svante';
+    if (source.includes('sarah') || source.includes('mamma')) return 'source-sarah';
+
+    // Check assignees if no source match
+    if (assignees.includes('Svante')) return 'assigned-svante';
+    if (assignees.includes('Sarah')) return 'assigned-sarah';
+    if (assignees.includes('Algot')) return 'assigned-algot';
+    if (assignees.includes('Leon')) return 'assigned-leon';
+    if (assignees.includes('Tuva')) return 'assigned-tuva';
+
+    return ''; // Default, no special color
+  };
+
   // State för att skapa nytt event
 
   const [newEvent, setNewEvent] = useState({
@@ -2916,15 +2935,13 @@ function App() {
                     );
                   } else {
                     const event = item.data;
-                    let sourceClass = '';
-                    if (event.source === 'Svante (Privat)') sourceClass = 'source-svante';
-                    if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
+                    const colorClass = getEventColorClass(event);
 
                     const assignments = event.assignments || {};
                     const isFullyAssigned = assignments.driver && assignments.packer;
 
                     return (
-                      <div key={key} className={`card ${sourceClass} ${isFullyAssigned ? 'assigned' : ''}`}
+                      <div key={key} className={`card ${colorClass} ${isFullyAssigned ? 'assigned' : ''}`}
                         style={{
                           cursor: 'pointer',
                           background: 'var(--card-bg)',
@@ -2932,7 +2949,6 @@ function App() {
                           padding: '0.8rem',
                           borderRadius: '12px',
                           border: '1px solid var(--border-color)',
-                          borderLeft: `4px solid ${event.source && event.source.includes('Svante') ? '#ff7675' : '#74b9ff'}`,
                           marginBottom: '0.5rem',
                           ...(event.cancelled ? { opacity: 0.6, textDecoration: 'line-through' } : {})
                         }}
@@ -3811,12 +3827,9 @@ function App() {
                       lastDate = eventDateStr;
                       lastWeek = eventWeek;
 
-                      let sourceClass = '';
-                      if (event.source === 'Svante (Privat)') sourceClass = 'source-svante';
-                      if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
+                      const colorClass = getEventColorClass(event);
                       const assignments = event.assignments || {};
                       const isFullyAssigned = assignments.driver && assignments.packer;
-                      const colorClass = getAssignedColorClass(event);
 
                       return (
                         <Fragment key={event.uid}>
@@ -3874,7 +3887,7 @@ function App() {
                           )}
 
                           {/* Event card */}
-                          <div className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''}`}
+                          <div className={`card ${colorClass} ${isFullyAssigned ? 'assigned' : ''}`}
                             style={{
                               cursor: 'pointer',
                               padding: '1rem',
@@ -3882,7 +3895,6 @@ function App() {
                               borderRadius: '24px',
                               background: 'var(--card-bg)',
                               border: '1px solid var(--border-color)',
-                              borderLeft: `4px solid ${event.source && event.source.includes('Svante') ? '#ff7675' : '#74b9ff'}`,
                               display: 'flex',
                               flexDirection: 'column',
                               gap: '0.2rem'
