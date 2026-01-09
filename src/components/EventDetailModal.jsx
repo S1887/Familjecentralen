@@ -13,7 +13,7 @@ const isAllDayEvent = (event) => {
     return startHour === 0 && startMin === 0 && ((endHour === 0 && endMin === 0) || (endHour === 23 && endMin === 59));
 };
 
-const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onShowAllUpcoming, getGoogleCalendarLink }) => {
+const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onShowAllUpcoming, onTrash, getGoogleCalendarLink }) => {
     if (!event) return null;
 
     // Sort events chronologically (upcoming only)
@@ -360,6 +360,47 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                                 📅 Google Kalender
                             </a>
                         )}
+
+                        {/* "Ej aktuell" button - only for subscription events AND admin users */}
+                        {onTrash && isAdmin && (() => {
+                            const source = event.source || '';
+                            const isOwnGoogleCalendar = source.includes('Svante') || source.includes('Sarah') || source.includes('Familjen') || source.includes('Örtendahls');
+                            const isSubscription = !isOwnGoogleCalendar && (
+                                source.includes('Villa') || source.includes('Råda') || source.includes('HK Lidköping') ||
+                                source.includes('Lidköping') || source.includes('Arsenal') || source.includes('ÖIS') ||
+                                source.includes('Örgryte') || source.includes('Vklass') || source.includes('Sportadmin') ||
+                                source.includes('Laget') || event.isExternalSource || source.includes('Helgdag')
+                            );
+
+                            if (!isSubscription) return null;
+
+                            return (
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm(`Markera "${event.summary}" som ej aktuell?`)) {
+                                            onTrash(event);
+                                            onClose();
+                                        }
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: '0.75rem 1.5rem',
+                                        background: '#ffa502',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '12px',
+                                        fontSize: '1rem',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'transform 0.2s, filter 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                >
+                                    🚫 Ej aktuell
+                                </button>
+                            );
+                        })()}
                     </div>
 
                     {/* Navigation */}

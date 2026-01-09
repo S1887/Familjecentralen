@@ -186,14 +186,31 @@ export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink })
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                                    {/* Google Calendar Save Button */}
+                                    {/* Aktuell - marks event for feed.ics inclusion */}
                                     {!isImported && !isPast && (
                                         <button
-                                            onClick={(e) => handleSaveToGoogle(item, e)}
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                try {
+                                                    // Mark as approved (remove from inbox by ignoring but NOT trashing)
+                                                    await fetch(getApiUrl('/api/approve-inbox'), {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ uid: item.uid })
+                                                    });
+                                                    setImportedUids(prev => new Set([...prev, item.uid]));
+                                                    // Remove from list after short delay
+                                                    setTimeout(() => {
+                                                        setItems(items.filter(i => i.uid !== item.uid));
+                                                    }, 1000);
+                                                } catch (err) {
+                                                    console.error("Failed to approve event", err);
+                                                }
+                                            }}
                                             style={{
                                                 flex: 1,
                                                 padding: '0.6rem',
-                                                background: '#4285F4', // Google Blue
+                                                background: '#2ed573',
                                                 color: 'white',
                                                 border: 'none',
                                                 borderRadius: '6px',
@@ -203,26 +220,44 @@ export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink })
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 gap: '0.5rem',
-                                                minWidth: '200px'
+                                                minWidth: '120px'
                                             }}
                                         >
-                                            📅 Spara till familjens Google-kalender
+                                            ✅ Aktuell
                                         </button>
                                     )}
 
-
+                                    {/* Ej aktuell - moves to trash */}
                                     <button
-                                        onClick={(e) => handleIgnore(item.uid, e)}
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            try {
+                                                await fetch(getApiUrl('/api/trash'), {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        uid: item.uid,
+                                                        summary: item.summary,
+                                                        start: item.start,
+                                                        source: item.source
+                                                    })
+                                                });
+                                                setItems(items.filter(i => i.uid !== item.uid));
+                                            } catch (err) {
+                                                console.error("Failed to trash event", err);
+                                            }
+                                        }}
                                         style={{
                                             padding: '0.6rem 1rem',
                                             background: 'transparent',
-                                            border: '1px solid #ff4757',
-                                            color: '#ff4757',
+                                            border: '1px solid #ffa502',
+                                            color: '#ffa502',
                                             borderRadius: '6px',
-                                            cursor: 'pointer'
+                                            cursor: 'pointer',
+                                            fontWeight: 600
                                         }}
                                     >
-                                        🚫 Ignorera
+                                        🚫 Ej aktuell
                                     </button>
                                 </div>
                             </div>

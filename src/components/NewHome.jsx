@@ -241,8 +241,36 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                 <div style={{ fontSize: '0.9rem', color: theme.accent, fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
                                     Dagens händelser
                                 </div>
-                                <div style={{ background: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)', padding: '0.3rem 0.8rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', color: theme.cardText }}>
-                                    {todaysEvents.length} {todaysEvents.length === 1 ? 'händelse' : 'händelser'}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <div style={{ background: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)', padding: '0.3rem 0.8rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', color: theme.cardText }}>
+                                        {todaysEvents.length} {todaysEvents.length === 1 ? 'händelse' : 'händelser'}
+                                    </div>
+                                    <div
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedDate(new Date()); // Ensure we're on today's date
+                                            setViewMode('upcoming');
+                                            setActiveTab('timeline');
+                                        }}
+                                        style={{
+                                            background: theme.accent,
+                                            color: theme.textColorInverse,
+                                            padding: '0.3rem 0.6rem',
+                                            borderRadius: '12px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.3rem',
+                                            transition: 'opacity 0.2s'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                                        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                        title="Visa alla kommande händelser"
+                                    >
+                                        Alla →
+                                    </div>
                                 </div>
                             </div>
 

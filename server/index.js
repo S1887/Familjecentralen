@@ -23,6 +23,9 @@ import {
     deleteLocalEvent,
     getIgnoredEventIds,
     addIgnoredEvent,
+    getTrashedEvents,
+    addToTrash,
+    removeFromTrash,
     migrateFromJson
 } from './db/mongodb.js';
 
@@ -30,7 +33,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 8443;
+
+// DEBUG LOGGER
+const LOG_FILE = path.join(__dirname, 'server_debug.log');
+function logToFile(msg) {
+    try { fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] ${msg}\n`); } catch (e) { }
+}
+logToFile('--- SERVER STARTING ---');
+
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -248,6 +259,7 @@ if (fs.existsSync(INITIAL_DATA_DIR)) {
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 const LOCAL_EVENTS_FILE = path.join(DATA_DIR, 'local_events.json');
 const IGNORED_EVENTS_FILE = path.join(DATA_DIR, 'ignored_events.json');
+const TRASH_FILE = path.join(DATA_DIR, 'trash.json');
 const CACHE_FILE = path.join(DATA_DIR, 'calendar_cache.json');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
 const MEALS_FILE = path.join(DATA_DIR, 'meals.json');
@@ -465,10 +477,10 @@ async function fetchCalendarsFromGoogle() {
                     // Determine correct event source
                     let eventSource = cal.name;
 
-                    // Training events that bypass inbox should have family calendar as source
-                    if (!isInbox && cal.inboxOnly) {
-                        eventSource = 'Örtendahls familjekalender';
-                    }
+                    // REMOVED: Keep original source name for subscriptions so UI and buttons work correctly
+                    // if (!isInbox && cal.inboxOnly) {
+                    //     eventSource = 'Örtendahls familjekalender';
+                    // }
 
                     freshEvents.push({
                         uid: ev.uid,
@@ -494,6 +506,7 @@ async function fetchCalendarsFromGoogle() {
             }
         } catch (e) {
             console.error(`✗ Kunde inte hämta kalender: ${cal.name}. Error: ${e.message}`);
+            logToFile(`Error fetching ${cal.name}: ${e.message}`);
             errorCount++;
             lastFetchError = { calendar: cal.name, error: e.message, time: new Date().toISOString() };
         }
@@ -547,12 +560,15 @@ async function fetchAndCacheCalendars() {
 // Schedule background refresh every hour
 function startScheduledRefresh() {
     console.log('[Scheduler] Starting hourly calendar refresh...');
+    logToFile('[Scheduler] Starting hourly calendar refresh...');
 
-    // Initial fetch after 30 seconds (give server time to start)
+    // Initial fetch after 10 seconds (reduced from 30 for debug)
     setTimeout(async () => {
         console.log('[Scheduler] Running initial calendar fetch...');
+        logToFile('[Scheduler] Running initial calendar fetch...');
         await fetchCalendarsFromGoogle();
-    }, 30000);
+    }, 10000);
+
 
     // Then refresh every hour
     setInterval(async () => {
@@ -1281,6 +1297,11 @@ app.get('/api/events', async (req, res) => {
         // Filter out scheduleOnly events (they have their own endpoint)
         allEvents = allEvents.filter(e => !e.scheduleOnly);
 
+        // Filter out ignored/trashed events
+        const ignoredEventIds = await readIgnoredEvents();
+        const ignoredSet = new Set(ignoredEventIds);
+        allEvents = allEvents.filter(e => !ignoredSet.has(e.uid));
+
         // Sortera: Närmast i tid först
         allEvents.sort((a, b) => new Date(a.start) - new Date(b.start));
 
@@ -1342,12 +1363,14 @@ app.get('/api/feed.ics', async (req, res) => {
         }
 
         const localEvents = readLocalEvents();
+        const ignoredEvents = await readIgnoredEvents();
+        const ignoredSet = new Set(ignoredEvents);
 
         const feedEvents = [];
 
-        // Add Local Events
+        // Add Local Events (excluding deleted and trashed)
         localEvents.forEach(ev => {
-            if (!ev.deleted) feedEvents.push(ev);
+            if (!ev.deleted && !ignoredSet.has(ev.uid)) feedEvents.push(ev);
         });
 
         // Sport source IDs to include (same as sportochskola.ics)
@@ -1362,6 +1385,10 @@ app.get('/api/feed.ics', async (req, res) => {
         ];
 
         // Add Auto-Approved External Events (from cache)
+        // Also read approved inbox events
+        const approvedEventIds = readApprovedEvents();
+        const approvedSet = new Set(approvedEventIds);
+
         cachedCalendarEvents.forEach(ev => {
             const originCal = CALENDARS.find(c => c.name === ev.source || c.name === ev.originalSource);
 
@@ -1374,8 +1401,11 @@ app.get('/api/feed.ics', async (req, res) => {
             // Include Vklass activities that are NOT lessons
             const isVklassActivity = (originCal?.id === 'vklass_skola' || originCal?.id === 'vklass_skola_tuva') && !ev.isLesson && !ev.scheduleOnly;
 
-            if (isFromSportSource || isAutoApprovedInbox || isVklassActivity) {
-                if (!ev.inboxOnly) {
+            // Check if user manually approved this inbox event
+            const isUserApproved = approvedSet.has(ev.uid);
+
+            if (isFromSportSource || isAutoApprovedInbox || isVklassActivity || isUserApproved) {
+                if (!ignoredSet.has(ev.uid)) {
                     if (!feedEvents.find(fe => fe.uid === ev.uid)) {
                         feedEvents.push(ev);
                     }
@@ -1554,6 +1584,151 @@ app.post('/api/ignore-event', async (req, res) => {
     } catch (error) {
         console.error('Ignore event error:', error);
         res.status(500).json({ error: 'Kunde inte ignorera händelse' });
+    }
+});
+
+// Approve inbox event (marks it for feed.ics inclusion)
+const APPROVED_EVENTS_FILE = path.join(DATA_DIR, 'approved_events.json');
+
+function readApprovedEvents() {
+    try {
+        if (fs.existsSync(APPROVED_EVENTS_FILE)) {
+            return JSON.parse(fs.readFileSync(APPROVED_EVENTS_FILE, 'utf8'));
+        }
+    } catch (e) {
+        console.error('[Approved] Failed to read file:', e.message);
+    }
+    return [];
+}
+
+function writeApprovedEvents(data) {
+    fs.writeFileSync(APPROVED_EVENTS_FILE, JSON.stringify(data, null, 2));
+}
+
+app.post('/api/approve-inbox', async (req, res) => {
+    try {
+        const { uid } = req.body;
+        if (!uid) return res.status(400).json({ error: 'UID krävs' });
+
+        console.log(`[Inbox] Approving event ${uid} for feed.ics`);
+
+        const approved = readApprovedEvents();
+        if (!approved.includes(uid)) {
+            approved.push(uid);
+            writeApprovedEvents(approved);
+        }
+
+        res.json({ success: true, message: 'Händelse godkänd för kalendersynk' });
+    } catch (error) {
+        console.error('Approve inbox error:', error);
+        res.status(500).json({ error: 'Kunde inte godkänna händelse' });
+    }
+});
+
+// ============ TRASH / PAPPERSKORG ============
+
+// Helper: Read trash from file
+function readTrashFile() {
+    try {
+        if (fs.existsSync(TRASH_FILE)) {
+            return JSON.parse(fs.readFileSync(TRASH_FILE, 'utf8'));
+        }
+    } catch (e) {
+        console.error('[Trash] Failed to read trash.json:', e.message);
+    }
+    return [];
+}
+
+// Helper: Write trash to file
+function writeTrashFile(items) {
+    try {
+        fs.writeFileSync(TRASH_FILE, JSON.stringify(items, null, 2));
+    } catch (e) {
+        console.error('[Trash] Failed to write trash.json:', e.message);
+    }
+}
+
+// Get all trashed events
+app.get('/api/trash', async (req, res) => {
+    try {
+        if (isMongoConnected()) {
+            const items = await getTrashedEvents();
+            return res.json(items);
+        }
+        // Fallback: read from trash.json
+        const trashItems = readTrashFile();
+        return res.json(trashItems);
+    } catch (error) {
+        console.error('Get trash error:', error);
+        res.status(500).json({ error: 'Kunde inte hämta papperskorgen' });
+    }
+});
+
+// Add event to trash
+app.post('/api/trash', async (req, res) => {
+    try {
+        const { uid, summary, start, source } = req.body;
+        if (!uid) return res.status(400).json({ error: 'UID krävs' });
+
+        console.log(`[Trash] Adding event ${uid} to trash: "${summary}"`);
+
+        // Add to ignored_events.json (for feed.ics filtering)
+        const ignored = await readIgnoredEvents();
+        if (!ignored.includes(uid)) {
+            ignored.push(uid);
+            writeIgnoredEvents(ignored);
+        }
+
+        // Add to trash.json with full metadata
+        const trashItems = readTrashFile();
+        if (!trashItems.find(t => t.eventId === uid)) {
+            trashItems.push({
+                eventId: uid,
+                summary: summary || 'Okänd händelse',
+                start: start,
+                source: source,
+                trashedAt: new Date().toISOString()
+            });
+            writeTrashFile(trashItems);
+        }
+
+        if (isMongoConnected()) {
+            await addToTrash(uid, { summary, start, source });
+        }
+
+        res.json({ success: true, message: 'Händelse flyttad till papperskorgen' });
+    } catch (error) {
+        console.error('Add to trash error:', error);
+        res.status(500).json({ error: 'Kunde inte ta bort händelse' });
+    }
+});
+
+// Restore event from trash
+app.delete('/api/trash/:uid', async (req, res) => {
+    try {
+        const { uid } = req.params;
+        if (!uid) return res.status(400).json({ error: 'UID krävs' });
+
+        console.log(`[Trash] Restoring event ${uid} from trash`);
+
+        // Remove from ignored_events.json
+        const ignored = await readIgnoredEvents();
+        const updatedIgnored = ignored.filter(id => id !== uid);
+        writeIgnoredEvents(updatedIgnored);
+
+        // Remove from trash.json
+        const trashItems = readTrashFile();
+        const updatedTrash = trashItems.filter(t => t.eventId !== uid);
+        writeTrashFile(updatedTrash);
+
+        if (isMongoConnected()) {
+            await removeFromTrash(uid);
+        }
+
+        res.json({ success: true, message: 'Händelse återställd' });
+    } catch (error) {
+        console.error('Restore from trash error:', error);
+        res.status(500).json({ error: 'Kunde inte återställa händelse' });
     }
 });
 
@@ -1950,3 +2125,4 @@ async function startServer() {
 }
 
 startServer();
+// Trigger restart

@@ -172,7 +172,7 @@ export async function deleteLocalEvent(uid) {
     return await collection.deleteOne({ uid });
 }
 
-// ============ IGNORED EVENTS (ignored_events.json replacement) ============
+// ============ TRASH / IGNORED EVENTS (papperskorg) ============
 
 export async function getIgnoredEventIds() {
     const collection = getIgnoredEventsCollection();
@@ -180,6 +180,34 @@ export async function getIgnoredEventIds() {
 
     const docs = await collection.find({}).toArray();
     return docs.map(doc => doc.eventId);
+}
+
+// Get full trash items with metadata for UI
+export async function getTrashedEvents() {
+    const collection = getIgnoredEventsCollection();
+    if (!collection) return [];
+
+    return await collection.find({}).sort({ trashedAt: -1 }).toArray();
+}
+
+// Add event to trash with metadata
+export async function addToTrash(eventId, eventData = {}) {
+    const collection = getIgnoredEventsCollection();
+    if (!collection) return null;
+
+    return await collection.updateOne(
+        { eventId },
+        {
+            $set: {
+                eventId,
+                summary: eventData.summary || 'Okänd händelse',
+                start: eventData.start,
+                source: eventData.source,
+                trashedAt: new Date()
+            }
+        },
+        { upsert: true }
+    );
 }
 
 export async function addIgnoredEvent(eventId) {
@@ -193,11 +221,16 @@ export async function addIgnoredEvent(eventId) {
     );
 }
 
-export async function removeIgnoredEvent(eventId) {
+// Restore from trash
+export async function removeFromTrash(eventId) {
     const collection = getIgnoredEventsCollection();
     if (!collection) return null;
 
     return await collection.deleteOne({ eventId });
+}
+
+export async function removeIgnoredEvent(eventId) {
+    return await removeFromTrash(eventId);
 }
 
 // ============ MIGRATION HELPER ============

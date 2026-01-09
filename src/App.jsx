@@ -582,8 +582,10 @@ function App() {
           const isArsenal = newEv.source === 'Arsenal FC' || summaryLower.includes('arsenal');
           const isOis = newEv.source === 'Örgryte IS' || summaryLower.includes('örgryte') || summaryLower.includes('orgryte');
 
-          if ((isArsenal || isOis) && !newEv.category) {
-            newEv.category = 'Fotboll';
+          if (isArsenal || isOis) {
+            if (!newEv.category) newEv.category = 'Fotboll';
+            if (isArsenal) newEv.source = 'Arsenal FC';
+            if (isOis) newEv.source = 'Örgryte IS';
           }
 
           // Cancellation
@@ -981,7 +983,10 @@ function App() {
 
     // View Mode Filters
     if (viewMode === 'upcoming') {
-      return eventDate >= startOfSelected;
+      // Always filter from TODAY for upcoming, regardless of selectedDate
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      return eventDate >= todayStart;
     } else if (viewMode === 'history') {
       return eventDate < startOfSelected;
     } else if (viewMode === 'next3days') {
@@ -1845,20 +1850,61 @@ function App() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      {isAdmin && !editEventData.isExternalSource && (
-                        <button type="button" onClick={() => deleteEvent(editEventData)} style={{
-                          padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ff4757', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
-                        }} title="Ta bort event">
-                          <span>🗑️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ta bort</span>
-                        </button>
-                      )}
-                      {isAdmin && !editEventData.cancelled && (
-                        <button type="button" onClick={() => cancelEvent(editEventData)} style={{
-                          padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ffa502', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
-                        }} title="Ställ in">
-                          <span>🚫</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ställ in</span>
-                        </button>
-                      )}
+                      {/* Delete button - only for pure local events (not Google, not Subscriptions) */}
+
+                      {isAdmin && !editEventData.isExternalSource &&
+                        !['svante', 'sarah', 'familje', 'örtendahls'].some(n => (editEventData.source || '').toLowerCase().includes(n)) &&
+                        !['villa', 'råda', 'hk', 'lidköping', 'arsenal', 'öis', 'örgryte', 'vklass', 'sportadmin', 'laget', 'helgdag'].some(k => (editEventData.source || '').toLowerCase().includes(k)) && (
+                          <button type="button" onClick={() => deleteEvent(editEventData)} style={{
+                            padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ff4757', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
+                          }} title="Ta bort event">
+                            <span>🗑️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ta bort</span>
+                          </button>
+                        )}
+
+                      {/* "Ej aktuell" button - ONLY for subscription events, NOT personal calendars */}
+                      {isAdmin && !editEventData.cancelled && (() => {
+                        const source = (editEventData.source || '').toLowerCase();
+                        // Exclude personal calendars
+                        const isPersonalCalendar = source.includes('svante') || source.includes('sarah') || source.includes('familjen') || source.includes('örtendahls');
+                        // Check if it's a subscription source
+                        const isSubscription = !isPersonalCalendar && (
+                          editEventData.isExternalSource ||
+                          ['villa', 'råda', 'hk', 'lidköping', 'arsenal', 'öis', 'örgryte', 'vklass', 'sportadmin', 'laget', 'helgdag'].some(k => source.includes(k))
+                        );
+                        return isSubscription;
+                      })() && (
+                          <button type="button" onClick={async () => {
+                            // Add extra debug logging
+                            console.log('[Ej Aktuell] Button clicked for source:', editEventData.source, 'isExternal:', editEventData.isExternalSource);
+                            if (window.confirm(`Markera "${editEventData.summary}" som ej aktuell? Eventet döljs från kalendern.`)) {
+                              try {
+                                const response = await fetch('/api/trash', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    uid: editEventData.uid,
+                                    summary: editEventData.summary,
+                                    start: editEventData.start,
+                                    source: editEventData.source
+                                  })
+                                });
+                                if (response.ok) {
+                                  setEvents(prev => prev.filter(e => e.uid !== editEventData.uid));
+                                  setIsEditingEvent(false);
+                                  console.log(`[Trash] Event "${editEventData.summary}" marked as not relevant`);
+                                }
+                              } catch (error) {
+                                console.error('Failed to hide event:', error);
+                                alert('Kunde inte dölja händelsen');
+                              }
+                            }
+                          }} style={{
+                            padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ffa502', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
+                          }} title="Markera som ej aktuell (dölj från kalendern)">
+                            <span>🚫</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ej aktuell</span>
+                          </button>
+                        )}
                       {/* Directions button for all users */}
                       {editEventData.coords && (
                         <button type="button" onClick={() => {
@@ -1938,7 +1984,7 @@ function App() {
               }} onClick={e => e.stopPropagation()}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <h2>🗑️ Papperskorg</h2>
-                  <button onClick={() => setActiveTab('new-home')} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+                  <button onClick={() => setViewTrash(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>✕</button>
                 </div>
 
                 {trashItems.length === 0 ? (
@@ -1946,15 +1992,15 @@ function App() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {trashItems.map(item => (
-                      <div key={item.uid} style={{ border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-bg)', opacity: 0.8 }}>
+                      <div key={item.eventId || item.uid} style={{ border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-bg)', opacity: 0.8 }}>
                         <div>
-                          <div style={{ fontWeight: 'bold' }}>{item.summary}</div>
+                          <div style={{ fontWeight: 'bold' }}>{item.summary || '(Okänd händelse)'}</div>
                           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                            {new Date(item.start).toLocaleString('sv-SE')}
-                            {item.cancelled ? <span style={{ color: 'orange', marginLeft: '0.5rem' }}>(Inställd)</span> : <span style={{ color: 'red', marginLeft: '0.5rem' }}>(Borttagen)</span>}
+                            {item.start ? new Date(item.start).toLocaleString('sv-SE') : item.trashedAt ? `Borttagen: ${new Date(item.trashedAt).toLocaleString('sv-SE')}` : 'Okänt datum'}
+                            <span style={{ color: '#ffa502', marginLeft: '0.5rem' }}>(Ej aktuell)</span>
                           </div>
                         </div>
-                        <button onClick={() => restoreEvent(item.uid)} style={{
+                        <button onClick={() => restoreEvent(item.eventId || item.uid)} style={{
                           background: '#2ed573', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '20px', cursor: 'pointer'
                         }}>
                           ♻️ Återställ
@@ -2803,6 +2849,11 @@ function App() {
               {(() => {
                 const combined = [];
                 const now = new Date(); // Used for sorting past/future events if needed
+                const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+
+                const heroTasks = tasks.filter(t => t.date && isSameDay(new Date(t.date), selectedDate));
+                const heroEvents = events.filter(e => isSameDay(new Date(e.start), selectedDate));
+
 
                 // 1. Add Tasks
                 heroTasks.forEach(task => {
@@ -2827,9 +2878,7 @@ function App() {
                 combined.sort((a, b) => {
                   const getCategory = (item) => {
                     if (item.type === 'task') {
-                      return item.data.done ? 0 : 3; // Done tasks first or last? Usually Done last if focusing on todo. User didn't specify, sticking to previous logic: Done (0), Future Evt (2), Undone Task (3). Wait, previous logic was weird.
-                      // Let's optimize: Undone Task (0), Future Event (1), Done Task (2), Past Event (3)?
-                      // User wants "Flow". Time based.
+                      // Done tasks at bottom (3), Undone at top (0)
                       return item.data.done ? 3 : 0;
                     } else {
                       // Event
@@ -3842,7 +3891,7 @@ function App() {
                           >
                             <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.85rem' }}>
                               <span className="time" style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>
-                                {new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                {isAllDayEvent(event) ? 'Heldag' : new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                               <span className="source-badge" style={{ opacity: 0.7, fontSize: '0.8em' }}>
                                 {(() => {
@@ -3856,11 +3905,7 @@ function App() {
                                     return source.replace('Familjen', 'Örtendahls familjekalender');
                                   }
 
-                                  // If it's a subscription source, show "Source genom Örtendahls familjekalender"
-                                  if (hasSubscriptionSource) {
-                                    return `${source} genom Örtendahls familjekalender`;
-                                  }
-
+                                  // Just show the source directly
                                   return source;
                                 })()}
                               </span>
@@ -4249,6 +4294,28 @@ function App() {
               setViewMode('upcoming');
               setActiveTab('timeline'); // Switch to dedicated timeline/calendar view
               // Optional: Scroll to top or specific element if needed
+            }}
+            onTrash={async (event) => {
+              try {
+                const response = await fetch('/api/trash', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    uid: event.uid,
+                    summary: event.summary,
+                    start: event.start,
+                    source: event.source
+                  })
+                });
+                if (response.ok) {
+                  // Remove from local state
+                  setEvents(prev => prev.filter(e => e.uid !== event.uid));
+                  console.log(`[Trash] Event "${event.summary}" moved to trash`);
+                }
+              } catch (error) {
+                console.error('Failed to trash event:', error);
+                alert('Kunde inte ta bort händelsen');
+              }
             }}
             getGoogleCalendarLink={getGoogleCalendarLink}
           />
