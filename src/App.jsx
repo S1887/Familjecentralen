@@ -4145,7 +4145,7 @@ function App() {
             }}
             onTrash={async (event) => {
               try {
-                const response = await fetch('/api/trash', {
+                const response = await fetch(getApiUrl('api/trash'), {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
