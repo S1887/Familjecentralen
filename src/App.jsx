@@ -467,16 +467,26 @@ function App() {
     }
   }, [viewMode, isMobile]);
 
-  // Helper function to get color class for events based on source or assignees
+  // Helper function to get color class for events based on location, source, or assignees
   const getEventColorClass = (event) => {
+    const location = (event.location || '').toLowerCase();
     const source = (event.source || '').toLowerCase();
     const assignees = event.assignees || [];
 
-    // Check source first
+    // PRIORITY 1: Check location first (most specific)
+    // This ensures events at specific venues get consistent colors
+    if (location.includes('valhalla') || location.includes('lidköping')) {
+      return 'assigned-algot'; // Blue for Lidköping venues
+    }
+
+    // PRIORITY 2: Check source (Arsenal/ÖIS get red like Svante)
+    if (source.includes('arsenal') || source.includes('öis') || source.includes('örgryte')) {
+      return 'source-svante'; // Red for football
+    }
     if (source.includes('svante')) return 'source-svante';
     if (source.includes('sarah') || source.includes('mamma')) return 'source-sarah';
 
-    // Check assignees if no source match
+    // PRIORITY 3: Check assignees if no source match
     if (assignees.includes('Svante')) return 'assigned-svante';
     if (assignees.includes('Sarah')) return 'assigned-sarah';
     if (assignees.includes('Algot')) return 'assigned-algot';
