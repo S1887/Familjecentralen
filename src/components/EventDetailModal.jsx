@@ -377,9 +377,9 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                             return (
                                 <button
                                     onClick={() => {
-                                        if (window.confirm(`Markera "${event.summary}" som ej aktuell?`)) {
+                                        if (window.confirm(`Markera "${event.summary}" som ej aktuell?\nEventet döljs från kalendern.`)) {
                                             onTrash(event);
-                                            onClose();
+                                            // Modal closes in App.jsx after API success
                                         }
                                     }}
                                     style={{
