@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { getApiUrl } from '../utils/api';
 
-const getApiUrl = (endpoint) => {
-    // Same helper as App.jsx (should be in a shared utils file ideally)
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-    if (window.location.port === '3001') return '/' + cleanEndpoint;
-    const pathname = window.location.pathname;
-    if (pathname.includes('ingress') || pathname.includes('hassio')) {
-        const basePath = pathname.replace(/\/+$/, '');
-        return basePath + '/' + cleanEndpoint;
-    }
-    return './' + cleanEndpoint;
-};
 
 export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink }) {
     const [items, setItems] = useState([]);

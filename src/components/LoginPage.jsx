@@ -1,24 +1,15 @@
 import { useState } from 'react';
 import './LoginPage.css';
+import { getApiUrl } from '../utils/api';
 
 // User list for display ONLY - No PINs here!
 const USERS = [
-    { name: 'Svante', role: 'parent' }, // Password removed
-    { name: 'Sarah', role: 'parent' },  // Password removed
-    { name: 'Algot', role: 'child' },   // Password removed
-    { name: 'Tuva', role: 'child' },    // Password removed
-    { name: 'Leon', role: 'child' },    // Password removed
+    { name: 'Svante', role: 'parent' },
+    { name: 'Sarah', role: 'parent' },
+    { name: 'Algot', role: 'child' },
+    { name: 'Tuva', role: 'child' },
+    { name: 'Leon', role: 'child' },
 ];
-
-// Determine API URL based on environment (similar to App.jsx helper)
-const getApiUrl = (endpoint) => {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-    if (window.location.port === '3001') return '/' + cleanEndpoint;
-    // Simple fallback for relative path in production/ingress
-    const pathname = window.location.pathname;
-    const basePath = pathname.replace(/\/+$/, '');
-    return basePath && basePath !== '/' ? basePath + '/' + cleanEndpoint : './' + cleanEndpoint;
-};
 
 function LoginPage({ onLogin }) {
     const [selectedUser, setSelectedUser] = useState(null);
