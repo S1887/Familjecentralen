@@ -165,6 +165,8 @@ import EventDetailModal from './components/EventDetailModal';
 import MealPlanner from './components/MealPlanner';
 
 function App() {
+  const [activeTab, setActiveTab] = useState('new-home');
+  const currentView = activeTab;
   const [showInbox, setShowInbox] = useState(false);
   const [inboxData, setInboxData] = useState([]); // Store actual items to track UIDs
   const inboxCount = inboxData.length;
@@ -533,7 +535,7 @@ function App() {
   // Swipe logic removed per user request
 
   const [scheduleEvents, setScheduleEvents] = useState([]);
-  const [activeTab, setActiveTab] = useState('new-home'); // 'dashboard' | 'schedule' | 'new-home'
+
 
   useEffect(() => {
     fetchEvents();
