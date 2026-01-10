@@ -1406,7 +1406,7 @@ function App() {
         width: '100%',
         height: '100%',
         zIndex: -1,
-        background: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), url('/bg-family.jpg')`,
+        background: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), url('./bg-family.jpg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed'
@@ -3913,6 +3913,26 @@ function App() {
                 </form>
               )
             }
+            {currentView === 'projects' && (
+              <ProjectHub
+                isAdmin={isAdmin}
+                getApiUrl={getApiUrl}
+              />
+            )}
+
+            {/* Debug Footer */}
+            <div style={{
+              fontSize: '10px',
+              color: '#888',
+              textAlign: 'center',
+              padding: '20px',
+              opacity: 0.7,
+              fontFamily: 'monospace'
+            }}>
+              v3.5.10 | Path: {window.location.pathname} <br />
+              API: {getApiUrl('test')} <br />
+              Base: {document.baseURI}
+            </div>
             {/* Add task button - shows for everyone */}
             {(
               <button
