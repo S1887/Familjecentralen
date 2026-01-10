@@ -3,32 +3,29 @@ export const getApiUrl = (endpoint) => {
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
 
     const pathname = window.location.pathname;
-    const hostname = window.location.hostname;
     const port = window.location.port;
 
-    // If we're on port 3001 directly (production serving static), use absolute paths
+    // For debugging - remove in future
+    // console.log(`[API Debug] Resolving ${endpoint} on port ${port}, path ${pathname}`);
+
+    // If we're on dev ports, use absolute paths
     if (port === '3001') {
         return '/' + cleanEndpoint;
     }
-
-    // If on port 5173 (Vite dev), use absolute paths (proxy handles routing)
     if (port === '5173') {
         return '/' + cleanEndpoint;
     }
 
-    // Check if running via HA Ingress (local or nabu.casa remote access)
-    const isNabuCasa = hostname.includes('nabu.casa');
-    const isHALocal = hostname.includes('homeassistant.local') || hostname.includes('supervisor');
-    const hasIngressPath = pathname.includes('ingress') || pathname.includes('hassio');
+    // Production Ingress (HA, Nabu Casa, etc)
+    // We assume the API is mounted at the same base path as the app
+    let basePath = pathname.replace(/\/+$/, ''); // Remove trailing slashes
 
-    if (isNabuCasa || isHALocal || hasIngressPath) {
-        // For HA ingress, we need to append to the current pathname
-        // pathname might be like: /7716521d_ortendahls_familjecentral/ingress
-        // We need to return: /7716521d_ortendahls_familjecentral/ingress/api/trash
-        const basePath = pathname.replace(/\/+$/, ''); // Remove trailing slashes
-        return basePath + '/' + cleanEndpoint;
+    // Safety check: strip index.html if present (though unlikely in current setup)
+    if (basePath.endsWith('/index.html')) {
+        basePath = basePath.substring(0, basePath.length - '/index.html'.length);
     }
 
-    // Default fallback
-    return '/' + cleanEndpoint;
+    const finalUrl = basePath + '/' + cleanEndpoint;
+    console.log(`[API] ${endpoint} -> ${finalUrl}`);
+    return finalUrl;
 };
