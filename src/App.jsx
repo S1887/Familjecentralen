@@ -1934,7 +1934,7 @@ function App() {
                               console.log('[Ej Aktuell] Button clicked for source:', editEventData.source, 'isExternal:', editEventData.isExternalSource);
                               if (window.confirm(`Markera "${editEventData.summary}" som ej aktuell? Eventet döljs från kalendern.`)) {
                                 try {
-                                  const response = await fetch('/api/trash', {
+                                  const response = await fetch(getApiUrl('api/trash'), {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
