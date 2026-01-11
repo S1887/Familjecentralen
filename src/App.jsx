@@ -1414,28 +1414,6 @@ function App() {
       }}
       />
 
-      {/* Floating Debug Bar - Always Visible */}
-      <div style={{
-        position: 'fixed',
-        top: '70px', // Below header
-        left: '10px',
-        right: '10px',
-        background: 'rgba(0,0,0,0.9)',
-        color: '#00ff00',
-        zIndex: 99999,
-        padding: '8px',
-        borderRadius: '5px',
-        border: '2px solid #00ff00',
-        fontSize: '12px',
-        fontFamily: 'monospace',
-        textAlign: 'center',
-        boxShadow: '0 0 10px rgba(0,0,0,0.5)',
-        pointerEvents: 'none' // Click through
-      }}>
-        <strong>v3.5.13</strong> | API: {getApiUrl('test')} <br />
-        Base: {document.baseURI}
-      </div>
-
       <div className="max-w-7xl mx-auto">
         {/* Header and modals - always visible */}
         <div>
