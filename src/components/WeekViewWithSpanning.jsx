@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 
 const WeekViewWithSpanning = ({
     selectedDate,
@@ -13,6 +13,7 @@ const WeekViewWithSpanning = ({
     setActiveTab,
     newEvent
 }) => {
+    const containerRef = useRef(null);
     const days = [];
     const current = new Date(selectedDate);
     const dayOfWeek = current.getDay() || 7;
@@ -86,21 +87,43 @@ const WeekViewWithSpanning = ({
         }
     });
 
+    // Auto-scroll to today's column on mount
+    useEffect(() => {
+        if (containerRef.current) {
+            const todayColumn = containerRef.current.querySelector('#today-column');
+            if (todayColumn) {
+                // Slight delay to ensure DOM is ready
+                setTimeout(() => {
+                    todayColumn.scrollIntoView({
+                        behavior: 'smooth',
+                        inline: 'start',
+                        block: 'nearest'
+                    });
+                }, 100);
+            }
+        }
+    }, [selectedDate]);
+
     return (
-        <div style={{
-            width: '100%',
-            overflowX: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            scrollSnapType: 'x mandatory'
-        }}>
+        <div
+            ref={containerRef}
+            className="week-view-container"
+            style={{
+                width: '100%',
+                overflowX: 'auto',
+                WebkitOverflowScrolling: 'touch'
+            }}
+        >
             {/* Main grid for day columns */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(7, minmax(120px, 1fr))',
-                gap: '0.5rem',
-                position: 'relative',
-                minWidth: 'max-content'
-            }}>
+            <div
+                className="week-view-grid"
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(7, 1fr)',
+                    gap: '0.5rem',
+                    position: 'relative'
+                }}
+            >
                 {days.map((d, index) => {
                     const dayEvents = singleDayEventsByDay[index].sort((a, b) => new Date(a.start) - new Date(b.start));
                     const isTodayHeader = isSameDay(d, new Date());

@@ -1258,3 +1258,28 @@ body.modal-open {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+/* Week View Responsive - Mobile horizontal scroll */
+@media (max-width: 767px) {
+  .week-view-grid {
+    grid-template-columns: repeat(7, calc(33.33vw - 0.5rem)) !important;
+    min-width: max-content;
+  }
+
+  .week-column {
+    min-width: calc(33.33vw - 0.5rem);
+    scroll-snap-align: start;
+  }
+}
+
+/* Desktop: ensure all 7 days fit */
+@media (min-width: 768px) {
+  .week-view-container {
+    overflow-x: visible;
+  }
+
+  .week-view-grid {
+    grid-template-columns: repeat(7, 1fr) !important;
+    min-width: auto;
+  }
+}

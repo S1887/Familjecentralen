@@ -2491,7 +2491,7 @@ function App() {
         {/* Global Back Button for helper views */}
         {
           activeTab !== 'new-home' && activeTab !== 'day-view' && activeTab !== 'create-event' && (
-            <div style={{ width: '100%', textAlign: 'left', paddingBottom: '0.5rem' }}>
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.5rem' }}>
               <button
                 onClick={() => setActiveTab('new-home')}
                 style={{
@@ -2501,6 +2501,37 @@ function App() {
                 }}
               >
                 ‹ Tillbaka till start
+              </button>
+              <button
+                onClick={() => {
+                  setNewEvent({
+                    summary: '',
+                    location: '',
+                    description: '',
+                    assignees: [],
+                    category: null,
+                    date: selectedDate.toLocaleDateString('sv-SE'),
+                    time: '12:00',
+                    endTime: '13:00'
+                  });
+                  setActiveTab('create-event');
+                }}
+                style={{
+                  background: 'var(--accent)',
+                  border: 'none',
+                  borderRadius: '20px',
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                }}
+              >
+                + Lägg till händelse
               </button>
             </div>
           )
@@ -3543,28 +3574,11 @@ function App() {
                     { id: 'upcoming', label: 'Kommande' },
                     { id: 'week', label: `Vecka ${getWeekNumber(selectedDate)}` },
                     { id: 'month', label: selectedDate.toLocaleDateString('sv-SE', { month: 'long' }) },
-                    { id: 'create', label: '+ Ny händelse' },
                     { id: 'history', label: 'Historik' }
                   ].map(view => (
                     <button
                       key={view.id}
-                      onClick={() => {
-                        if (view.id === 'create') {
-                          setNewEvent({
-                            summary: '',
-                            location: '',
-                            description: '',
-                            assignees: [],
-                            category: null,
-                            date: selectedDate.toLocaleDateString('sv-SE'), // Use currently selected date
-                            time: '12:00',
-                            endTime: '13:00'
-                          });
-                          setActiveTab('create-event');
-                        } else {
-                          setViewMode(view.id);
-                        }
-                      }}
+                      onClick={() => setViewMode(view.id)}
                       style={{
                         background: viewMode === view.id ? 'var(--card-bg)' : 'transparent',
                         color: viewMode === view.id ? 'var(--card-text)' : 'var(--text-muted)',
@@ -3601,7 +3615,7 @@ function App() {
                     </>
                   ) : (
                     <span style={{ color: 'var(--text-main)' }}>
-                      📅 Kommande händelser
+                      📅 {viewMode === 'history' ? 'Historik' : 'Kommande händelser'}
                     </span>
                   )}
                 </h2>
