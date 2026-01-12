@@ -1663,31 +1663,8 @@ app.post('/api/approve-inbox', async (req, res) => {
             writeApprovedEvents(approved);
         }
 
-        // ALSO save the event to local_events.json so it persists in feed.ics
-        // This ensures the event is available even after cache refresh
-        if (event) {
-            const localEvents = readLocalEvents();
-            // Only add if not already in local events
-            if (!localEvents.find(e => e.uid === uid)) {
-                const eventToSave = {
-                    uid: event.uid || uid,
-                    summary: event.summary || 'Godkänd händelse',
-                    start: event.start,
-                    end: event.end,
-                    location: event.location || 'Okänd plats',
-                    description: event.description || '',
-                    source: event.source || 'Familjen',
-                    originalSource: event.originalSource || event.source || 'Inbox',
-                    assignees: event.assignees || [],
-                    category: event.category || null,
-                    inboxOnly: false,  // Mark as NOT inbox-only since it's approved
-                    deleted: false
-                };
-                localEvents.push(eventToSave);
-                writeLocalEvents(localEvents);
-                console.log(`[Inbox] Saved approved event ${uid} to local_events.json`);
-            }
-        }
+        // Log for debugging
+        console.log(`[Inbox] Event ${uid} added to approved_events.json. It will appear in feed.ics.`);
 
         res.json({ success: true, message: 'Händelse godkänd för kalendersynk' });
     } catch (error) {

@@ -87,13 +87,19 @@ const WeekViewWithSpanning = ({
     });
 
     return (
-        <div style={{ width: '100%' }}>
+        <div style={{
+            width: '100%',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            scrollSnapType: 'x mandatory'
+        }}>
             {/* Main grid for day columns */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(7, 1fr)',
+                gridTemplateColumns: 'repeat(7, minmax(120px, 1fr))',
                 gap: '0.5rem',
-                position: 'relative'
+                position: 'relative',
+                minWidth: 'max-content'
             }}>
                 {days.map((d, index) => {
                     const dayEvents = singleDayEventsByDay[index].sort((a, b) => new Date(a.start) - new Date(b.start));
