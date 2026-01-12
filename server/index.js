@@ -1398,9 +1398,15 @@ app.get('/api/feed.ics', async (req, res) => {
 
         const feedEvents = [];
 
-        // Add Local Events (excluding deleted and trashed)
+        // Add Local Events (excluding deleted, but mark trashed as cancelled)
         localEvents.forEach(ev => {
-            if (!ev.deleted && !ignoredSet.has(ev.uid)) feedEvents.push(ev);
+            if (!ev.deleted) {
+                if (ignoredSet.has(ev.uid)) {
+                    feedEvents.push({ ...ev, cancelled: true });
+                } else {
+                    feedEvents.push(ev);
+                }
+            }
         });
 
         // Sport source IDs to include (same as sportochskola.ics)
@@ -1435,8 +1441,10 @@ app.get('/api/feed.ics', async (req, res) => {
             const isUserApproved = approvedSet.has(ev.uid);
 
             if (isFromSportSource || isAutoApprovedInbox || isVklassActivity || isUserApproved) {
-                if (!ignoredSet.has(ev.uid)) {
-                    if (!feedEvents.find(fe => fe.uid === ev.uid)) {
+                if (!feedEvents.find(fe => fe.uid === ev.uid)) {
+                    if (ignoredSet.has(ev.uid)) {
+                        feedEvents.push({ ...ev, cancelled: true });
+                    } else {
                         feedEvents.push(ev);
                     }
                 }
@@ -1517,6 +1525,12 @@ app.get('/api/feed.ics', async (req, res) => {
             if (ev.description) {
                 const description = sanitizeICSText(ev.description);
                 icsContent.push(foldLine(`DESCRIPTION:${description}`));
+            }
+
+            // Add STATUS:CANCELLED for ignored/trashed events per RFC 5545
+            if (ev.cancelled) {
+                icsContent.push('STATUS:CANCELLED');
+                icsContent.push('METHOD:CANCEL');
             }
 
             icsContent.push('END:VEVENT');
@@ -1637,15 +1651,42 @@ function writeApprovedEvents(data) {
 
 app.post('/api/approve-inbox', async (req, res) => {
     try {
-        const { uid } = req.body;
+        const { uid, event } = req.body;
         if (!uid) return res.status(400).json({ error: 'UID krävs' });
 
         console.log(`[Inbox] Approving event ${uid} for feed.ics`);
 
+        // Save UID to approved list
         const approved = readApprovedEvents();
         if (!approved.includes(uid)) {
             approved.push(uid);
             writeApprovedEvents(approved);
+        }
+
+        // ALSO save the event to local_events.json so it persists in feed.ics
+        // This ensures the event is available even after cache refresh
+        if (event) {
+            const localEvents = readLocalEvents();
+            // Only add if not already in local events
+            if (!localEvents.find(e => e.uid === uid)) {
+                const eventToSave = {
+                    uid: event.uid || uid,
+                    summary: event.summary || 'Godkänd händelse',
+                    start: event.start,
+                    end: event.end,
+                    location: event.location || 'Okänd plats',
+                    description: event.description || '',
+                    source: event.source || 'Familjen',
+                    originalSource: event.originalSource || event.source || 'Inbox',
+                    assignees: event.assignees || [],
+                    category: event.category || null,
+                    inboxOnly: false,  // Mark as NOT inbox-only since it's approved
+                    deleted: false
+                };
+                localEvents.push(eventToSave);
+                writeLocalEvents(localEvents);
+                console.log(`[Inbox] Saved approved event ${uid} to local_events.json`);
+            }
         }
 
         res.json({ success: true, message: 'Händelse godkänd för kalendersynk' });

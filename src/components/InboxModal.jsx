@@ -182,11 +182,11 @@ export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink })
                                             onClick={async (e) => {
                                                 e.stopPropagation();
                                                 try {
-                                                    // Mark as approved (remove from inbox by ignoring but NOT trashing)
+                                                    // Mark as approved and save event for feed.ics
                                                     await fetch(getApiUrl('/api/approve-inbox'), {
                                                         method: 'POST',
                                                         headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ uid: item.uid })
+                                                        body: JSON.stringify({ uid: item.uid, event: item })
                                                     });
                                                     setImportedUids(prev => new Set([...prev, item.uid]));
                                                     // Remove from list after short delay
