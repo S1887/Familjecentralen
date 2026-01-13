@@ -118,21 +118,22 @@ app.get('/api/hero-image', (req, res) => {
 
 // Calendar sources - private calendars loaded from environment variables
 // Set ICAL_SVANTE, ICAL_SARAH, ICAL_FAMILY in .env file
-    {
+    // Private calendars - only included if URL is configured
+    ...(process.env.ICAL_SVANTE ? [{
         id: 'svante_personal',
         name: 'Svante',
-        url: process.env.ICAL_SVANTE || ''
-    },
-    {
+        url: process.env.ICAL_SVANTE
+    }] : []),
+    ...(process.env.ICAL_SARAH ? [{
         id: 'sarah_personal',
         name: 'Sarah',
-        url: process.env.ICAL_SARAH || ''
-    },
-    {
+        url: process.env.ICAL_SARAH
+    }] : []),
+    ...(process.env.ICAL_FAMILY ? [{
         id: 'family_group',
         name: 'Örtendahls familjekalender',
-        url: process.env.ICAL_FAMILY || ''
-    },
+        url: process.env.ICAL_FAMILY
+    }] : []),
     // Subscription calendars - marked as inbox only, will not be primary sources
     {
         id: 'arsenal_fc',

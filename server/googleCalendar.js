@@ -321,6 +321,9 @@ async function testConnection() {
 
 // Check if API is enabled
 function isEnabled() {
+    // Check if credentials exist AND at least one calendar ID is configured
+    const hasCalendarIds = CALENDAR_CONFIG.familjen || CALENDAR_CONFIG.svante || CALENDAR_CONFIG.sarah;
+    if (!hasCalendarIds) return false;
     return fs.existsSync(CREDENTIALS_PATH);
 }
 
