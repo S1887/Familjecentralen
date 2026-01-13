@@ -802,6 +802,49 @@ async function fetchCalendarsFromGoogle() {
         }
     }
 
+    // [TWO-WAY SYNC] Check if locally created events have been deleted from Google
+    if (googleCalendar.isEnabled() && freshEvents.length > 0) {
+        try {
+            const mappings = googleCalendar.getAllMappings(); // source UID → { googleEventId, calendarId }
+            const googleEventIds = new Set();
+
+            // Collect all Google Event IDs from freshEvents
+            freshEvents.forEach(ev => {
+                // Remove @google.com suffix if present
+                googleEventIds.add(ev.uid.replace(/@google\.com$/, ''));
+            });
+
+            const localEvents = await readLocalEvents();
+            let deletedCount = 0;
+
+            // Check each mapping to see if the Google event still exists
+            for (const [sourceUid, mapping] of Object.entries(mappings)) {
+                const googleId = mapping.googleEventId.replace(/@google\.com$/, '');
+
+                // If the Google event is missing, mark local event as deleted
+                if (!googleEventIds.has(googleId)) {
+                    const localEvent = localEvents.find(e => e.uid === sourceUid);
+                    if (localEvent && !localEvent.deleted) {
+                        localEvent.deleted = true;
+                        localEvent.deletedAt = new Date().toISOString();
+                        deletedCount++;
+                        console.log(`[Sync] Marking as deleted (removed from Google): ${localEvent.summary || sourceUid}`);
+
+                        // Remove the mapping since Google event is gone
+                        googleCalendar.removeMapping(sourceUid);
+                    }
+                }
+            }
+
+            if (deletedCount > 0) {
+                await writeLocalEvents(localEvents);
+                console.log(`[Sync] Marked ${deletedCount} event(s) as deleted (removed from Google Calendar)`);
+            }
+        } catch (syncError) {
+            console.error('[Sync] Failed to check for deleted events:', syncError.message);
+        }
+    }
+
     // Only update cache if we got ANY new events
     if (freshEvents.length > 0) {
         cachedCalendarEvents = freshEvents;
@@ -1541,6 +1584,8 @@ app.get('/api/events', async (req, res) => {
                     todoList: localOverride.todoList || googleEvent.todoList || [],
                     cancelled: localOverride.cancelled !== undefined ? localOverride.cancelled : googleEvent.cancelled,
                     deleted: localOverride.deleted !== undefined ? localOverride.deleted : googleEvent.deleted,
+                    // CRITICAL: Apply inboxOnly override (allows importing from inbox)
+                    inboxOnly: localOverride.inboxOnly !== undefined ? localOverride.inboxOnly : googleEvent.inboxOnly,
                     // If this was a shadow edit, mark the source as edited
                     source: localOverride.source || googleEvent.source
                 };
@@ -1751,6 +1796,11 @@ app.get('/api/events', async (req, res) => {
             }
             return e;
         }).filter(e => !e._shouldRemove);
+
+        // Filter out deleted events (unless includeTrash is true)
+        if (!includeTrash) {
+            allEvents = allEvents.filter(e => !e.deleted);
+        }
 
         // Sortera: Närmast i tid först
         allEvents.sort((a, b) => new Date(a.start) - new Date(b.start));
@@ -2580,7 +2630,38 @@ app.post('/api/create-event', async (req, res) => {
         events.push(newEvent);
         await writeLocalEvents(events);
 
-        res.json({ success: true, event: newEvent });
+        // Also create in Google Calendar via API
+        let googleResult = null;
+        if (googleCalendar.isEnabled()) {
+            try {
+                const googleEvent = { ...newEvent };
+
+                // Determine target calendar based on assignees
+                const calendarId = googleCalendar.getTargetCalendarId(newEvent.assignees);
+
+                // If pushing to Family Calendar with single child assignee, prefix with their name
+                if (calendarId === googleCalendar.CALENDAR_CONFIG.familjen && newEvent.assignees && newEvent.assignees.length === 1) {
+                    const assignee = newEvent.assignees[0];
+                    if (['Algot', 'Leon', 'Tuva'].includes(assignee)) {
+                        googleEvent.summary = `${assignee}: ${googleEvent.summary}`;
+                        console.log(`[CreateEvent] Prefixed summary for Google: ${googleEvent.summary}`);
+                    }
+                }
+
+                const createdEvent = await googleCalendar.createEvent(googleEvent);
+
+                if (createdEvent) {
+                    await googleCalendar.saveMapping(newEvent.uid, createdEvent.id, calendarId);
+                    console.log(`[CreateEvent] Created in Google Calendar: ${newEvent.summary} -> ${createdEvent.id}`);
+                    googleResult = createdEvent;
+                }
+            } catch (err) {
+                console.error('[CreateEvent] Failed to create in Google Calendar:', err.message);
+                // Don't fail the local creation if Google sync fails
+            }
+        }
+
+        res.json({ success: true, event: newEvent, googlePushed: !!googleResult });
     } catch (error) {
         console.error('Events fetch error:', error);
         try {

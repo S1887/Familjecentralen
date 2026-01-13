@@ -503,7 +503,13 @@ function App() {
   // State för att skapa nytt event
 
   const [newEvent, setNewEvent] = useState({
-    summary: '', date: '', endDate: '', time: '', endTime: '', location: '', description: '',
+    summary: '',
+    date: new Date().toISOString().split('T')[0],
+    endDate: '',
+    time: '12:00',
+    endTime: '13:00',
+    location: '',
+    description: '',
     assignments: { driver: null, packer: null },
     todoList: [],
     assignees: [], // Array for multiple selection
@@ -1235,8 +1241,8 @@ function App() {
   const createEvent = async (e) => {
     e.preventDefault();
 
-    // This function now only handles LOCAL saving
-    // Google Calendar saving is handled by the separate <a> tag button
+    // This function now creates BOTH locally and in Google Calendar via API
+    // Backend automatically determines the correct calendar based on assignees
 
     const startDateTime = new Date(`${newEvent.date}T${newEvent.time}`);
     // Use endDate if set, otherwise fall back to start date
@@ -1244,7 +1250,7 @@ function App() {
     const endDateTime = new Date(`${effectiveEndDate}T${newEvent.endTime}`);
 
     try {
-      await fetch(getApiUrl('api/events'), {
+      const response = await fetch(getApiUrl('api/create-event'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1257,9 +1263,15 @@ function App() {
           assignees: newEvent.assignees || [],
           assignee: (newEvent.assignees || []).join(', '),
           category: newEvent.category || null,
-          source: 'Familjen (Eget)'
+          source: 'FamilyOps'
         })
       });
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log('Event created successfully', result.googlePushed ? '(synced to Google Calendar)' : '(local only)');
+      }
 
       // Close modal and reset form
       setActiveTab('timeline'); // Return to calendar/timeline view
@@ -2822,85 +2834,9 @@ function App() {
                   <button type="button" onClick={() => setActiveTab('new-home')} style={{
                     padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', cursor: 'pointer'
                   }}>Avbryt</button>
-                  {(() => {
-                    const hasSvante = newEvent.assignees.includes('Svante');
-                    const hasSarah = newEvent.assignees.includes('Sarah');
-                    const hasChildren = newEvent.assignees.some(name => ['Algot', 'Tuva', 'Leon'].includes(name));
-                    const isFamily = newEvent.assignees.length === 0; // "Hela familjen"
-
-                    // Determine target label
-                    // LOGIC: Defaults to Family if children involved or mixed.
-                    // Only pure single-parent events go to private calendars.
-                    let googleTarget = 'Familjen';
-
-                    if (hasSvante && !hasSarah && !hasChildren && !isFamily) googleTarget = 'Svante';
-                    else if (hasSarah && !hasSvante && !hasChildren && !isFamily) googleTarget = 'Sarah';
-
-                    // If forced target by explicit assignee selection logic above fails, it remains 'Familjen'
-
-                    if (googleTarget) {
-                      const baseDate = (newEvent.date || '').replace(/-/g, '');
-                      const startTime = (newEvent.time || '12:00').replace(/:/g, '') + '00';
-                      const endTime = (newEvent.endTime || newEvent.time || '13:00').replace(/:/g, '') + '00';
-                      const dates = `${baseDate}T${startTime}/${baseDate}T${endTime}`;
-
-                      const text = encodeURIComponent(newEvent.summary || 'Ny händelse');
-                      const details = encodeURIComponent(`${newEvent.description || ''}\n\n(Skapad via Family-Ops)`);
-                      const location = encodeURIComponent(newEvent.location || '');
-
-                      // Add src parameter to pre-select calendar
-                      const targetEmail = GOOGLE_CALENDAR_EMAILS[googleTarget === 'Familjen' ? 'Familjen' : `${googleTarget} (Privat)`];
-                      let googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${dates}&details=${details}&location=${location}`;
-                      if (targetEmail) {
-                        googleUrl += `&src=${encodeURIComponent(targetEmail)}`;
-                      }
-
-                      return (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                          <a
-                            href={googleUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => setActiveTab('new-home')}
-                            style={{
-                              padding: '0.75rem 1.5rem',
-                              borderRadius: '8px',
-                              border: 'none',
-                              background: '#2ed573',
-                              color: 'white',
-                              cursor: 'pointer',
-                              fontWeight: 'bold',
-                              textDecoration: 'none',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.5rem'
-                            }}
-                          >
-                            📅 {googleTarget === 'Familjen' ? 'Skapa i familjens Google-kalender' : `Skapa i ${googleTarget}s Google-kalender`} ↗
-                          </a>
-                          <button
-                            type="submit"
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: '#888',
-                              fontSize: '0.8rem',
-                              cursor: 'pointer',
-                              textDecoration: 'underline'
-                            }}
-                          >
-                            eller spara bara lokalt
-                          </button>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <button type="submit" style={{
-                        padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer', fontWeight: 'bold'
-                      }}>Skapa händelse</button>
-                    );
-                  })()}
+                  <button type="submit" style={{
+                    padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer', fontWeight: 'bold'
+                  }}>Skapa händelse</button>
                 </div>
               </form>
             </div>
