@@ -220,6 +220,14 @@ if (fs.existsSync(HA_OPTIONS_FILE)) {
             process.env.GEMINI_API_KEY = options.gemini_api_key;
             console.log('[Init] Loaded Gemini API Key from HA options');
         }
+        // Load calendar URLs from HA options
+        if (options.ical_svante) process.env.ICAL_SVANTE = options.ical_svante;
+        if (options.ical_sarah) process.env.ICAL_SARAH = options.ical_sarah;
+        if (options.ical_family) process.env.ICAL_FAMILY = options.ical_family;
+        if (options.calendar_svante) process.env.CALENDAR_SVANTE = options.calendar_svante;
+        if (options.calendar_sarah) process.env.CALENDAR_SARAH = options.calendar_sarah;
+        if (options.calendar_family) process.env.CALENDAR_FAMILY = options.calendar_family;
+        console.log('[Init] Loaded calendar config from HA options');
     } catch (e) { console.error('[Init] Failed to load HA options:', e.message); }
 }
 
