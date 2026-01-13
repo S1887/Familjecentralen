@@ -11,9 +11,9 @@ import path from 'path';
 
 // Calendar IDs configuration
 const CALENDAR_CONFIG = {
-    svante: 'svante.ortendahl@gmail.com',
-    sarah: 'sarah.ortendahl@gmail.com',
-    familjen: 'family17438490542731545369@group.calendar.google.com'
+    svante: process.env.CALENDAR_SVANTE || '',
+    sarah: process.env.CALENDAR_SARAH || '',
+    familjen: process.env.CALENDAR_FAMILY || ''
 };
 
 // Path to credentials file (set via environment variable or config)

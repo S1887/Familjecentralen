@@ -116,22 +116,22 @@ app.get('/api/hero-image', (req, res) => {
 // Hjälpfunktion för att läsa/skriva databas
 // DB_FILE and LOCAL_EVENTS_FILE defined centrally above
 
-// Dina kalender-källor (Dessa ska vi fylla på)
-const CALENDARS = [
+// Calendar sources - private calendars loaded from environment variables
+// Set ICAL_SVANTE, ICAL_SARAH, ICAL_FAMILY in .env file
     {
         id: 'svante_personal',
         name: 'Svante',
-        url: 'https://calendar.google.com/calendar/ical/svante.ortendahl%40gmail.com/private-96d4e54f3b8348303cec1fbc1ab90ccb/basic.ics'
+        url: process.env.ICAL_SVANTE || ''
     },
     {
         id: 'sarah_personal',
         name: 'Sarah',
-        url: 'https://calendar.google.com/calendar/ical/sarah.ortendahl%40gmail.com/private-884acb7a4a2e50c22116cacd9a43eaa1/basic.ics'
+        url: process.env.ICAL_SARAH || ''
     },
     {
         id: 'family_group',
         name: 'Örtendahls familjekalender',
-        url: 'https://calendar.google.com/calendar/ical/family17438490542731545369%40group.calendar.google.com/private-a8ef35f1df9c3adeab2b260aa704f722/basic.ics'
+        url: process.env.ICAL_FAMILY || ''
     },
     // Subscription calendars - marked as inbox only, will not be primary sources
     {
