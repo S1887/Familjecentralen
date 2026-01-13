@@ -28,6 +28,7 @@ import {
     removeFromTrash,
     migrateFromJson
 } from './db/mongodb.js';
+import googleCalendar from './googleCalendar.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -323,6 +324,12 @@ async function fetchCalendarsFromGoogle() {
                 continue;
             }
 
+            // [API SYNC SWITCH] Skip family_group ICS fetch, we use API now
+            if (googleCalendar.isEnabled() && cal.id === 'family_group') {
+                console.log(`[Cache] Skipping ICS fetch for ${cal.name} (Using Google API)`);
+                continue;
+            }
+
             console.log(`Fetching calendar: ${cal.name}...`);
 
             const opts = {
@@ -401,6 +408,28 @@ async function fetchCalendarsFromGoogle() {
                         summary = `Algot: ${summary}`;
                         assignees = ['Algot'];
                         category = 'Bandy';
+                    }
+
+                    // RESTORE ASSIGNEES FROM GOOGLE (Mirror Sync)
+                    // Events pushed to Google have summaries like "Name: Event"
+                    // We need to parse this back to restore the assignee
+                    if (cal.id === 'family_group') {
+                        const assigneeMatch = summary.match(/^([A-Za-z]+):\s/);
+                        if (assigneeMatch) {
+                            const name = assigneeMatch[1];
+                            const validNames = ['Svante', 'Sarah', 'Algot', 'Leon', 'Tuva'];
+                            if (validNames.includes(name)) {
+                                assignees = [name];
+                                // Optionally restore category if known, but hard to guess from summary alone
+                                // Special case for known sports
+                                if (summary.toLowerCase().includes('träning') || summary.toLowerCase().includes('match')) {
+                                    if (name === 'Algot') category = summary.toLowerCase().includes('hk lidköping') ? 'Handboll' : 'Fotboll'; // Guess
+                                    if (summary.toLowerCase().includes('bandy')) category = 'Bandy';
+                                    if (name === 'Tuva' && summary.toLowerCase().includes('fotboll')) category = 'Fotboll';
+                                    if (name === 'Tuva' && summary.toLowerCase().includes('handboll')) category = 'Handboll';
+                                }
+                            }
+                        }
                     }
 
                     // 6. Arsenal (Svante): ALL matches go directly to calendar
@@ -500,7 +529,8 @@ async function fetchCalendarsFromGoogle() {
                         // Custom props
                         scheduleOnly: ev.scheduleOnly || false,
                         student: ev.student || null,
-                        isLesson: ev.isLesson || false
+                        isLesson: ev.isLesson || false,
+                        isExternalSource: cal.inboxOnly || false // Mark inbox calendars as external
                     });
                 }
             }
@@ -516,6 +546,261 @@ async function fetchCalendarsFromGoogle() {
     }
 
     isFetching = false;
+
+    // [AUTO-PUSH] Push auto-approved events to Google Calendar
+    // Events from inbox sources (inboxOnly: true config) that got auto-approved (isInbox: false)
+    // need to be pushed to Google Calendar
+    if (googleCalendar.isEnabled()) {
+        const autoPushEvents = freshEvents.filter(e =>
+            e.inboxOnly === false && // Auto-approved (not going to inbox)
+            e.isExternalSource === true && // From an inbox source originally
+            !e.scheduleOnly && // Not a schedule-only event (Vklass lessons)
+            !e.isLesson && // Not a lesson
+            // Exclude Arsenal and ÖIS - these should only show in Centralen, not sync to Google
+            !(e.originalSource && (e.originalSource.includes('Arsenal') || e.originalSource.includes('Örgryte') || e.originalSource.includes('ÖIS')))
+        );
+
+        console.log(`[Auto-Push] Found ${autoPushEvents.length} auto-approved events to check for Google sync`);
+
+        for (const event of autoPushEvents) {
+            // Check if already in Google
+            const existingMapping = googleCalendar.getMapping(event.uid);
+            if (existingMapping) {
+                // Already pushed, skip
+                continue;
+            }
+
+            // Check if event is in the future (don't push old events)
+            const eventStart = new Date(event.start);
+            const now = new Date();
+            if (eventStart < now) {
+                continue;
+            }
+
+            // Check if verification event already exists in Google (to avoid duplicates if mapping was lost)
+            // We search in freshEvents which contains all API events fetched just now
+            const existingGoogleEvent = freshEvents.find(e =>
+                (e.originalSource === 'family_group_api' || e.originalSource === 'svante_api' || e.originalSource === 'sara_api') &&
+                e.summary === event.summary &&
+                new Date(e.start).getTime() === new Date(event.start).getTime()
+            );
+
+            if (existingGoogleEvent) {
+                console.log(`[Auto-Push] Found existing Google event, restoring mapping: ${event.summary} -> ${existingGoogleEvent.uid}`);
+                const targetCalId = googleCalendar.getTargetCalendarId(event.assignees);
+                // The API event UID is the Google Event ID
+                await googleCalendar.saveMapping(event.uid, existingGoogleEvent.uid, targetCalId);
+                continue;
+            }
+
+            try {
+                // Determine target calendar based on assignees
+                const calendarId = googleCalendar.getTargetCalendarId(event.assignees);
+
+                const googleEvent = {
+                    summary: event.summary,
+                    start: event.start,
+                    end: event.end,
+                    location: event.location,
+                    description: event.description || `Källa: ${event.originalSource || event.source}`,
+                    assignees: event.assignees
+                };
+
+                const createdEvent = await googleCalendar.createEvent(googleEvent);
+
+                if (createdEvent) {
+                    await googleCalendar.saveMapping(event.uid, createdEvent.id, calendarId);
+                    console.log(`[Auto-Push] Pushed to ${calendarId === googleCalendar.CALENDAR_CONFIG.svante ? 'Svante' : calendarId === googleCalendar.CALENDAR_CONFIG.sara ? 'Sara' : 'Family'}: ${event.summary}`);
+                }
+
+                // Wait a bit between pushes to be nice to Google API
+                await delay(500);
+            } catch (err) {
+                console.error(`[Auto-Push] Failed to push ${event.summary}:`, err.message);
+            }
+        }
+    }
+
+    // [API SYNC SWITCH] Fetch Family Calendar directly from Google API
+    if (googleCalendar.isEnabled()) {
+        try {
+            console.log('[Cache] Fetching Family Calendar via API...');
+            const startTime = new Date();
+            startTime.setMonth(startTime.getMonth() - 3); // 3 months back
+            const endTime = new Date();
+            endTime.setFullYear(endTime.getFullYear() + 1); // 1 year forward
+
+            const apiEvents = await googleCalendar.listEvents(
+                googleCalendar.CALENDAR_CONFIG.familjen,
+                startTime.toISOString(),
+                endTime.toISOString()
+            );
+
+            console.log(`[Cache] Found ${apiEvents.length} events from Family API`);
+
+            // Limit logging to avoid spam
+            if (apiEvents.length > 0) {
+                console.log(`[Cache] Example API Event: ${apiEvents[0].summary} (${apiEvents[0].start.dateTime || apiEvents[0].start.date})`);
+            }
+
+            for (const ev of apiEvents) {
+                let summary = ev.summary || 'Utan rubrik';
+                let assignees = [];
+                let category = 'Family';
+                let isInbox = false; // API events are already approved/in calendar
+
+                // 1. Parse "Name: " prefix to restore assignees
+                const assigneeMatch = summary.match(/^([A-Za-zÅÄÖåäö]+):\s/);
+                if (assigneeMatch) {
+                    const name = assigneeMatch[1];
+                    const validNames = ['Svante', 'Sarah', 'Algot', 'Leon', 'Tuva'];
+                    if (validNames.includes(name)) {
+                        assignees = [name];
+                        // Auto-categorize based on keywords if we have a name
+                        if (name === 'Algot') {
+                            if (summary.toLowerCase().includes('hk lidköping') || summary.toLowerCase().includes('handboll')) category = 'Handboll';
+                            if (summary.toLowerCase().includes('fotboll') || summary.toLowerCase().includes('p-2015')) category = 'Fotboll';
+                            if (summary.toLowerCase().includes('bandy')) category = 'Bandy';
+                        }
+                        if (name === 'Tuva') {
+                            if (summary.toLowerCase().includes('handboll')) category = 'Handboll';
+                            if (summary.toLowerCase().includes('fotboll')) category = 'Fotboll';
+                        }
+                    }
+                } else {
+                    // Fallback: Keyword-based assignee guessing for known un-prefixed events
+                    const s = summary.toLowerCase();
+                    if (s.includes('handbollsfestival') || s.includes('handbolls festival')) {
+                        assignees = ['Tuva'];
+                        category = 'Handboll';
+                    }
+                    else if (s.includes('poolspel') && (s.includes('villa') || s.includes('bandy'))) {
+                        assignees = ['Algot'];
+                        category = 'Bandy';
+                    }
+                    else if (s.includes('match') && s.includes('poolspel') && s.includes('slättbergshallen')) {
+                        assignees = ['Algot'];
+                        category = 'Bandy';
+                    }
+                }
+
+                // [Robust Deduplication] 
+                // Capture the source event UID if stored in extendedProperties
+                let sourceUid = null;
+                if (ev.extendedProperties && ev.extendedProperties.private && ev.extendedProperties.private.familjecentralenUid) {
+                    sourceUid = ev.extendedProperties.private.familjecentralenUid;
+                }
+
+                freshEvents.push({
+                    uid: ev.id, // Use Google ID as UID
+                    summary: summary,
+                    start: new Date(ev.start.dateTime || ev.start.date),
+                    end: new Date(ev.end.dateTime || ev.end.date),
+                    location: ev.location || '',
+                    description: ev.description || '',
+                    source: 'Örtendahls familjekalender', // Identify as Family Calendar
+                    originalSource: 'family_group_api',
+                    inboxOnly: false,
+                    isExternalSource: false,
+                    assignees: assignees,
+                    category: category,
+                    todoList: [],
+                    tags: [],
+                    deleted: false,
+                    scheduleOnly: false,
+                    linkedSourceUid: sourceUid // Store specifically for dedupe logic
+                });
+            }
+            successCount++; // Count API fetch as a success
+        } catch (apiError) {
+            console.error('[Cache] API Fetch failed:', apiError);
+            errorCount++;
+        }
+
+        // Fetch Sara's Calendar
+        try {
+            console.log('[Cache] Fetching Sara Calendar via API...');
+            const startTime = new Date();
+            startTime.setMonth(startTime.getMonth() - 3);
+            const endTime = new Date();
+            endTime.setFullYear(endTime.getFullYear() + 1);
+
+            const saraEvents = await googleCalendar.listEvents(
+                googleCalendar.CALENDAR_CONFIG.sara,
+                startTime.toISOString(),
+                endTime.toISOString()
+            );
+
+            console.log(`[Cache] Found ${saraEvents.length} events from Sara's calendar`);
+
+            for (const ev of saraEvents) {
+                freshEvents.push({
+                    uid: ev.id,
+                    summary: ev.summary || 'Utan rubrik',
+                    start: new Date(ev.start.dateTime || ev.start.date),
+                    end: new Date(ev.end.dateTime || ev.end.date),
+                    location: ev.location || '',
+                    description: ev.description || '',
+                    source: 'Sara',
+                    originalSource: 'sara_api',
+                    inboxOnly: false,
+                    assignees: ['Sarah'],
+                    category: null,
+                    todoList: [],
+                    tags: [],
+                    deleted: false,
+                    scheduleOnly: false,
+                    isExternalSource: false
+                });
+            }
+            successCount++;
+        } catch (apiError) {
+            console.error('[Cache] Sara API Fetch failed:', apiError);
+            errorCount++;
+        }
+
+        // Fetch Svante's Calendar
+        try {
+            console.log('[Cache] Fetching Svante Calendar via API...');
+            const startTime = new Date();
+            startTime.setMonth(startTime.getMonth() - 3);
+            const endTime = new Date();
+            endTime.setFullYear(endTime.getFullYear() + 1);
+
+            const svanteEvents = await googleCalendar.listEvents(
+                googleCalendar.CALENDAR_CONFIG.svante,
+                startTime.toISOString(),
+                endTime.toISOString()
+            );
+
+            console.log(`[Cache] Found ${svanteEvents.length} events from Svante's calendar`);
+
+            for (const ev of svanteEvents) {
+                freshEvents.push({
+                    uid: ev.id,
+                    summary: ev.summary || 'Utan rubrik',
+                    start: new Date(ev.start.dateTime || ev.start.date),
+                    end: new Date(ev.end.dateTime || ev.end.date),
+                    location: ev.location || '',
+                    description: ev.description || '',
+                    source: 'Svante',
+                    originalSource: 'svante_api',
+                    inboxOnly: false,
+                    assignees: ['Svante'],
+                    category: null,
+                    todoList: [],
+                    tags: [],
+                    deleted: false,
+                    scheduleOnly: false,
+                    isExternalSource: false
+                });
+            }
+            successCount++;
+        } catch (apiError) {
+            console.error('[Cache] Svante API Fetch failed:', apiError);
+            errorCount++;
+        }
+    }
 
     // Only update cache if we got ANY new events
     if (freshEvents.length > 0) {
@@ -1297,6 +1582,141 @@ app.get('/api/events', async (req, res) => {
         // Filter out scheduleOnly events (they have their own endpoint)
         allEvents = allEvents.filter(e => !e.scheduleOnly);
 
+        // DEBUG: Log events for Jan 28 BEFORE dedupe
+        const debugEvents = allEvents.filter(e => {
+            if (!e.start) return false;
+            const dateStr = (e.start instanceof Date) ? e.start.toISOString() : e.start;
+            return dateStr.startsWith('2026-01-28') || dateStr.startsWith('2025-01-28');
+        });
+        if (debugEvents.length > 0) {
+            const logLines = [`[Debug API] Jan 28 Events BEFORE dedupe: ${debugEvents.length}`];
+            debugEvents.forEach(e => {
+                logLines.push(`  - ${e.summary} (UID: ${e.uid}) Source: ${e.source} Assignees: ${e.assignees} InboxOnly: ${e.inboxOnly}`);
+            });
+            try {
+                fs.writeFileSync(path.join(__dirname, 'debug_trace.txt'), logLines.join('\n'));
+            } catch (err) { console.error('Failed to write debug trace', err); }
+        }
+
+        // ============ DEDUPLICATION (Mirror Sync) ============
+        // Filter out source events (ICS) that have already been pushed to Google
+        if (googleCalendar.isEnabled()) {
+            const googleMap = googleCalendar.getAllMappings(); // Source UID -> Google ID
+
+            // Create Set of Normalized UIDs (remove @google.com suffix which ical adds)
+            // But ALSO include UIDs found directly in the API events (extendedProperties)
+            const currentUids = new Set();
+
+            // 1. Add Google IDs from current API events
+            allEvents.forEach(e => {
+                // Check all API sources
+                if (e.originalSource === 'family_group_api' ||
+                    e.originalSource === 'svante_api' ||
+                    e.originalSource === 'sara_api') {
+
+                    currentUids.add(e.uid.replace(/@google\.com$/, ''));
+
+                    // 2. Add the Linked Source UID if present
+                    if (e.linkedSourceUid) {
+                        currentUids.add(e.linkedSourceUid);
+                    }
+                }
+            });
+
+            // FUZZY MATCHING & ENRICHMENT
+            // 1. Create a map of "StartTime_Summary" -> Google API Event Object
+            // This allows us to quickly find the API event that masks a source event
+            const apiEventMap = new Map();
+            allEvents.forEach(e => {
+                if ((e.originalSource === 'family_group_api' ||
+                    e.originalSource === 'svante_api' ||
+                    e.originalSource === 'sara_api') && e.start) {
+
+                    const time = new Date(e.start).getTime();
+                    // Normalize summary
+                    const cleanSummary = (e.summary || '').toLowerCase().replace(/^[a-zåäö]+:\s+/, '');
+                    apiEventMap.set(`${time}_${cleanSummary}`, e);
+                }
+            });
+
+            // 2. Iterate through NON-API events to find matches and enrich the API event
+            allEvents.forEach(ev => {
+                if (ev.originalSource !== 'family_group_api' &&
+                    ev.originalSource !== 'svante_api' &&
+                    ev.originalSource !== 'sara_api' &&
+                    ev.start) {
+                    // Check mapping
+                    let apiEvent = null;
+
+                    // By ID Map
+                    if (googleMap[ev.uid] && currentUids.has(googleMap[ev.uid])) {
+                        // Find the API event object with this Google ID
+                        apiEvent = allEvents.find(e => e.uid.includes(googleMap[ev.uid]));
+                    }
+                    // By Fuzzy Match
+                    else {
+                        const time = new Date(ev.start).getTime();
+                        const cleanSummary = (ev.summary || '').toLowerCase().replace(/^[a-zåäö]+:\s+/, '');
+                        const signature = `${time}_${cleanSummary}`;
+                        apiEvent = apiEventMap.get(signature);
+                    }
+
+                    if (apiEvent) {
+                        // ENRICH THE API EVENT!
+                        // Overlay the source from the specific feed so UI shows "HK Lidköping" instead of "Familjen"
+                        apiEvent.source = ev.source;
+                        apiEvent.isExternalSource = true; // Mark as external so it gets locked by default
+                        // console.log(`[Dedupe] Enriched API event ${apiEvent.summary} with source: ${ev.source}`);
+                    }
+                }
+            });
+
+            const initialCount = allEvents.length; // Keep track for logging
+            allEvents = allEvents.filter(ev => {
+                // If this is an API event, always keep it (unless filtered by other rules)
+                if (ev.originalSource === 'family_group_api' ||
+                    ev.originalSource === 'svante_api' ||
+                    ev.originalSource === 'sara_api') {
+                    return true;
+                }
+
+                // Check 1: Does this event map to a known Google Event ID that is currently present?
+                if (googleMap[ev.uid] && currentUids.has(googleMap[ev.uid])) {
+                    // console.log(`[Dedupe] Hiding mapped event: ${ev.summary} (Mapped to: ${googleMap[ev.uid]})`);
+                    return false;
+                }
+
+                // Check 2: Is this event's UID directly present in the active set (via linkedSourceUid)?
+                if (currentUids.has(ev.uid)) {
+                    // console.log(`[Dedupe] Hiding event via Link: ${ev.summary} (UID: ${ev.uid})`);
+                    return false;
+                }
+
+                // Check 3: FUZZY MATCH - Same time and similar title?
+                if (ev.start) {
+                    const time = new Date(ev.start).getTime();
+                    const cleanSummary = (ev.summary || '').toLowerCase().replace(/^[a-zåäö]+:\s+/, '');
+                    const signature = `${time}_${cleanSummary}`;
+
+                    if (apiEventMap.has(signature)) {
+                        // console.log(`[Dedupe] Hiding Fuzzily Matched event: ${ev.summary} (${ev.source})`);
+                        return false;
+                    }
+                }
+
+                // New Logic: If we rely fully on API for "Familjen",
+                // and this event is destined for "Familjen" but comes from an ICS feed,
+                // strictly speaking we wait for it to appear in API.
+
+                return true;
+            });
+
+            const removed = initialCount - allEvents.length;
+            if (removed > 0) {
+                console.log(`[Dedupe] Hidden ${removed} duplicate source events (already in Google)`);
+            }
+        }
+
         // Filter out ignored/trashed events - BUT keep subscription events with isTrashed flag
         const ignoredEventIds = await readIgnoredEvents();
         const ignoredSet = new Set(ignoredEventIds);
@@ -1343,7 +1763,10 @@ app.get('/api/events', async (req, res) => {
 
         res.json(enrichedEvents);
     } catch (error) {
-        console.error(error);
+        console.error('Events fetch error:', error);
+        try {
+            fs.appendFileSync(path.join(__dirname, 'debug_crash.txt'), `[GET /api/events] ${new Date().toISOString()} - ${error.stack}\n`);
+        } catch (e) { console.error('Failed to log crash', e); }
         res.status(500).json({ error: 'Kunde inte hämta händelser' });
     }
 });
@@ -1654,19 +2077,59 @@ app.post('/api/approve-inbox', async (req, res) => {
         const { uid, event } = req.body;
         if (!uid) return res.status(400).json({ error: 'UID krävs' });
 
-        console.log(`[Inbox] Approving event ${uid} for feed.ics`);
+        console.log(`[Inbox] Approving event ${uid} for feed.ics and Google Calendar`);
 
-        // Save UID to approved list
+        // Save UID to approved list (for feed.ics)
         const approved = readApprovedEvents();
         if (!approved.includes(uid)) {
             approved.push(uid);
             writeApprovedEvents(approved);
         }
 
-        // Log for debugging
-        console.log(`[Inbox] Event ${uid} added to approved_events.json. It will appear in feed.ics.`);
+        // Push to Google Calendar if API is enabled and event data provided
+        let googleResult = null;
+        if (googleCalendar.isEnabled() && event) {
+            try {
+                // Check if already in Google (avoid duplicates)
+                const existingMapping = googleCalendar.getMapping(uid);
 
-        res.json({ success: true, message: 'Händelse godkänd för kalendersynk' });
+                if (existingMapping) {
+                    console.log(`[Inbox] Event ${uid} already in Google (${existingMapping.googleEventId})`);
+                } else {
+                    const googleEvent = { ...event };
+
+                    // Determine target calendar
+                    const calendarId = googleCalendar.getTargetCalendarId(event.assignees);
+
+                    // If pushing to the shared Family Calendar and we have a specific assignee,
+                    // prefix the summary with their name so we can identify them later.
+                    if (calendarId === googleCalendar.CALENDAR_CONFIG.familjen && event.assignees && event.assignees.length === 1) {
+                        const assignee = event.assignees[0];
+                        if (['Algot', 'Leon', 'Tuva'].includes(assignee)) {
+                            googleEvent.summary = `${assignee}: ${googleEvent.summary}`;
+                            console.log(`[Inbox] prefixed summary for Google: ${googleEvent.summary}`);
+                        }
+                    }
+
+                    const createdEvent = await googleCalendar.createEvent(googleEvent);
+
+                    if (createdEvent) {
+                        await googleCalendar.saveMapping(uid, createdEvent.id, calendarId);
+                        console.log(`[Inbox] Mirrored to Google & Map saved: ${uid} -> ${createdEvent.id}`);
+                        googleResult = createdEvent;
+                    }
+                }
+            } catch (err) {
+                console.error('[Inbox] Google Mirror Log Error:', err);
+                // Don't fail the approval if Google sync fails, but log it
+            }
+        }
+
+        res.json({
+            success: true,
+            message: 'Händelse godkänd för kalendersynk',
+            googlePushed: !!googleResult
+        });
     } catch (error) {
         console.error('Approve inbox error:', error);
         res.status(500).json({ error: 'Kunde inte godkänna händelse' });
@@ -1699,11 +2162,7 @@ function writeTrashFile(items) {
 // Get all trashed events
 app.get('/api/trash', async (req, res) => {
     try {
-        if (isMongoConnected()) {
-            const items = await getTrashedEvents();
-            return res.json(items);
-        }
-        // Fallback: read from trash.json
+        // Return trash.json which now includes trashType
         const trashItems = readTrashFile();
         return res.json(trashItems);
     } catch (error) {
@@ -1758,8 +2217,27 @@ app.post('/api/trash', async (req, res) => {
             console.log(`[Trash] Event ${uid} added to MongoDB ignored list`);
         }
 
+        // Cancel in Google Calendar if it was pushed there
+        let googleCancelled = false;
+        if (googleCalendar.isEnabled()) {
+            const mapping = googleCalendar.getMapping(uid);
+            if (mapping) {
+                try {
+                    const cancelled = await googleCalendar.cancelEvent(mapping.googleEventId, mapping.calendarId);
+                    if (cancelled) {
+                        console.log(`[Trash] Event cancelled in Google Calendar: ${mapping.googleEventId}`);
+                        googleCancelled = true;
+                    }
+                } catch (googleError) {
+                    console.error('[Trash] Failed to cancel in Google:', googleError.message);
+                }
+            } else {
+                console.log(`[Trash] Event ${uid} not found in Google mapping (not pushed)`);
+            }
+        }
+
         console.log(`[Trash] SUCCESS - Event "${summary}" marked as ej aktuell`);
-        res.json({ success: true, message: 'Händelse flyttad till papperskorgen' });
+        res.json({ success: true, message: 'Händelse flyttad till papperskorgen', googleCancelled });
     } catch (error) {
         console.error('[Trash] ERROR:', error);
         res.status(500).json({ error: 'Kunde inte ta bort händelse: ' + error.message });
@@ -1788,12 +2266,178 @@ app.delete('/api/trash/:uid', async (req, res) => {
             await removeFromTrash(uid);
         }
 
-        res.json({ success: true, message: 'Händelse återställd' });
+        // Reactivate in Google Calendar - remove INSTÄLLD prefix
+        let googleReactivated = false;
+        if (googleCalendar.isEnabled()) {
+            const mapping = googleCalendar.getMapping(uid);
+            if (mapping) {
+                try {
+                    // Get current event and remove INSTÄLLD prefix
+                    const currentEvent = await googleCalendar.findEventByUid(uid, mapping.calendarId);
+                    if (currentEvent && currentEvent.summary.startsWith('INSTÄLLD: ')) {
+                        const restoredTitle = currentEvent.summary.replace('INSTÄLLD: ', '');
+                        await googleCalendar.updateEvent(
+                            mapping.googleEventId,
+                            { summary: restoredTitle },
+                            mapping.calendarId
+                        );
+                        console.log(`[Trash] Event title restored in Google Calendar: ${mapping.googleEventId}`);
+                        googleReactivated = true;
+                    }
+                } catch (googleError) {
+                    console.error('[Trash] Failed to reactivate in Google:', googleError.message);
+                }
+            } else {
+                console.log(`[Trash] Event ${uid} not found in Google mapping`);
+            }
+        }
+
+        console.log(`[Trash] SUCCESS - Event restored from trash`);
+        res.json({ success: true, message: 'Händelse återställd', googleReactivated });
     } catch (error) {
         console.error('Restore from trash error:', error);
         res.status(500).json({ error: 'Kunde inte återställa händelse' });
     }
 });
+
+// Cancel event (mark as CANCELLED in Google, show strikethrough)
+app.post('/api/cancel-event', async (req, res) => {
+    try {
+        const { uid } = req.body;
+        if (!uid) return res.status(400).json({ error: 'UID krävs' });
+
+        console.log(`[Cancel] Marking event ${uid} as cancelled`);
+
+        // Mark as cancelled in local storage
+        const localEvents = await readLocalEvents();
+        const existing = localEvents.find(e => e.uid === uid);
+        if (existing) {
+            existing.cancelled = true;
+        } else {
+            localEvents.push({ uid, cancelled: true });
+        }
+        await writeLocalEvents(localEvents);
+
+        // Mark as INSTÄLLD in Google Calendar (prefix title instead of status, since cancelled hides the event)
+        let googleCancelled = false;
+        if (googleCalendar.isEnabled()) {
+            const mapping = googleCalendar.getMapping(uid);
+            if (mapping) {
+                try {
+                    // First get the current event to get its title
+                    const currentEvent = await googleCalendar.findEventByUid(uid, mapping.calendarId);
+                    if (currentEvent && !currentEvent.summary.startsWith('INSTÄLLD:')) {
+                        await googleCalendar.updateEvent(
+                            mapping.googleEventId,
+                            { summary: `INSTÄLLD: ${currentEvent.summary}` },
+                            mapping.calendarId
+                        );
+                        console.log(`[Cancel] Event marked as INSTÄLLD in Google: ${mapping.googleEventId}`);
+                        googleCancelled = true;
+                    }
+                } catch (googleError) {
+                    console.error('[Cancel] Failed to cancel in Google:', googleError.message);
+                }
+            }
+        }
+
+        res.json({ success: true, message: 'Händelse markerad som ej aktuell', googleCancelled });
+    } catch (error) {
+        console.error('[Cancel] ERROR:', error);
+        res.status(500).json({ error: 'Kunde inte markera händelse som ej aktuell' });
+    }
+});
+
+// Delete event permanently (remove from Google Calendar)
+app.post('/api/delete-event', async (req, res) => {
+    try {
+        const { uid, summary, start, source } = req.body;
+        if (!uid) return res.status(400).json({ error: 'UID krävs' });
+
+        console.log(`[Delete] Permanently deleting event ${uid}`);
+
+        // Mark as deleted in local storage (for trash view)
+        const localEvents = await readLocalEvents();
+        const existing = localEvents.find(e => e.uid === uid);
+        if (existing) {
+            existing.deleted = true;
+        } else {
+            localEvents.push({ uid, deleted: true, summary, start, source });
+        }
+        await writeLocalEvents(localEvents);
+
+        // Add to trash.json for trash view
+        const trashItems = readTrashFile();
+        if (!trashItems.find(t => t.eventId === uid)) {
+            trashItems.push({
+                eventId: uid,
+                summary: summary || 'Okänd händelse',
+                start: start,
+                source: source,
+                trashType: 'deleted',
+                trashedAt: new Date().toISOString()
+            });
+            writeTrashFile(trashItems);
+        }
+
+        // DELETE from Google Calendar (permanent)
+        let googleDeleted = false;
+        if (googleCalendar.isEnabled()) {
+            const mapping = googleCalendar.getMapping(uid);
+            if (mapping) {
+                try {
+                    await googleCalendar.deleteEvent(mapping.googleEventId, mapping.calendarId);
+                    console.log(`[Delete] Event deleted from Google: ${mapping.googleEventId}`);
+                    googleDeleted = true;
+                } catch (googleError) {
+                    console.error('[Delete] Failed to delete from Google:', googleError.message);
+                }
+            }
+        }
+
+        res.json({ success: true, message: 'Händelse borttagen', googleDeleted });
+    } catch (error) {
+        console.error('[Delete] ERROR:', error);
+        res.status(500).json({ error: 'Kunde inte ta bort händelse' });
+    }
+});
+
+// Ignore inbox event (don't add to Google, just mark as ignored)
+app.post('/api/ignore-inbox', async (req, res) => {
+    try {
+        const { uid, summary, start, source } = req.body;
+        if (!uid) return res.status(400).json({ error: 'UID krävs' });
+
+        console.log(`[Ignore] Ignoring inbox event ${uid}`);
+
+        // Add to ignored_events.json
+        const ignored = await readIgnoredEvents();
+        if (!ignored.includes(uid)) {
+            ignored.push(uid);
+            writeIgnoredEvents(ignored);
+        }
+
+        // Add to trash.json for trash view
+        const trashItems = readTrashFile();
+        if (!trashItems.find(t => t.eventId === uid)) {
+            trashItems.push({
+                eventId: uid,
+                summary: summary || 'Okänd händelse',
+                start: start,
+                source: source,
+                trashType: 'ignored',
+                trashedAt: new Date().toISOString()
+            });
+            writeTrashFile(trashItems);
+        }
+
+        res.json({ success: true, message: 'Händelse ignorerad' });
+    } catch (error) {
+        console.error('[Ignore] ERROR:', error);
+        res.status(500).json({ error: 'Kunde inte ignorera händelse' });
+    }
+});
+
 
 app.get('/api/schedule', async (req, res) => {
     try {
@@ -1938,8 +2582,11 @@ app.post('/api/create-event', async (req, res) => {
 
         res.json({ success: true, event: newEvent });
     } catch (error) {
-        console.error('Create event error:', error);
-        res.status(500).json({ error: 'Kunde inte skapa händelse' });
+        console.error('Events fetch error:', error);
+        try {
+            fs.appendFileSync(path.join(__dirname, 'debug_crash.txt'), `${new Date().toISOString()} - ${error.stack}\n`);
+        } catch (e) { console.error('Failed to log crash', e); }
+        res.status(500).json({ error: 'Kunde inte hämta händelser' });
     }
 });
 
@@ -1951,6 +2598,44 @@ app.post('/api/update-event', async (req, res) => {
         const existingIndex = events.findIndex(e => e.uid === uid);
 
         console.log('Update Event called for:', uid);
+
+        // ============ GOOGLE CALENDAR SYNC ============
+        if (googleCalendar.isEnabled()) {
+            try {
+                let googleId = null;
+                let calendarId = googleCalendar.CALENDAR_CONFIG.familjen; // Default
+
+                // 1. Check if mapped (ICS -> Google)
+                const mapping = googleCalendar.getMapping(uid);
+                if (mapping) {
+                    googleId = mapping.googleEventId;
+                    calendarId = mapping.calendarId;
+                }
+                // 2. Check if it's a direct Google API event (UID ends with @google.com)
+                else if (uid.includes('@google.com')) {
+                    googleId = uid.replace(/@google\.com$/, '');
+                }
+                // 3. Fallback: Assume it's a raw Google ID if it looks like one
+                else if (!uid.includes('@') && uid.length > 5) { // Simple heuristic
+                    googleId = uid;
+                }
+
+                if (googleId) {
+                    console.log(`[Update] Pushing changes to Google Calendar (ID: ${googleId}, Cal: ${calendarId})...`);
+                    await googleCalendar.updateEvent(googleId, {
+                        summary,
+                        location,
+                        description,
+                        start: { dateTime: start, timeZone: 'Europe/Stockholm' },
+                        end: { dateTime: end, timeZone: 'Europe/Stockholm' }
+                    }, calendarId);
+                }
+            } catch (syncError) {
+                console.error('[Update] Google Sync Failed:', syncError.message);
+                // We optimize for UX: Continue to update local shadow so user sees change immediately
+            }
+        }
+        // ==============================================
 
         if (existingIndex >= 0) {
             let newSource = events[existingIndex].source;
@@ -2123,6 +2808,16 @@ app.use(express.static(distPath, {
     }
 }));
 
+// ============ GOOGLE CALENDAR API ============
+app.get('/api/test-google-calendar', async (req, res) => {
+    try {
+        const result = await googleCalendar.testConnection();
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // 2. Fallback handler - serve index.html for all non-API, non-asset routes (SPA routing)
 app.use((req, res) => {
     console.log(`Fallback triggered for: ${req.url}`);
@@ -2182,6 +2877,7 @@ async function startServer() {
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`Family Ops Backend körs på http://0.0.0.0:${PORT}`);
         console.log(`MongoDB status: ${isMongoConnected() ? 'CONNECTED ✓' : 'NOT CONNECTED (using files)'}`);
+        console.log(`Google Calendar API: ${googleCalendar.isEnabled() ? 'ENABLED ✓' : 'DISABLED (no credentials)'}`);
         // Start the background calendar refresh scheduler
         startScheduledRefresh();
     });

@@ -1,0 +1,8 @@
+[Debug API] Jan 28 Events BEFORE dedupe: 7
+  - Svante: Arsenal - Kairat Almaty [CL] (UID: 4v2ds0neideic96qbuo1q1qbug@google.com) Source: Svante Assignees: Svante InboxOnly: false
+  - Svante: Arsenal - Kairat Almaty [CL] (UID: uhS4TB1BXI6EYNpzTWmqx1ENOowdAnOiHoSM0Nme@maak-agenda.nl) Source: Arsenal FC Assignees: Svante InboxOnly: false
+  - Algot: Träning - HK Lidköping P11/P10 (UID: 29234544@laget.se) Source: HK Lidköping P11/P10 Assignees: Algot InboxOnly: false
+  - Algot: Träning - P-2015 (U11) (UID: 12709612-2648@sportadmin.se) Source: Villa Lidköping (Algot) Assignees: Algot InboxOnly: false
+  - Algot: Träning - HK Lidköping P11/P10 (UID: dh47bstbu36a7o3j851erm3hn4) Source: HK Lidköping P11/P10 Assignees: Algot InboxOnly: false
+  - Algot: Träning - P-2015 (U11) (UID: 55avpj6bdfnbcoq97f0es3lks0) Source: Villa Lidköping (Algot) Assignees: Algot InboxOnly: false
+  - Svante: Arsenal - Kairat Almaty [CL] (UID: 4v2ds0neideic96qbuo1q1qbug) Source: Arsenal FC Assignees: Svante InboxOnly: false

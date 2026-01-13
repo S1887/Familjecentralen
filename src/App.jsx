@@ -1139,9 +1139,12 @@ function App() {
   };
 
   const openEditModal = (event) => {
-    // Show banner for ALL Google Calendar events (to provide edit link)
-    // Only FamilyOps (old local events) don't need the banner
-    const isExternalSource = event.source && event.source !== 'FamilyOps';
+    // Show banner only for TRUE external sources (subscriptions)
+    // Family Calendar events should be editable natively
+    const isExternalSource = event.source &&
+      event.source !== 'FamilyOps' &&
+      event.source !== 'Familjen' &&
+      !event.source.includes('Örtendahls familjekalender');
 
     setEditEventData({
       ...event,
@@ -1151,7 +1154,8 @@ function App() {
       time: new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
       endTime: new Date(event.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
       todoList: event.todoList || [],
-      isExternalSource // Flag to lock title/date/time fields for external events
+      isExternalSource, // Flag for origin
+      isLocked: isExternalSource // Default lock state (can be unlocked by user)
     });
     setIsEditingEvent(true);
   };
@@ -1518,46 +1522,27 @@ function App() {
                         })()}
                       </span>
 
-                      {/* EDIT Button - ONLY for writable Google sources */}
+                      {/* Unified Edit Lock UI - ALL events use same interface */}
                       {(() => {
-                        const isGoogleWritable = (GOOGLE_CALENDAR_EMAILS[editEventData.source] || GOOGLE_CALENDAR_EMAILS[editEventData.source?.split(' (')[0] + ' (Privat)']) && editEventData.uid?.includes('@google.com');
-
-                        // Strict check: Must be "Writable" AND be a real Google Event to show button
-                        if (isGoogleWritable) {
+                        // External sources (HKL, Råda, Villa, etc.) require unlock confirmation
+                        if (editEventData.isExternalSource && editEventData.isLocked) {
                           return (
-                            <a
-                              href={getGoogleCalendarLink(editEventData, false)} // Deep Link
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{
-                                background: 'white',
-                                color: '#2ed573',
-                                padding: '0.6rem 1rem',
-                                borderRadius: '4px',
-                                textDecoration: 'none',
-                                fontWeight: '600',
-                                fontSize: '0.9rem',
-                                whiteSpace: 'nowrap',
-                                display: 'inline-block',
-                                marginTop: '0.5rem',
-                                cursor: 'pointer',
-                                textAlign: 'center',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                              }}
-                            >
-                              Redigera i Google-kalendern ↗️
-                            </a>
-                          );
-                        }
-
-                        // If external/subscription but NOT writable -> Show "Read-Only" badge
-                        if (editEventData.isExternalSource) {
-                          return (
-                            <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)', fontStyle: 'italic', background: 'rgba(0,0,0,0.1)', padding: '4px 8px', borderRadius: '4px' }}>
-                              Prenumeration - redigeras vid källan
+                            <div style={{ marginTop: '0.5rem' }}>
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  if (window.confirm(`Vill du redigera den här händelsen trots att källan är från ${editEventData.source}?`)) {
+                                    setEditEventData({ ...editEventData, isLocked: false });
+                                  }
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.85rem', cursor: 'pointer', background: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '4px', fontWeight: '500' }}
+                              >
+                                🔓 Redigera händelse
+                              </button>
                             </div>
                           );
                         }
+                        // Sara/Svante/Family events - no lock, no special UI needed
                         return null;
                       })()}
                     </div>
@@ -1565,14 +1550,14 @@ function App() {
 
                   <form onSubmit={updateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div>
-                      <label>Vad händer? {(editEventData.isExternalSource || !isAdmin) && <span style={{ fontSize: '0.75rem', color: '#888' }}>{editEventData.isExternalSource ? '(extern källa)' : '(visa)'}</span>}</label>
+                      <label>Vad händer? {(editEventData.isLocked || !isAdmin) && <span style={{ fontSize: '0.75rem', color: '#888' }}>{editEventData.isLocked ? '(låst)' : '(visa)'}</span>}</label>
                       <input
                         type="text"
                         required
                         value={editEventData.summary}
-                        onChange={e => isAdmin && !editEventData.isExternalSource && setEditEventData({ ...editEventData, summary: e.target.value })}
-                        readOnly={editEventData.isExternalSource || !isAdmin}
-                        style={(editEventData.isExternalSource || !isAdmin)
+                        onChange={e => isAdmin && !editEventData.isLocked && setEditEventData({ ...editEventData, summary: e.target.value })}
+                        readOnly={editEventData.isLocked || !isAdmin}
+                        style={(editEventData.isLocked || !isAdmin)
                           ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
                           : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
                         }
@@ -1581,28 +1566,28 @@ function App() {
 
                     <div style={{ display: 'flex', gap: '1rem' }}>
                       <div style={{ flex: 1 }}>
-                        <label>Startdatum {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
+                        <label>Startdatum {editEventData.isLocked && <span style={{ fontSize: '0.75rem', color: '#888' }}>(låst)</span>}</label>
                         <input
                           type="date"
                           required
                           value={editEventData.date}
-                          onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, date: e.target.value })}
-                          readOnly={editEventData.isExternalSource}
-                          style={editEventData.isExternalSource
+                          onChange={e => !editEventData.isLocked && setEditEventData({ ...editEventData, date: e.target.value })}
+                          readOnly={editEventData.isLocked}
+                          style={editEventData.isLocked
                             ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
                             : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
                           }
                         />
                       </div>
                       <div style={{ flex: 1 }}>
-                        <label>Slutdatum {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
+                        <label>Slutdatum {editEventData.isLocked && <span style={{ fontSize: '0.75rem', color: '#888' }}>(låst)</span>}</label>
                         <input
                           type="date"
                           required
                           value={editEventData.endDate}
-                          onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, endDate: e.target.value })}
-                          readOnly={editEventData.isExternalSource}
-                          style={editEventData.isExternalSource
+                          onChange={e => !editEventData.isLocked && setEditEventData({ ...editEventData, endDate: e.target.value })}
+                          readOnly={editEventData.isLocked}
+                          style={editEventData.isLocked
                             ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
                             : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
                           }
@@ -1612,28 +1597,28 @@ function App() {
 
                     <div style={{ display: 'flex', gap: '1rem' }}>
                       <div style={{ flex: 1 }}>
-                        <label>Tid start {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
+                        <label>Tid start {editEventData.isLocked && <span style={{ fontSize: '0.75rem', color: '#888' }}>(låst)</span>}</label>
                         <input
                           type="time"
                           required
                           value={editEventData.time}
-                          onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, time: e.target.value })}
-                          readOnly={editEventData.isExternalSource}
-                          style={editEventData.isExternalSource
+                          onChange={e => !editEventData.isLocked && setEditEventData({ ...editEventData, time: e.target.value })}
+                          readOnly={editEventData.isLocked}
+                          style={editEventData.isLocked
                             ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
                             : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
                           }
                         />
                       </div>
                       <div style={{ flex: 1 }}>
-                        <label>Tid slut {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
+                        <label>Tid slut {editEventData.isLocked && <span style={{ fontSize: '0.75rem', color: '#888' }}>(låst)</span>}</label>
                         <input
                           type="time"
                           required
                           value={editEventData.endTime}
-                          onChange={e => !editEventData.isExternalSource && setEditEventData({ ...editEventData, endTime: e.target.value })}
-                          readOnly={editEventData.isExternalSource}
-                          style={editEventData.isExternalSource
+                          onChange={e => !editEventData.isLocked && setEditEventData({ ...editEventData, endTime: e.target.value })}
+                          readOnly={editEventData.isLocked}
+                          style={editEventData.isLocked
                             ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
                             : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
                           }
@@ -1643,13 +1628,13 @@ function App() {
 
                     <div style={{ display: 'flex', gap: '1rem' }}>
                       <div style={{ flex: 1 }}>
-                        <label>Plats {editEventData.isExternalSource && <span style={{ fontSize: '0.75rem', color: '#888' }}>(ändra i Google)</span>}</label>
+                        <label>Plats {editEventData.isLocked && <span style={{ fontSize: '0.75rem', color: '#888' }}>(låst)</span>}</label>
                         <LocationAutocomplete
                           placeholder="T.ex. Valhalla IP"
                           value={editEventData.location}
-                          onChange={val => !editEventData.isExternalSource && isAdmin && setEditEventData({ ...editEventData, location: val })}
-                          onSelect={coords => !editEventData.isExternalSource && isAdmin && setEditEventData({ ...editEventData, coords })}
-                          disabled={!isAdmin || editEventData.isExternalSource}
+                          onChange={val => !editEventData.isLocked && isAdmin && setEditEventData({ ...editEventData, location: val })}
+                          onSelect={coords => !editEventData.isLocked && isAdmin && setEditEventData({ ...editEventData, coords })}
+                          disabled={!isAdmin || editEventData.isLocked}
                         />
                       </div>
                     </div>
@@ -1896,24 +1881,41 @@ function App() {
                             </button>
                           )}
 
-                        {/* "Ej aktuell" button - ONLY for subscription events, NOT personal calendars */}
-                        {isAdmin && !editEventData.cancelled && (() => {
-                          const source = (editEventData.source || '').toLowerCase();
-                          // Exclude personal calendars
-                          const isPersonalCalendar = source.includes('svante') || source.includes('sarah') || source.includes('familjen') || source.includes('örtendahls');
-                          // Check if it's a subscription source
-                          const isSubscription = !isPersonalCalendar && (
-                            editEventData.isExternalSource ||
-                            ['villa', 'råda', 'hk', 'lidköping', 'arsenal', 'öis', 'örgryte', 'vklass', 'sportadmin', 'laget', 'helgdag'].some(k => source.includes(k))
-                          );
-                          return isSubscription;
-                        })() && (
+                        {/* Cancel and Delete buttons - available for ALL events */}
+                        {isAdmin && (
+                          <>
                             <button type="button" onClick={async () => {
-                              // Add extra debug logging
-                              console.log('[Ej Aktuell] Button clicked for source:', editEventData.source, 'isExternal:', editEventData.isExternalSource);
-                              if (window.confirm(`Markera "${editEventData.summary}" som ej aktuell? Eventet döljs från kalendern.`)) {
+                              if (window.confirm(`Markera "${editEventData.summary}" som ej aktuell? Händelsen blir överstruken men kan återställas.`)) {
                                 try {
-                                  const response = await fetch(getApiUrl('api/trash'), {
+                                  const response = await fetch(getApiUrl('api/cancel-event'), {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ uid: editEventData.uid })
+                                  });
+                                  if (response.ok) {
+                                    // Mark as cancelled in local state AND editEventData
+                                    setEditEventData(prev => ({ ...prev, cancelled: true }));
+                                    setEvents(prev => prev.map(e =>
+                                      e.uid === editEventData.uid ? { ...e, cancelled: true } : e
+                                    ));
+                                    alert('Händelsen markerad som ej aktuell. Klicka Återställ för att ångra.');
+                                    console.log(`[Cancel] Event "${editEventData.summary}" marked as cancelled`);
+                                  }
+                                } catch (error) {
+                                  console.error('Failed to cancel event:', error);
+                                  alert('Kunde inte markera händelsen som ej aktuell');
+                                }
+                              }
+                            }} style={{
+                              padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ffa502', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
+                            }} title="Markera som ej aktuell (överstruken, kan återställas)">
+                              <span>❌</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ej aktuell</span>
+                            </button>
+
+                            <button type="button" onClick={async () => {
+                              if (window.confirm(`Ta bort "${editEventData.summary}" permanent? Händelsen flyttas till papperskorgen.`)) {
+                                try {
+                                  const response = await fetch(getApiUrl('api/delete-event'), {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
@@ -1926,19 +1928,47 @@ function App() {
                                   if (response.ok) {
                                     setEvents(prev => prev.filter(e => e.uid !== editEventData.uid));
                                     setIsEditingEvent(false);
-                                    console.log(`[Trash] Event "${editEventData.summary}" marked as not relevant`);
+                                    console.log(`[Delete] Event "${editEventData.summary}" deleted`);
                                   }
                                 } catch (error) {
-                                  console.error('Failed to hide event:', error);
-                                  alert('Kunde inte dölja händelsen');
+                                  console.error('Failed to delete event:', error);
+                                  alert('Kunde inte ta bort händelsen');
                                 }
                               }
                             }} style={{
-                              padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ffa502', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
-                            }} title="Markera som ej aktuell (dölj från kalendern)">
-                              <span>🚫</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ej aktuell</span>
+                              padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#e74c3c', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
+                            }} title="Ta bort permanent (papperskorg)">
+                              <span>🗑️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ta bort</span>
                             </button>
-                          )}
+
+                            {/* Restore button - only for cancelled events */}
+                            {editEventData.cancelled && (
+                              <button type="button" onClick={async () => {
+                                if (window.confirm(`Återställ "${editEventData.summary}"?`)) {
+                                  try {
+                                    const response = await fetch(getApiUrl(`api/trash/${editEventData.uid}`), {
+                                      method: 'DELETE'
+                                    });
+                                    if (response.ok) {
+                                      setEditEventData(prev => ({ ...prev, cancelled: false }));
+                                      setEvents(prev => prev.map(e =>
+                                        e.uid === editEventData.uid ? { ...e, cancelled: false } : e
+                                      ));
+                                      alert('Händelsen återställd');
+                                    }
+                                  } catch (error) {
+                                    console.error('Failed to restore event:', error);
+                                    alert('Kunde inte återställa händelsen');
+                                  }
+                                }
+                              }} style={{
+                                padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#2ed573', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
+                              }} title="Återställ händelse">
+                                <span>↩️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Återställ</span>
+                              </button>
+                            )}
+                          </>
+                        )}
                         {/* Directions button for all users */}
                         {editEventData.coords && (
                           <button type="button" onClick={() => {

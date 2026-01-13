@@ -36,6 +36,19 @@
   --next-event-bg: linear-gradient(135deg, #ffffff 0%, #f1f2f6 100%);
 }
 
+/* Cancelled Events Styling */
+.event-cancelled {
+  text-decoration: line-through !important;
+  opacity: 0.6 !important;
+  filter: grayscale(30%);
+}
+
+.event-cancelled .event-title,
+.event-cancelled .event-time,
+.event-cancelled .event-location {
+  text-decoration: line-through;
+}
+
 .dark-mode {
   /* DARK MODE: Spotify-style dark with light text */
   --bg-main: #121212;

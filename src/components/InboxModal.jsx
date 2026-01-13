@@ -222,7 +222,7 @@ export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink })
                                         onClick={async (e) => {
                                             e.stopPropagation();
                                             try {
-                                                await fetch(getApiUrl('/api/trash'), {
+                                                await fetch(getApiUrl('/api/ignore-inbox'), {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
                                                     body: JSON.stringify({
