@@ -117,6 +117,7 @@ app.get('/api/hero-image', (req, res) => {
 // DB_FILE and LOCAL_EVENTS_FILE defined centrally above
 
 // Calendar sources - private calendars loaded from environment variables
+const CALENDARS = [
 // Set ICAL_SVANTE, ICAL_SARAH, ICAL_FAMILY in .env file
     // Private calendars - only included if URL is configured
     ...(process.env.ICAL_SVANTE ? [{
