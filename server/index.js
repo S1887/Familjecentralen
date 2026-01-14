@@ -873,6 +873,21 @@ async function fetchCalendarsFromGoogle() {
                             ignoredEvents.push(sourceUid);
                             ignoredCount++;
                             console.log(`[Sync] Subscription event deleted from Google, adding to ignored: ${sourceUid}`);
+
+                            // Also add to trash.json so it appears in papperskorgen
+                            const sourceEvent = freshEvents.find(e => e.uid === sourceUid);
+                            const trashItems = readTrashFile();
+                            if (!trashItems.find(t => t.eventId === sourceUid)) {
+                                trashItems.push({
+                                    eventId: sourceUid,
+                                    summary: sourceEvent?.summary || 'Okänd händelse',
+                                    start: sourceEvent?.start,
+                                    source: sourceEvent?.source || 'Prenumeration',
+                                    trashType: 'deleted_from_google',
+                                    trashedAt: new Date().toISOString()
+                                });
+                                writeTrashFile(trashItems);
+                            }
                         }
                         // Remove the mapping
                         googleCalendar.removeMapping(sourceUid);

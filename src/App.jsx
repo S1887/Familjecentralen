@@ -2080,6 +2080,8 @@ function App() {
                                 <span style={{ color: '#ffa502', marginLeft: '0.5rem' }}>(Ej aktuell)</span>
                               ) : item.trashType === 'ignored' ? (
                                 <span style={{ color: '#9b59b6', marginLeft: '0.5rem' }}>(Ignorerad)</span>
+                              ) : item.trashType === 'deleted_from_google' ? (
+                                <span style={{ color: '#3498db', marginLeft: '0.5rem' }}>(Borttagen i Google)</span>
                               ) : (
                                 <span style={{ color: '#95a5a6', marginLeft: '0.5rem' }}>(I papperskorgen)</span>
                               )}
