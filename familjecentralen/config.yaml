@@ -1,5 +1,5 @@
 name: "Örtendahls familjecentral"
-version: "3.5.30"
+version: "3.5.31"
 slug: "ortendahls_familjecentral"
 description: "Örtendahls familjecentral - Kalender och Sysslor"
 url: "https://github.com/S1887/Familjecentralen"
@@ -23,6 +23,7 @@ options:
   calendar_svante: ""
   calendar_sarah: ""
   calendar_family: ""
+  google_credentials: ""
 schema:
   gemini_api_key: str?
   ical_svante: str?
@@ -31,3 +32,4 @@ schema:
   calendar_svante: str?
   calendar_sarah: str?
   calendar_family: str?
+  google_credentials: str?

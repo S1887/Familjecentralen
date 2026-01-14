@@ -49,6 +49,25 @@ if (fs.existsSync(HA_OPTIONS_FILE_EARLY)) {
         if (options.calendar_svante) process.env.CALENDAR_SVANTE = options.calendar_svante;
         if (options.calendar_sarah) process.env.CALENDAR_SARAH = options.calendar_sarah;
         if (options.calendar_family) process.env.CALENDAR_FAMILY = options.calendar_family;
+
+        // Google Service Account credentials (JSON string from HA config)
+        if (options.google_credentials) {
+            try {
+                // Parse to validate it's valid JSON
+                const creds = JSON.parse(options.google_credentials);
+                // Write to the expected credentials path
+                const credentialsDir = path.join(process.cwd(), 'server', 'credentials');
+                if (!fs.existsSync(credentialsDir)) {
+                    fs.mkdirSync(credentialsDir, { recursive: true });
+                }
+                const credentialsPath = path.join(credentialsDir, 'google-service-account.json');
+                fs.writeFileSync(credentialsPath, JSON.stringify(creds, null, 2));
+                console.log('[Init] Wrote Google credentials from HA options');
+            } catch (credErr) {
+                console.error('[Init] Invalid google_credentials JSON:', credErr.message);
+            }
+        }
+
         console.log('[Init] Loaded calendar config from HA options');
     } catch (e) { console.error('[Init] Failed to load HA options:', e.message); }
 }
@@ -334,10 +353,14 @@ async function fetchCalendarsFromGoogle() {
                 continue;
             }
 
-            // [API SYNC SWITCH] Skip family_group ICS fetch, we use API now
-            if (googleCalendar.isEnabled() && cal.id === 'family_group') {
-                console.log(`[Cache] Skipping ICS fetch for ${cal.name} (Using Google API)`);
-                continue;
+            // [API SYNC SWITCH] Skip ALL personal calendars ICS fetch if using API
+            // This prevents duplicates since we read Svante, Sarah, and Familjen via Google API
+            if (googleCalendar.isEnabled()) {
+                const isPersonalCalendar = ['family_group', 'svante_personal', 'sarah_personal'].includes(cal.id);
+                if (isPersonalCalendar) {
+                    console.log(`[Cache] Skipping ICS fetch for ${cal.name} (Using Google API instead)`);
+                    continue;
+                }
             }
 
             console.log(`Fetching calendar: ${cal.name}...`);
@@ -620,7 +643,7 @@ async function fetchCalendarsFromGoogle() {
 
                 if (createdEvent) {
                     await googleCalendar.saveMapping(event.uid, createdEvent.id, calendarId);
-                    console.log(`[Auto-Push] Pushed to ${calendarId === googleCalendar.CALENDAR_CONFIG.svante ? 'Svante' : calendarId === googleCalendar.CALENDAR_CONFIG.sara ? 'Sara' : 'Family'}: ${event.summary}`);
+                    console.log(`[Auto-Push] Pushed to ${calendarId === googleCalendar.CALENDAR_CONFIG.svante ? 'Svante' : calendarId === googleCalendar.CALENDAR_CONFIG.sarah ? 'Sarah' : 'Family'}: ${event.summary}`);
                 }
 
                 // Wait a bit between pushes to be nice to Google API
@@ -736,7 +759,7 @@ async function fetchCalendarsFromGoogle() {
             endTime.setFullYear(endTime.getFullYear() + 1);
 
             const saraEvents = await googleCalendar.listEvents(
-                googleCalendar.CALENDAR_CONFIG.sara,
+                googleCalendar.CALENDAR_CONFIG.sarah,
                 startTime.toISOString(),
                 endTime.toISOString()
             );
