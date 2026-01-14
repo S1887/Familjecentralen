@@ -1707,15 +1707,26 @@ app.get('/api/events', async (req, res) => {
             // 1. Create a map of "StartTime_Summary" -> Google API Event Object
             // This allows us to quickly find the API event that masks a source event
             const apiEventMap = new Map();
+
+            // Helper to normalize summary for matching
+            const normalizeSummary = (summary) => {
+                if (!summary) return '';
+                return summary
+                    .toLowerCase()
+                    .replace(/^[a-zåäö]+:\s+/, '') // Remove "Algot: " prefix
+                    .replace(/\s+/g, ' ')          // Normalize whitespace
+                    .trim();
+            };
+
             allEvents.forEach(e => {
                 if ((e.originalSource === 'family_group_api' ||
                     e.originalSource === 'svante_api' ||
                     e.originalSource === 'sara_api') && e.start) {
 
                     const time = new Date(e.start).getTime();
-                    // Normalize summary
-                    const cleanSummary = (e.summary || '').toLowerCase().replace(/^[a-zåäö]+:\s+/, '');
+                    const cleanSummary = normalizeSummary(e.summary);
                     apiEventMap.set(`${time}_${cleanSummary}`, e);
+                    // console.log(`[Dedupe] API event: ${time}_${cleanSummary}`);
                 }
             });
 
@@ -1736,7 +1747,7 @@ app.get('/api/events', async (req, res) => {
                     // By Fuzzy Match
                     else {
                         const time = new Date(ev.start).getTime();
-                        const cleanSummary = (ev.summary || '').toLowerCase().replace(/^[a-zåäö]+:\s+/, '');
+                        const cleanSummary = normalizeSummary(ev.summary);
                         const signature = `${time}_${cleanSummary}`;
                         apiEvent = apiEventMap.get(signature);
                     }
@@ -1775,7 +1786,7 @@ app.get('/api/events', async (req, res) => {
                 // Check 3: FUZZY MATCH - Same time and similar title?
                 if (ev.start) {
                     const time = new Date(ev.start).getTime();
-                    const cleanSummary = (ev.summary || '').toLowerCase().replace(/^[a-zåäö]+:\s+/, '');
+                    const cleanSummary = normalizeSummary(ev.summary);
                     const signature = `${time}_${cleanSummary}`;
 
                     if (apiEventMap.has(signature)) {
