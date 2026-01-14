@@ -835,43 +835,68 @@ async function fetchCalendarsFromGoogle() {
         }
     }
 
-    // [TWO-WAY SYNC] Check if locally created events have been deleted from Google
+    // [TWO-WAY SYNC] Check if pushed events have been deleted from Google
+    // This handles BOTH local events AND subscription events (laget.se, sportadmin, etc)
     if (googleCalendar.isEnabled() && freshEvents.length > 0) {
         try {
             const mappings = googleCalendar.getAllMappings(); // source UID → { googleEventId, calendarId }
             const googleEventIds = new Set();
 
-            // Collect all Google Event IDs from freshEvents
+            // Collect all Google Event IDs from freshEvents (API events)
             freshEvents.forEach(ev => {
-                // Remove @google.com suffix if present
-                googleEventIds.add(ev.uid.replace(/@google\.com$/, ''));
+                if (ev.originalSource === 'family_group_api' ||
+                    ev.originalSource === 'svante_api' ||
+                    ev.originalSource === 'sara_api') {
+                    googleEventIds.add(ev.uid.replace(/@google\.com$/, ''));
+                }
             });
 
             const localEvents = await readLocalEvents();
+            const ignoredEvents = await readIgnoredEvents();
             let deletedCount = 0;
+            let ignoredCount = 0;
 
             // Check each mapping to see if the Google event still exists
             for (const [sourceUid, mapping] of Object.entries(mappings)) {
                 const googleId = mapping.googleEventId.replace(/@google\.com$/, '');
 
-                // If the Google event is missing, mark local event as deleted
+                // If the Google event is missing from API response, it was deleted
                 if (!googleEventIds.has(googleId)) {
-                    const localEvent = localEvents.find(e => e.uid === sourceUid);
-                    if (localEvent && !localEvent.deleted && !localEvent.cancelled) {
-                        localEvent.deleted = true;
-                        localEvent.deletedAt = new Date().toISOString();
-                        deletedCount++;
-                        console.log(`[Sync] Marking as deleted (removed from Google): ${localEvent.summary || sourceUid}`);
+                    // Check if this is a subscription event (laget.se, sportadmin, etc)
+                    const isSubscriptionUid = sourceUid.includes('@laget.se') ||
+                                              sourceUid.includes('@sportadmin.se') ||
+                                              sourceUid.includes('vklass');
 
-                        // Remove the mapping since Google event is gone
+                    if (isSubscriptionUid) {
+                        // For subscription events: add to ignored_events so they don't reappear
+                        if (!ignoredEvents.includes(sourceUid)) {
+                            ignoredEvents.push(sourceUid);
+                            ignoredCount++;
+                            console.log(`[Sync] Subscription event deleted from Google, adding to ignored: ${sourceUid}`);
+                        }
+                        // Remove the mapping
                         googleCalendar.removeMapping(sourceUid);
+                    } else {
+                        // For local events: mark as deleted
+                        const localEvent = localEvents.find(e => e.uid === sourceUid);
+                        if (localEvent && !localEvent.deleted && !localEvent.cancelled) {
+                            localEvent.deleted = true;
+                            localEvent.deletedAt = new Date().toISOString();
+                            deletedCount++;
+                            console.log(`[Sync] Marking as deleted (removed from Google): ${localEvent.summary || sourceUid}`);
+                            googleCalendar.removeMapping(sourceUid);
+                        }
                     }
                 }
             }
 
             if (deletedCount > 0) {
                 await writeLocalEvents(localEvents);
-                console.log(`[Sync] Marked ${deletedCount} event(s) as deleted (removed from Google Calendar)`);
+                console.log(`[Sync] Marked ${deletedCount} local event(s) as deleted`);
+            }
+            if (ignoredCount > 0) {
+                writeIgnoredEvents(ignoredEvents);
+                console.log(`[Sync] Added ${ignoredCount} subscription event(s) to ignored list`);
             }
         } catch (syncError) {
             console.error('[Sync] Failed to check for deleted events:', syncError.message);
