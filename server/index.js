@@ -3118,6 +3118,43 @@ async function startServer() {
         console.log('[Startup] Running in file-only mode (no MongoDB)');
     }
 
+    // ============ MIGRATION: Clean up old cancelled flags ============
+    // This runs on every startup to convert old 'cancelled' flags to proper handling
+    try {
+        console.log('[Migration] Checking for old cancelled flags in local_events.json...');
+        const localEvents = await readLocalEvents();
+        let migratedCount = 0;
+
+        for (const event of localEvents) {
+            // If event has cancelled=true but no proper handling, clean it up
+            if (event.cancelled === true) {
+                // Check if this event's UID is in ignored_events (meaning it was "ej aktuell")
+                const ignoredEvents = await readIgnoredEvents();
+                if (ignoredEvents.includes(event.uid)) {
+                    // This was marked as "ej aktuell" - remove cancelled flag, ignored_events handles it
+                    delete event.cancelled;
+                    migratedCount++;
+                    console.log(`[Migration] Cleaned cancelled flag for: ${event.uid?.substring(0, 30)}`);
+                }
+            }
+        }
+
+        if (migratedCount > 0) {
+            await writeLocalEvents(localEvents);
+            console.log(`[Migration] Cleaned ${migratedCount} old cancelled flags`);
+        } else {
+            console.log('[Migration] No old cancelled flags to clean');
+        }
+
+        // Also clear the calendar cache to force fresh fetch
+        if (fs.existsSync(CACHE_FILE)) {
+            fs.unlinkSync(CACHE_FILE);
+            console.log('[Migration] Cleared calendar cache for fresh data');
+        }
+    } catch (migrationError) {
+        console.error('[Migration] Error during cancelled flag cleanup:', migrationError);
+    }
+
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`Family Ops Backend körs på http://0.0.0.0:${PORT}`);
         console.log(`MongoDB status: ${isMongoConnected() ? 'CONNECTED ✓' : 'NOT CONNECTED (using files)'}`);
