@@ -195,8 +195,8 @@ const MonthViewWithSpanning = ({
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap',
                                         zIndex: 10,
-                                        opacity: ev.isTrashed ? 0.6 : 1,
-                                        textDecoration: ev.isTrashed ? 'line-through' : 'none'
+                                        opacity: ev.isTrashed || ev.cancelled ? 0.6 : 1,
+                                        textDecoration: ev.isTrashed || ev.cancelled ? 'line-through' : 'none'
                                     }}
                                     onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                                     title={ev.summary}

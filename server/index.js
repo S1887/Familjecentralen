@@ -834,7 +834,7 @@ async function fetchCalendarsFromGoogle() {
                 // If the Google event is missing, mark local event as deleted
                 if (!googleEventIds.has(googleId)) {
                     const localEvent = localEvents.find(e => e.uid === sourceUid);
-                    if (localEvent && !localEvent.deleted) {
+                    if (localEvent && !localEvent.deleted && !localEvent.cancelled) {
                         localEvent.deleted = true;
                         localEvent.deletedAt = new Date().toISOString();
                         deletedCount++;
@@ -1583,7 +1583,22 @@ app.get('/api/events', async (req, res) => {
             const localOverride = localEventsMap[googleEvent.uid];
             if (localOverride) {
                 mergedCount++;
-                console.log(`[Debug] Merging override for event: ${googleEvent.summary?.substring(0, 30)}... | assignees: ${JSON.stringify(localOverride.assignees)} | category: ${localOverride.category}`);
+
+                // Check if this should be "isTrashed" instead of "cancelled"
+                // For subscription events, we use isTrashed to show "EJ AKTUELL" label
+                const effectiveSource = localOverride.source || googleEvent.source || '';
+                const isSubscription = effectiveSource.toLowerCase().includes('hk lidköping') ||
+                    effectiveSource.toLowerCase().includes('villa lidköping') ||
+                    effectiveSource.toLowerCase().includes('råda') ||
+                    effectiveSource.toLowerCase().includes('vklass') ||
+                    effectiveSource.toLowerCase().includes('arsenal') ||
+                    effectiveSource.toLowerCase().includes('örgryte') ||
+                    googleEvent.isExternalSource;
+
+                const shouldBeTrash = localOverride.cancelled && isSubscription;
+
+                console.log(`[Debug] Merging override for event: ${googleEvent.summary?.substring(0, 30)}... | cancelled=${localOverride.cancelled} | isTrashed=${shouldBeTrash} | uid=${googleEvent.uid?.substring(0, 25)}`);
+
                 // Merge local overrides into the Google event
                 return {
                     ...googleEvent,
@@ -1592,7 +1607,9 @@ app.get('/api/events', async (req, res) => {
                     assignees: localOverride.assignees || googleEvent.assignees || [],
                     category: localOverride.category || googleEvent.category,
                     todoList: localOverride.todoList || googleEvent.todoList || [],
-                    cancelled: localOverride.cancelled !== undefined ? localOverride.cancelled : googleEvent.cancelled,
+                    // Convert cancelled to isTrashed for subscription events
+                    cancelled: shouldBeTrash ? false : (localOverride.cancelled !== undefined ? localOverride.cancelled : googleEvent.cancelled),
+                    isTrashed: shouldBeTrash ? true : (localOverride.isTrashed || googleEvent.isTrashed),
                     deleted: localOverride.deleted !== undefined ? localOverride.deleted : googleEvent.deleted,
                     // CRITICAL: Apply inboxOnly override (allows importing from inbox)
                     inboxOnly: localOverride.inboxOnly !== undefined ? localOverride.inboxOnly : googleEvent.inboxOnly,
@@ -1792,16 +1809,34 @@ app.get('/api/events', async (req, res) => {
                 s.includes('helgdag');
         };
 
-        // For subscription events: mark as trashed but keep them visible
-        // For personal calendar events: filter them out completely (existing behavior)
+        // For subscription events (ICS feeds): mark as trashed but keep them visible (strikethrough)
+        // For Google API events and personal calendar events: filter them out completely
         allEvents = allEvents.map(e => {
             if (ignoredSet.has(e.uid)) {
-                if (isSubscriptionSource(e.source) || e.isExternalSource) {
-                    // Subscription event - keep it but mark as trashed
-                    return { ...e, isTrashed: true };
-                } else {
-                    // Personal calendar event - mark for removal
+                // Google API events should be removed completely (they've been deleted from Google)
+                if (e.originalSource === 'family_group_api' ||
+                    e.originalSource === 'svante_api' ||
+                    e.originalSource === 'sara_api') {
                     return { ...e, _shouldRemove: true };
+                }
+                // Subscription events (ICS feeds) - keep visible but mark as trashed
+                // Also convert old "cancelled" flag to "isTrashed" for consistency
+                if (isSubscriptionSource(e.source) || e.isExternalSource) {
+                    return { ...e, isTrashed: true, cancelled: false };
+                }
+                // Personal calendar events - mark for removal
+                return { ...e, _shouldRemove: true };
+            }
+            // Also check if linkedSourceUid is in ignored list (for API events that were pushed from ICS)
+            if (e.linkedSourceUid && ignoredSet.has(e.linkedSourceUid)) {
+                return { ...e, _shouldRemove: true };
+            }
+            // Convert old "cancelled" to "isTrashed" if event has cancelled flag but is in trash.json
+            // This handles legacy data from old /api/cancel-event calls
+            if (e.cancelled && !e.isTrashed) {
+                const trashItems = readTrashFile();
+                if (trashItems.find(t => t.eventId === e.uid)) {
+                    return { ...e, isTrashed: true, cancelled: false };
                 }
             }
             return e;
@@ -2265,10 +2300,11 @@ app.post('/api/trash', async (req, res) => {
                 summary: summary || 'Okänd händelse',
                 start: start,
                 source: source,
+                trashType: 'not_relevant',
                 trashedAt: new Date().toISOString()
             });
             writeTrashFile(trashItems);
-            console.log(`[Trash] Added to trash.json`);
+            console.log(`[Trash] Added to trash.json with trashType: not_relevant`);
         }
 
         if (isMongoConnected()) {
@@ -2277,27 +2313,76 @@ app.post('/api/trash', async (req, res) => {
             console.log(`[Trash] Event ${uid} added to MongoDB ignored list`);
         }
 
-        // Cancel in Google Calendar if it was pushed there
-        let googleCancelled = false;
+        // DELETE from Google Calendar (not just cancel - actually remove it)
+        let googleDeleted = false;
         if (googleCalendar.isEnabled()) {
+            // Method 1: Try via mapping (for events we pushed from ICS feeds)
             const mapping = googleCalendar.getMapping(uid);
             if (mapping) {
                 try {
-                    const cancelled = await googleCalendar.cancelEvent(mapping.googleEventId, mapping.calendarId);
-                    if (cancelled) {
-                        console.log(`[Trash] Event cancelled in Google Calendar: ${mapping.googleEventId}`);
-                        googleCancelled = true;
-                    }
+                    await googleCalendar.deleteEvent(mapping.googleEventId, mapping.calendarId);
+                    console.log(`[Trash] Event DELETED from Google via mapping: ${mapping.googleEventId}`);
+                    googleDeleted = true;
                 } catch (googleError) {
-                    console.error('[Trash] Failed to cancel in Google:', googleError.message);
+                    console.error('[Trash] Failed to delete from Google via mapping:', googleError.message);
                 }
-            } else {
-                console.log(`[Trash] Event ${uid} not found in Google mapping (not pushed)`);
+            }
+
+            // Method 2: If UID is a Google Event ID (from API fetch), delete directly from all calendars
+            if (!googleDeleted && uid && !uid.includes('@') && uid.length > 10) {
+                const calendarsToTry = [
+                    { id: googleCalendar.CALENDAR_CONFIG.familjen, name: 'Familjen' },
+                    { id: googleCalendar.CALENDAR_CONFIG.svante, name: 'Svante' },
+                    { id: googleCalendar.CALENDAR_CONFIG.sarah, name: 'Sarah' }
+                ].filter(c => c.id); // Only try calendars that are configured
+
+                for (const cal of calendarsToTry) {
+                    if (googleDeleted) break;
+                    try {
+                        console.log(`[Trash] Trying to delete Google Event ID ${uid} from ${cal.name}...`);
+                        await googleCalendar.deleteEvent(uid, cal.id);
+                        console.log(`[Trash] Event DELETED from ${cal.name} calendar`);
+                        googleDeleted = true;
+                    } catch (deleteError) {
+                        // 404 = not in this calendar, try next
+                        if (!deleteError.message?.includes('404')) {
+                            console.error(`[Trash] Delete from ${cal.name} failed:`, deleteError.message);
+                        }
+                    }
+                }
+            }
+
+            // Method 3: For events with @google.com suffix (from ICS feeds pointing to Google)
+            if (!googleDeleted && uid && uid.includes('@google.com')) {
+                const eventId = uid.replace(/@google\.com$/, '');
+                const calendarsToTry = [
+                    { id: googleCalendar.CALENDAR_CONFIG.familjen, name: 'Familjen' },
+                    { id: googleCalendar.CALENDAR_CONFIG.svante, name: 'Svante' },
+                    { id: googleCalendar.CALENDAR_CONFIG.sarah, name: 'Sarah' }
+                ].filter(c => c.id);
+
+                for (const cal of calendarsToTry) {
+                    if (googleDeleted) break;
+                    try {
+                        console.log(`[Trash] Trying to delete ${eventId} from ${cal.name}...`);
+                        await googleCalendar.deleteEvent(eventId, cal.id);
+                        console.log(`[Trash] Event DELETED from ${cal.name} calendar`);
+                        googleDeleted = true;
+                    } catch (deleteError) {
+                        if (!deleteError.message?.includes('404')) {
+                            console.error(`[Trash] Delete from ${cal.name} failed:`, deleteError.message);
+                        }
+                    }
+                }
+            }
+
+            if (!googleDeleted) {
+                console.log(`[Trash] Event ${uid} could not be deleted from any Google Calendar`);
             }
         }
 
-        console.log(`[Trash] SUCCESS - Event "${summary}" marked as ej aktuell`);
-        res.json({ success: true, message: 'Händelse flyttad till papperskorgen', googleCancelled });
+        console.log(`[Trash] SUCCESS - Event "${summary}" marked as ej aktuell (Google deleted: ${googleDeleted})`);
+        res.json({ success: true, message: 'Händelse flyttad till papperskorgen', googleDeleted });
     } catch (error) {
         console.error('[Trash] ERROR:', error);
         res.status(500).json({ error: 'Kunde inte ta bort händelse: ' + error.message });
@@ -2326,82 +2411,143 @@ app.delete('/api/trash/:uid', async (req, res) => {
             await removeFromTrash(uid);
         }
 
-        // Reactivate in Google Calendar - remove INSTÄLLD prefix
-        let googleReactivated = false;
-        if (googleCalendar.isEnabled()) {
-            const mapping = googleCalendar.getMapping(uid);
-            if (mapping) {
-                try {
-                    // Get current event and remove INSTÄLLD prefix
-                    const currentEvent = await googleCalendar.findEventByUid(uid, mapping.calendarId);
-                    if (currentEvent && currentEvent.summary.startsWith('INSTÄLLD: ')) {
-                        const restoredTitle = currentEvent.summary.replace('INSTÄLLD: ', '');
-                        await googleCalendar.updateEvent(
-                            mapping.googleEventId,
-                            { summary: restoredTitle },
-                            mapping.calendarId
-                        );
-                        console.log(`[Trash] Event title restored in Google Calendar: ${mapping.googleEventId}`);
-                        googleReactivated = true;
-                    }
-                } catch (googleError) {
-                    console.error('[Trash] Failed to reactivate in Google:', googleError.message);
+        // Clear cancelled flag in local_events.json
+        const localEvents = await readLocalEvents();
+        const localEvent = localEvents.find(e => e.uid === uid);
+        if (localEvent) {
+            localEvent.cancelled = false;
+            localEvent.deleted = false;
+            delete localEvent.deletedAt;
+            await writeLocalEvents(localEvents);
+            console.log(`[Trash] Cleared cancelled/deleted flags for ${uid}`);
+        }
+
+        // RE-CREATE in Google Calendar (since we deleted it when cancelling)
+        let googleRecreated = false;
+        if (googleCalendar.isEnabled() && localEvent && localEvent.cancelledEventData) {
+            try {
+                const eventData = localEvent.cancelledEventData;
+                console.log(`[Trash] Re-creating event in Google Calendar: ${eventData.summary}`);
+
+                // Build Google event object
+                const googleEvent = {
+                    summary: eventData.summary,
+                    start: eventData.start,
+                    end: eventData.end,
+                    location: eventData.location || '',
+                    description: eventData.description || ''
+                };
+
+                // Determine target calendar
+                const calendarId = googleCalendar.getTargetCalendarId(eventData.assignees);
+
+                // Create the event
+                const createdEvent = await googleCalendar.createEvent(googleEvent, calendarId);
+
+                if (createdEvent) {
+                    await googleCalendar.saveMapping(uid, createdEvent.id, calendarId);
+                    console.log(`[Trash] Event re-created in Google Calendar: ${createdEvent.id}`);
+                    googleRecreated = true;
                 }
-            } else {
-                console.log(`[Trash] Event ${uid} not found in Google mapping`);
+
+                // Clear the cancelledEventData since it's been restored
+                delete localEvent.cancelledEventData;
+                await writeLocalEvents(localEvents);
+            } catch (googleError) {
+                console.error('[Trash] Failed to re-create in Google:', googleError.message);
             }
+        } else if (googleCalendar.isEnabled()) {
+            console.log(`[Trash] No cancelledEventData found for ${uid}, cannot re-create in Google`);
         }
 
         console.log(`[Trash] SUCCESS - Event restored from trash`);
-        res.json({ success: true, message: 'Händelse återställd', googleReactivated });
+        res.json({ success: true, message: 'Händelse återställd', googleRecreated });
     } catch (error) {
         console.error('Restore from trash error:', error);
         res.status(500).json({ error: 'Kunde inte återställa händelse' });
     }
 });
 
-// Cancel event (mark as CANCELLED in Google, show strikethrough)
+// Cancel event (DELETE from Google, show strikethrough locally)
 app.post('/api/cancel-event', async (req, res) => {
     try {
-        const { uid } = req.body;
+        const { uid, summary, source, start, end, location, description, assignees } = req.body;
         if (!uid) return res.status(400).json({ error: 'UID krävs' });
 
-        console.log(`[Cancel] Marking event ${uid} as cancelled`);
+        console.log(`[Cancel] Marking event ${uid} as cancelled and deleting from Google`);
 
-        // Mark as cancelled in local storage
+        // Store full event data in local_events for potential restore
         const localEvents = await readLocalEvents();
         const existing = localEvents.find(e => e.uid === uid);
         if (existing) {
             existing.cancelled = true;
+            // Store event data for restore
+            existing.cancelledEventData = { summary, start, end, location, description, assignees, source };
         } else {
-            localEvents.push({ uid, cancelled: true });
+            localEvents.push({
+                uid,
+                cancelled: true,
+                cancelledEventData: { summary, start, end, location, description, assignees, source }
+            });
         }
         await writeLocalEvents(localEvents);
 
-        // Mark as INSTÄLLD in Google Calendar (prefix title instead of status, since cancelled hides the event)
-        let googleCancelled = false;
+        // DELETE from Google Calendar
+        let googleDeleted = false;
         if (googleCalendar.isEnabled()) {
+            // First try via mapping (for events we pushed)
             const mapping = googleCalendar.getMapping(uid);
             if (mapping) {
                 try {
-                    // First get the current event to get its title
-                    const currentEvent = await googleCalendar.findEventByUid(uid, mapping.calendarId);
-                    if (currentEvent && !currentEvent.summary.startsWith('INSTÄLLD:')) {
-                        await googleCalendar.updateEvent(
-                            mapping.googleEventId,
-                            { summary: `INSTÄLLD: ${currentEvent.summary}` },
-                            mapping.calendarId
-                        );
-                        console.log(`[Cancel] Event marked as INSTÄLLD in Google: ${mapping.googleEventId}`);
-                        googleCancelled = true;
-                    }
+                    await googleCalendar.deleteEvent(mapping.googleEventId, mapping.calendarId);
+                    console.log(`[Cancel] Event deleted from Google via mapping: ${mapping.googleEventId}`);
+                    googleDeleted = true;
                 } catch (googleError) {
-                    console.error('[Cancel] Failed to cancel in Google:', googleError.message);
+                    console.error('[Cancel] Failed to delete from Google via mapping:', googleError.message);
+                }
+            }
+            
+            // For events from personal calendars (Svante/Sarah/Family) - delete directly
+            if (!googleDeleted && source && (source.toLowerCase().includes('svante') || source.toLowerCase().includes('sarah') || source.toLowerCase().includes('familje') || source.toLowerCase().includes('örtendahl'))) {
+                try {
+                    const eventId = uid.replace(/@google.com$/, '');
+                    let calendarId = null;
+
+                    // Determine calendar from source
+                    if (source.toLowerCase().includes('svante')) {
+                        calendarId = googleCalendar.CALENDAR_CONFIG.svante;
+                    } else if (source.toLowerCase().includes('sarah')) {
+                        calendarId = googleCalendar.CALENDAR_CONFIG.sarah;
+                    } else if (source.toLowerCase().includes('familje') || source.toLowerCase().includes('örtendahl')) {
+                        calendarId = googleCalendar.CALENDAR_CONFIG.familjen;
+                    }
+
+                    if (calendarId) {
+                        console.log(`[Cancel] Trying direct delete for personal calendar event: ${eventId} in ${calendarId}`);
+                        await googleCalendar.deleteEvent(eventId, calendarId);
+                        googleDeleted = true;
+                        console.log(`[Cancel] Event deleted from personal calendar`);
+                    }
+                } catch (directError) {
+                    console.error('[Cancel] Direct delete failed:', directError.message);
+                }
+            }
+
+            // Fallback: If UID looks like a Google Event ID, try to delete from family calendar
+            // This handles auto-pushed events that may not have mappings or matching source patterns
+            if (!googleDeleted && uid && !uid.includes('@') && uid.length > 10) {
+                try {
+                    console.log(`[Cancel] Trying fallback delete for Google Event ID: ${uid}`);
+                    await googleCalendar.deleteEvent(uid, googleCalendar.CALENDAR_CONFIG.familjen);
+                    googleDeleted = true;
+                    console.log(`[Cancel] Event deleted from family calendar via fallback`);
+                } catch (fallbackError) {
+                    console.error('[Cancel] Fallback delete failed:', fallbackError.message);
                 }
             }
         }
 
-        res.json({ success: true, message: 'Händelse markerad som ej aktuell', googleCancelled });
+        res.json({ success: true, message: 'Händelse markerad som ej aktuell', googleDeleted });
     } catch (error) {
         console.error('[Cancel] ERROR:', error);
         res.status(500).json({ error: 'Kunde inte markera händelse som ej aktuell' });
@@ -2690,8 +2836,13 @@ app.post('/api/update-event', async (req, res) => {
 
         console.log('Update Event called for:', uid);
 
+        // Check if event is cancelled (skip Google sync for cancelled events)
+        const existingEvent = events[existingIndex];
+        const isCancelled = cancelled || (existingEvent && existingEvent.cancelled);
+
         // ============ GOOGLE CALENDAR SYNC ============
-        if (googleCalendar.isEnabled()) {
+        // Skip sync for cancelled events - they should be deleted, not updated
+        if (googleCalendar.isEnabled() && !isCancelled) {
             try {
                 let googleId = null;
                 let calendarId = googleCalendar.CALENDAR_CONFIG.familjen; // Default
@@ -2725,6 +2876,8 @@ app.post('/api/update-event', async (req, res) => {
                 console.error('[Update] Google Sync Failed:', syncError.message);
                 // We optimize for UX: Continue to update local shadow so user sees change immediately
             }
+        } else if (isCancelled) {
+            console.log(`[Update] Skipping Google sync for cancelled event: ${uid}`);
         }
         // ==============================================
 

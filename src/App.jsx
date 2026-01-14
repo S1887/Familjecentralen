@@ -76,7 +76,7 @@ const LocationAutocomplete = ({ value, onChange, placeholder, ...props }) => {
 
   return (
     <div style={{ position: 'relative', flex: 1 }}>
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
         <input
           type="text"
           placeholder={placeholder}
@@ -1198,7 +1198,8 @@ function App() {
           assignees: editEventData.assignees || [],
           assignee: (editEventData.assignees || []).join(', '), // For backwards compatibility
           category: editEventData.category || null,
-          source: editEventData.source // Pass source to preserve it
+          source: editEventData.source,
+          cancelled: editEventData.cancelled // Preserve cancelled status
         })
       });
 
@@ -1879,8 +1880,8 @@ function App() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.5rem' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                         {/* Delete button - only for pure local events (not Google, not Subscriptions) */}
 
                         {isAdmin && !editEventData.isExternalSource &&
@@ -1899,22 +1900,22 @@ function App() {
                             <button type="button" onClick={async () => {
                               if (window.confirm(`Markera "${editEventData.summary}" som ej aktuell? Händelsen blir överstruken men kan återställas.`)) {
                                 try {
-                                  const response = await fetch(getApiUrl('api/cancel-event'), {
+                                  const response = await fetch(getApiUrl('api/trash'), {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ uid: editEventData.uid })
+                                    body: JSON.stringify({ uid: editEventData.uid, summary: editEventData.summary, source: editEventData.source, start: editEventData.start })
                                   });
                                   if (response.ok) {
-                                    // Mark as cancelled in local state AND editEventData
-                                    setEditEventData(prev => ({ ...prev, cancelled: true }));
+                                    // Mark as trashed in local state AND editEventData
+                                    setEditEventData(prev => ({ ...prev, isTrashed: true }));
                                     setEvents(prev => prev.map(e =>
-                                      e.uid === editEventData.uid ? { ...e, cancelled: true } : e
+                                      e.uid === editEventData.uid ? { ...e, isTrashed: true } : e
                                     ));
                                     alert('Händelsen markerad som ej aktuell. Klicka Återställ för att ångra.');
-                                    console.log(`[Cancel] Event "${editEventData.summary}" marked as cancelled`);
+                                    console.log(`[Trash] Event "${editEventData.summary}" marked as ej aktuell`);
                                   }
                                 } catch (error) {
-                                  console.error('Failed to cancel event:', error);
+                                  console.error('Failed to trash event:', error);
                                   alert('Kunde inte markera händelsen som ej aktuell');
                                 }
                               }
@@ -1994,7 +1995,7 @@ function App() {
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                         <button type="button" onClick={() => setIsEditingEvent(false)} style={{
                           padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontSize: '0.9rem'
                         }}>Stäng</button>
@@ -2073,7 +2074,15 @@ function App() {
                             <div style={{ fontWeight: 'bold' }}>{item.summary || '(Okänd händelse)'}</div>
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                               {item.start ? new Date(item.start).toLocaleString('sv-SE') : item.trashedAt ? `Borttagen: ${new Date(item.trashedAt).toLocaleString('sv-SE')}` : 'Okänt datum'}
-                              <span style={{ color: '#ffa502', marginLeft: '0.5rem' }}>(Ej aktuell)</span>
+                              {item.trashType === 'deleted' ? (
+                                <span style={{ color: '#e74c3c', marginLeft: '0.5rem' }}>(Borttagen)</span>
+                              ) : item.trashType === 'not_relevant' ? (
+                                <span style={{ color: '#ffa502', marginLeft: '0.5rem' }}>(Ej aktuell)</span>
+                              ) : item.trashType === 'ignored' ? (
+                                <span style={{ color: '#9b59b6', marginLeft: '0.5rem' }}>(Ignorerad)</span>
+                              ) : (
+                                <span style={{ color: '#95a5a6', marginLeft: '0.5rem' }}>(I papperskorgen)</span>
+                              )}
                             </div>
                           </div>
                           <button onClick={() => restoreEvent(item.eventId || item.uid)} style={{
@@ -3745,8 +3754,8 @@ function App() {
                                 const shouldStrikethrough = event.cancelled || event.isTrashed || isPast;
                                 return (
                                   <h3 style={{ textDecoration: shouldStrikethrough ? 'line-through' : 'none', color: shouldStrikethrough ? 'var(--text-muted)' : 'var(--card-text)', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.2rem 0', opacity: (isPast || event.isTrashed) ? 0.6 : 1 }}>
-                                    {event.cancelled && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}
-                                    {event.isTrashed && !event.cancelled && <span style={{ color: '#9b59b6', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>EJ AKTUELL</span>}
+                                    {event.isTrashed && <span style={{ color: '#9b59b6', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>EJ AKTUELL</span>}
+                                    {event.cancelled && !event.isTrashed && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}
                                     {isPast && !event.cancelled && !event.isTrashed && <span style={{ color: 'var(--text-muted)', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>PASSERAD</span>}
                                     {event.summary}
                                   </h3>

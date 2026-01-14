@@ -198,8 +198,8 @@ const WeekViewWithSpanning = ({
                                             <div style={{
                                                 fontWeight: 600,
                                                 fontSize: '0.9rem',
-                                                textDecoration: ev.isTrashed ? 'line-through' : 'none',
-                                                opacity: ev.isTrashed ? 0.6 : 1
+                                                textDecoration: ev.isTrashed || ev.cancelled ? 'line-through' : 'none',
+                                                opacity: ev.isTrashed || ev.cancelled ? 0.6 : 1
                                             }}>
                                                 {ev.isTrashed && <span style={{ color: '#9b59b6', marginRight: '0.3rem', fontSize: '0.7em', textDecoration: 'none', display: 'inline-block' }}>EJ AKTUELL</span>}
                                                 {ev.summary}
@@ -242,7 +242,7 @@ const WeekViewWithSpanning = ({
                                 justifyContent: 'space-between',
                                 overflow: 'hidden',
                                 zIndex: 5,
-                                opacity: event.isTrashed ? 0.6 : 1
+                                opacity: event.isTrashed || event.cancelled ? 0.6 : 1
                             }}
                             onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
                         >
@@ -253,7 +253,7 @@ const WeekViewWithSpanning = ({
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
                                 flex: 1,
-                                textDecoration: event.isTrashed ? 'line-through' : 'none'
+                                textDecoration: event.isTrashed || event.cancelled ? 'line-through' : 'none'
                             }}>
                                 {event.isTrashed && <span style={{ color: '#9b59b6', marginRight: '0.3rem', fontSize: '0.8em', textDecoration: 'none' }}>EJ AKTUELL</span>}
                                 {event.summary}
