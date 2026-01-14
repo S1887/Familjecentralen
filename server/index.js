@@ -1013,6 +1013,14 @@ const writeIgnoredEvents = (data) => {
     fs.writeFileSync(IGNORED_EVENTS_FILE, JSON.stringify(data, null, 2));
 };
 
+// Sync version for startup migration (no MongoDB check needed at startup)
+const readIgnoredEventsSync = () => {
+    if (!fs.existsSync(IGNORED_EVENTS_FILE)) return [];
+    try {
+        return JSON.parse(fs.readFileSync(IGNORED_EVENTS_FILE, 'utf8'));
+    } catch (e) { return []; }
+};
+
 // Ladda tasks - will be loaded from MongoDB after connection
 let tasksData = [];
 
@@ -3118,41 +3126,55 @@ async function startServer() {
         console.log('[Startup] Running in file-only mode (no MongoDB)');
     }
 
-    // ============ MIGRATION: Clean up old cancelled flags ============
-    // This runs on every startup to convert old 'cancelled' flags to proper handling
+    // ============ MIGRATION: Clean up subscription events from local_events ============
+    // Subscription events should NEVER be stored locally - they come from ICS feeds
+    // This removes any subscription events that were incorrectly saved locally
     try {
-        console.log('[Migration] Checking for old cancelled flags in local_events.json...');
+        console.log('[Migration] Cleaning up local_events.json...');
         const localEvents = await readLocalEvents();
-        let migratedCount = 0;
+        const originalCount = localEvents.length;
 
-        for (const event of localEvents) {
-            // If event has cancelled=true but no proper handling, clean it up
+        // Filter out events that are from subscription sources (should not be local)
+        const isSubscriptionUid = (uid) => {
+            if (!uid) return false;
+            return uid.includes('@laget.se') ||
+                   uid.includes('@sportadmin') ||
+                   uid.includes('vklass') ||
+                   uid.includes('@maak-agenda.nl');
+        };
+
+        const cleanedEvents = localEvents.filter(event => {
+            // Remove subscription events - they should come from ICS, not local storage
+            if (isSubscriptionUid(event.uid)) {
+                console.log(`[Migration] Removing subscription event: ${event.uid?.substring(0, 40)}`);
+                return false;
+            }
+            // Also remove events with cancelled flag that are in ignored list
             if (event.cancelled === true) {
-                // Check if this event's UID is in ignored_events (meaning it was "ej aktuell")
-                const ignoredEvents = await readIgnoredEvents();
+                const ignoredEvents = readIgnoredEventsSync();
                 if (ignoredEvents.includes(event.uid)) {
-                    // This was marked as "ej aktuell" - remove cancelled flag, ignored_events handles it
-                    delete event.cancelled;
-                    migratedCount++;
-                    console.log(`[Migration] Cleaned cancelled flag for: ${event.uid?.substring(0, 30)}`);
+                    console.log(`[Migration] Removing cancelled event: ${event.uid?.substring(0, 40)}`);
+                    return false;
                 }
             }
-        }
+            return true;
+        });
 
-        if (migratedCount > 0) {
-            await writeLocalEvents(localEvents);
-            console.log(`[Migration] Cleaned ${migratedCount} old cancelled flags`);
+        const removedCount = originalCount - cleanedEvents.length;
+        if (removedCount > 0) {
+            await writeLocalEvents(cleanedEvents);
+            console.log(`[Migration] Removed ${removedCount} subscription/cancelled events from local_events.json`);
         } else {
-            console.log('[Migration] No old cancelled flags to clean');
+            console.log('[Migration] No subscription events to clean');
         }
 
-        // Also clear the calendar cache to force fresh fetch
+        // Always clear the calendar cache to force fresh fetch
         if (fs.existsSync(CACHE_FILE)) {
             fs.unlinkSync(CACHE_FILE);
             console.log('[Migration] Cleared calendar cache for fresh data');
         }
     } catch (migrationError) {
-        console.error('[Migration] Error during cancelled flag cleanup:', migrationError);
+        console.error('[Migration] Error during cleanup:', migrationError);
     }
 
     app.listen(PORT, '0.0.0.0', () => {
