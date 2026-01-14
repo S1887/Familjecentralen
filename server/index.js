@@ -33,6 +33,25 @@ import googleCalendar from './googleCalendar.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
+// HA Options - MUST be loaded BEFORE CALENDARS array is created
+const HA_OPTIONS_FILE_EARLY = '/data/options.json';
+if (fs.existsSync(HA_OPTIONS_FILE_EARLY)) {
+    try {
+        const options = JSON.parse(fs.readFileSync(HA_OPTIONS_FILE_EARLY, 'utf8'));
+        if (options.gemini_api_key) {
+            process.env.GEMINI_API_KEY = options.gemini_api_key;
+            console.log('[Init] Loaded Gemini API Key from HA options');
+        }
+        if (options.ical_svante) process.env.ICAL_SVANTE = options.ical_svante;
+        if (options.ical_sarah) process.env.ICAL_SARAH = options.ical_sarah;
+        if (options.ical_family) process.env.ICAL_FAMILY = options.ical_family;
+        if (options.calendar_svante) process.env.CALENDAR_SVANTE = options.calendar_svante;
+        if (options.calendar_sarah) process.env.CALENDAR_SARAH = options.calendar_sarah;
+        if (options.calendar_family) process.env.CALENDAR_FAMILY = options.calendar_family;
+        console.log('[Init] Loaded calendar config from HA options');
+    } catch (e) { console.error('[Init] Failed to load HA options:', e.message); }
+}
 const app = express();
 
 // DEBUG LOGGER
@@ -200,7 +219,6 @@ const CALENDARS = [
 
 // Datakatalog
 // HA-Aware Configuration
-const HA_OPTIONS_FILE = '/data/options.json';
 const HA_DATA_DIR = '/data';
 
 // Determine DATA_DIR
@@ -214,24 +232,6 @@ if (fs.existsSync(HA_DATA_DIR)) {
 
 const DATA_DIR = dataPath;
 
-// Load Options from HA (Environment Variables override these if set, but in HA env vars are hard)
-if (fs.existsSync(HA_OPTIONS_FILE)) {
-    try {
-        const options = JSON.parse(fs.readFileSync(HA_OPTIONS_FILE, 'utf8'));
-        if (options.gemini_api_key) {
-            process.env.GEMINI_API_KEY = options.gemini_api_key;
-            console.log('[Init] Loaded Gemini API Key from HA options');
-        }
-        // Load calendar URLs from HA options
-        if (options.ical_svante) process.env.ICAL_SVANTE = options.ical_svante;
-        if (options.ical_sarah) process.env.ICAL_SARAH = options.ical_sarah;
-        if (options.ical_family) process.env.ICAL_FAMILY = options.ical_family;
-        if (options.calendar_svante) process.env.CALENDAR_SVANTE = options.calendar_svante;
-        if (options.calendar_sarah) process.env.CALENDAR_SARAH = options.calendar_sarah;
-        if (options.calendar_family) process.env.CALENDAR_FAMILY = options.calendar_family;
-        console.log('[Init] Loaded calendar config from HA options');
-    } catch (e) { console.error('[Init] Failed to load HA options:', e.message); }
-}
 
 // Se till att katalogen finns (om den inte är root)
 if (process.env.DATA_DIR && !fs.existsSync(DATA_DIR)) {
