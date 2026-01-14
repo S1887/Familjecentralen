@@ -3215,6 +3215,12 @@ async function startServer() {
         console.log(`Family Ops Backend körs på http://0.0.0.0:${PORT}`);
         console.log(`MongoDB status: ${isMongoConnected() ? 'CONNECTED ✓' : 'NOT CONNECTED (using files)'}`);
         console.log(`Google Calendar API: ${googleCalendar.isEnabled() ? 'ENABLED ✓' : 'DISABLED (no credentials)'}`);
+        console.log(`DATA_DIR: ${DATA_DIR}`);
+
+        // Log ignored events count
+        const ignoredCount = readIgnoredEventsSync().length;
+        console.log(`Ignored events: ${ignoredCount} events in ignored_events.json`);
+
         // Start the background calendar refresh scheduler
         startScheduledRefresh();
     });
