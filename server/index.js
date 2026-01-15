@@ -284,7 +284,7 @@ if (process.env.DATA_DIR && !fs.existsSync(DATA_DIR)) {
 // One-time cleanup when upgrading to prevent duplicates
 // This clears sync-related files but preserves user data (tasks, local_events, etc.)
 const VERSION_FILE = path.join(DATA_DIR, 'last_version.txt');
-const CURRENT_VERSION = '4.0.4';
+const CURRENT_VERSION = '4.0.7';
 
 function performVersionUpgradeCleanup() {
     let lastVersion = '';
@@ -309,7 +309,8 @@ function performVersionUpgradeCleanup() {
         path.join(DATA_DIR, 'trash.json'),
         path.join(DATA_DIR, 'calendar_cache.json'),
         path.join(DATA_DIR, 'approved_events.json'),
-        path.join(process.cwd(), 'server', 'google_event_map.json')
+        path.join(process.cwd(), 'server', 'google_event_map.json'),
+        path.join(DATA_DIR, 'google_event_map.json') // New persistent location
     ];
 
     filesToClean.forEach(file => {
