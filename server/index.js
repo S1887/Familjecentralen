@@ -2944,7 +2944,49 @@ app.post('/api/delete-event', async (req, res) => {
         }
 
         await writeLocalEvents(events);
-        res.json({ success: true });
+
+        // Delete from Google Calendar if API is enabled
+        let googleDeleted = false;
+        if (googleCalendar.isEnabled()) {
+            try {
+                // Check if we have a mapping for this event
+                const mapping = googleCalendar.getMapping(uid);
+                if (mapping) {
+                    await googleCalendar.deleteEvent(mapping.googleEventId, mapping.calendarId);
+                    googleCalendar.removeMapping(uid);
+                    googleDeleted = true;
+                    console.log(`[Delete] Removed from Google via mapping: ${mapping.googleEventId}`);
+                }
+                // Try direct deletion if UID looks like a Google event ID
+                else if (uid && !uid.includes('@') && uid.length > 10) {
+                    const calendarsToTry = [
+                        googleCalendar.CALENDAR_CONFIG.familjen,
+                        googleCalendar.CALENDAR_CONFIG.svante,
+                        googleCalendar.CALENDAR_CONFIG.sarah
+                    ].filter(c => c);
+
+                    for (const calId of calendarsToTry) {
+                        if (googleDeleted) break;
+                        try {
+                            await googleCalendar.deleteEvent(uid, calId);
+                            googleDeleted = true;
+                            console.log(`[Delete] Removed from Google: ${uid}`);
+                        } catch (e) {
+                            // 404 = not in this calendar, try next
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('[Delete] Google deletion failed:', err.message);
+            }
+
+            // Invalidate cache so deleted event disappears on refresh
+            if (googleDeleted) {
+                cacheTimestamp = 0;
+            }
+        }
+
+        res.json({ success: true, googleDeleted });
     } catch (error) {
         console.error('Delete event error:', error);
         res.status(500).json({ error: 'Kunde inte ta bort händelse' });
