@@ -200,17 +200,58 @@ async function createEvent(event) {
 }
 
 /**
- * Update an existing event in Google Calendar
+ * Get a single event from Google Calendar
  */
-async function updateEvent(eventId, updates, calendarId = CALENDAR_CONFIG.familjen) {
+async function getEvent(eventId, calendarId = CALENDAR_CONFIG.familjen) {
     const calendar = await initializeClient();
     if (!calendar) return null;
+
+    try {
+        const result = await calendar.events.get({
+            calendarId,
+            eventId
+        });
+
+        return result.data;
+    } catch (error) {
+        console.error('[GoogleCalendar] Get event failed:', error.message);
+        return null;
+    }
+}
+
+/**
+ * Update an existing event in Google Calendar
+ */
+async function updateEvent(eventId, calendarId, updates) {
+    const calendar = await initializeClient();
+    if (!calendar) return null;
+
+    // Convert our format to Google's format
+    const resource = {};
+    if (updates.summary) resource.summary = updates.summary;
+    if (updates.location) resource.location = updates.location;
+    if (updates.description) resource.description = updates.description;
+
+    if (updates.start) {
+        const startDate = new Date(updates.start);
+        resource.start = {
+            dateTime: startDate.toISOString(),
+            timeZone: 'Europe/Stockholm'
+        };
+    }
+    if (updates.end) {
+        const endDate = new Date(updates.end);
+        resource.end = {
+            dateTime: endDate.toISOString(),
+            timeZone: 'Europe/Stockholm'
+        };
+    }
 
     try {
         const result = await calendar.events.patch({
             calendarId,
             eventId,
-            resource: updates
+            resource
         });
 
         console.log(`[GoogleCalendar] Updated event: ${eventId}`);
@@ -350,10 +391,11 @@ async function listEvents(calendarId, timeMin, timeMax) {
 export default {
     initializeClient,
     createEvent,
+    getEvent,
     updateEvent,
     deleteEvent,
     findEventByUid,
-    listEvents, // New export
+    listEvents,
     cancelEvent,
     testConnection,
     isEnabled,

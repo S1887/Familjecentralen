@@ -262,6 +262,61 @@ if (process.env.DATA_DIR && !fs.existsSync(DATA_DIR)) {
     }
 }
 
+// === VERSION UPGRADE CLEANUP ===
+// One-time cleanup when upgrading to v4.0.2+ to prevent duplicates
+// This clears sync-related files but preserves user data (tasks, local_events, etc.)
+const VERSION_FILE = path.join(DATA_DIR, 'last_version.txt');
+const CURRENT_VERSION = '4.0.2';
+
+function performVersionUpgradeCleanup() {
+    let lastVersion = '';
+    try {
+        if (fs.existsSync(VERSION_FILE)) {
+            lastVersion = fs.readFileSync(VERSION_FILE, 'utf8').trim();
+        }
+    } catch (e) { /* ignore */ }
+
+    // Only run cleanup if upgrading from older version to 4.0.2+
+    if (lastVersion && lastVersion >= CURRENT_VERSION) {
+        console.log(`[Upgrade] Already on ${lastVersion}, no cleanup needed`);
+        return;
+    }
+
+    console.log(`[Upgrade] Upgrading from ${lastVersion || 'unknown'} to ${CURRENT_VERSION}`);
+    console.log('[Upgrade] Cleaning sync-related files to prevent duplicates...');
+
+    // Files to clean (sync-related only - NOT user data)
+    const filesToClean = [
+        path.join(DATA_DIR, 'ignored_events.json'),
+        path.join(DATA_DIR, 'trash.json'),
+        path.join(DATA_DIR, 'calendar_cache.json'),
+        path.join(DATA_DIR, 'approved_events.json'),
+        path.join(process.cwd(), 'server', 'google_event_map.json')
+    ];
+
+    filesToClean.forEach(file => {
+        if (fs.existsSync(file)) {
+            try {
+                fs.unlinkSync(file);
+                console.log(`[Upgrade] Deleted: ${path.basename(file)}`);
+            } catch (e) {
+                console.error(`[Upgrade] Failed to delete ${path.basename(file)}: ${e.message}`);
+            }
+        }
+    });
+
+    // Save current version
+    try {
+        fs.writeFileSync(VERSION_FILE, CURRENT_VERSION);
+        console.log(`[Upgrade] Cleanup complete. Version set to ${CURRENT_VERSION}`);
+    } catch (e) {
+        console.error('[Upgrade] Failed to save version:', e.message);
+    }
+}
+
+// Run cleanup before anything else
+performVersionUpgradeCleanup();
+
 // === SEEDING LOGIC ===
 // Om datafiler saknas i DATA_DIR, kopiera från server/initial_data (om de finns där)
 // Detta säkerställer att vi inte startar med tom databas vid första deploy
@@ -479,15 +534,96 @@ async function fetchCalendarsFromGoogle() {
     if (googleCalendar.isEnabled() && eventsToSyncToGoogle.length > 0) {
         console.log(`[Sync] ${eventsToSyncToGoogle.length} events to potentially sync to Google`);
         let pushedCount = 0;
+        let updatedCount = 0;
 
         for (const event of eventsToSyncToGoogle) {
-            // Skip if already in Google (check mapping)
-            if (googleCalendar.getMapping(event.uid)) continue;
-
             // Skip past events
             if (new Date(event.start) < new Date()) continue;
 
+            // Check if already in Google
+            const existingMapping = googleCalendar.getMapping(event.uid);
+
+            if (existingMapping) {
+                // Event exists - check if time has changed
+                try {
+                    const googleEvent = await googleCalendar.getEvent(
+                        existingMapping.googleEventId,
+                        existingMapping.calendarId
+                    );
+
+                    if (googleEvent) {
+                        const googleStart = new Date(googleEvent.start.dateTime || googleEvent.start.date);
+                        const icsStart = new Date(event.start);
+                        const googleEnd = new Date(googleEvent.end.dateTime || googleEvent.end.date);
+                        const icsEnd = new Date(event.end);
+
+                        // Check if time changed (allow 1 minute tolerance)
+                        const startDiff = Math.abs(googleStart - icsStart);
+                        const endDiff = Math.abs(googleEnd - icsEnd);
+
+                        if (startDiff > 60000 || endDiff > 60000) {
+                            // Time changed - update Google event
+                            console.log(`[Sync] Time changed for "${event.summary}": ${googleStart.toISOString()} → ${icsStart.toISOString()}`);
+
+                            await googleCalendar.updateEvent(existingMapping.googleEventId, existingMapping.calendarId, {
+                                summary: event.summary,
+                                start: event.start,
+                                end: event.end,
+                                location: event.location,
+                                description: `Källa: ${event.originalSource}`
+                            });
+                            updatedCount++;
+                        }
+                    }
+                } catch (err) {
+                    // Event might have been deleted from Google - skip
+                    console.log(`[Sync] Could not check/update ${event.summary}: ${err.message}`);
+                }
+                await delay(200);
+                continue;
+            }
+
+            // New event - but first check if duplicate already exists in Google
+            // This prevents duplicates when google_event_map.json was cleared
             try {
+                const eventStart = new Date(event.start);
+                const searchStart = new Date(eventStart);
+                searchStart.setHours(0, 0, 0, 0);
+                const searchEnd = new Date(eventStart);
+                searchEnd.setHours(23, 59, 59, 999);
+
+                // Search for events on the same day
+                const existingEvents = await googleCalendar.listEvents(
+                    googleCalendar.CALENDAR_CONFIG.familjen,
+                    searchStart.toISOString(),
+                    searchEnd.toISOString()
+                );
+
+                // Check if event with same summary and start time already exists
+                const duplicate = existingEvents.find(e => {
+                    const eSummary = (e.summary || '').toLowerCase().trim();
+                    const newSummary = (event.summary || '').toLowerCase().trim();
+                    const eStart = new Date(e.start.dateTime || e.start.date);
+                    const newStart = new Date(event.start);
+
+                    // Match if summary is same (or very similar) and start time within 5 minutes
+                    const summaryMatch = eSummary === newSummary ||
+                                        eSummary.includes(newSummary) ||
+                                        newSummary.includes(eSummary);
+                    const timeMatch = Math.abs(eStart - newStart) < 5 * 60 * 1000; // 5 min tolerance
+
+                    return summaryMatch && timeMatch;
+                });
+
+                if (duplicate) {
+                    // Found existing event - save mapping and skip creation
+                    console.log(`[Sync] Found existing event in Google: "${duplicate.summary}" - linking instead of creating`);
+                    await googleCalendar.saveMapping(event.uid, duplicate.id, googleCalendar.CALENDAR_CONFIG.familjen);
+                    await delay(100);
+                    continue;
+                }
+
+                // No duplicate found - create new event
                 const googleEvent = {
                     summary: event.summary,
                     start: event.start,
@@ -508,8 +644,8 @@ async function fetchCalendarsFromGoogle() {
             }
         }
 
-        if (pushedCount > 0) {
-            console.log(`[Sync] Pushed ${pushedCount} new events to Google`);
+        if (pushedCount > 0 || updatedCount > 0) {
+            console.log(`[Sync] Pushed ${pushedCount} new, updated ${updatedCount} changed events in Google`);
         }
     }
 
@@ -1629,38 +1765,15 @@ app.get('/api/events', async (req, res) => {
                 s.includes('helgdag');
         };
 
-        // For subscription events (ICS feeds): mark as trashed but keep them visible (strikethrough)
-        // For Google API events and personal calendar events: filter them out completely
-        allEvents = allEvents.map(e => {
-            if (ignoredSet.has(e.uid)) {
-                // Google API events should be removed completely (they've been deleted from Google)
-                if (e.originalSource === 'family_group_api' ||
-                    e.originalSource === 'svante_api' ||
-                    e.originalSource === 'sara_api') {
-                    return { ...e, _shouldRemove: true };
-                }
-                // Subscription events (ICS feeds) - keep visible but mark as trashed
-                // Also convert old "cancelled" flag to "isTrashed" for consistency
-                if (isSubscriptionSource(e.source) || e.isExternalSource) {
-                    return { ...e, isTrashed: true, cancelled: false };
-                }
-                // Personal calendar events - mark for removal
-                return { ...e, _shouldRemove: true };
-            }
-            // Also check if linkedSourceUid is in ignored list (for API events that were pushed from ICS)
-            if (e.linkedSourceUid && ignoredSet.has(e.linkedSourceUid)) {
-                return { ...e, _shouldRemove: true };
-            }
-            // Convert old "cancelled" to "isTrashed" if event has cancelled flag but is in trash.json
-            // This handles legacy data from old /api/cancel-event calls
-            if (e.cancelled && !e.isTrashed) {
-                const trashItems = readTrashFile();
-                if (trashItems.find(t => t.eventId === e.uid)) {
-                    return { ...e, isTrashed: true, cancelled: false };
-                }
-            }
-            return e;
-        }).filter(e => !e._shouldRemove);
+        // "Ej aktuell" events are removed from ALL views (and from Google)
+        // They go to papperskorgen and can be restored from there
+        allEvents = allEvents.filter(e => {
+            // Remove if in ignored list
+            if (ignoredSet.has(e.uid)) return false;
+            // Remove if linked source UID is ignored (for API events pushed from ICS)
+            if (e.linkedSourceUid && ignoredSet.has(e.linkedSourceUid)) return false;
+            return true;
+        });
 
         // Filter out deleted events (unless includeTrash is true)
         if (!includeTrash) {
