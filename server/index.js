@@ -50,21 +50,39 @@ if (fs.existsSync(HA_OPTIONS_FILE_EARLY)) {
         if (options.calendar_sarah) process.env.CALENDAR_SARAH = options.calendar_sarah;
         if (options.calendar_family) process.env.CALENDAR_FAMILY = options.calendar_family;
 
-        // Google Service Account credentials (JSON string from HA config)
+        // Google Service Account credentials (JSON string OR filename in /config/)
         if (options.google_credentials) {
-            try {
-                // Parse to validate it's valid JSON
-                const creds = JSON.parse(options.google_credentials);
-                // Write to the expected credentials path
-                const credentialsDir = path.join(process.cwd(), 'server', 'credentials');
-                if (!fs.existsSync(credentialsDir)) {
-                    fs.mkdirSync(credentialsDir, { recursive: true });
+            const credentialsDir = path.join(process.cwd(), 'server', 'credentials');
+            if (!fs.existsSync(credentialsDir)) {
+                fs.mkdirSync(credentialsDir, { recursive: true });
+            }
+            const credentialsPath = path.join(credentialsDir, 'google-service-account.json');
+
+            // Check if it's a filename (not JSON)
+            if (!options.google_credentials.trim().startsWith('{')) {
+                // It's a filename - try to read from /config/
+                const configFilePath = path.join('/config', options.google_credentials);
+                if (fs.existsSync(configFilePath)) {
+                    try {
+                        const fileContent = fs.readFileSync(configFilePath, 'utf8');
+                        JSON.parse(fileContent); // Validate JSON
+                        fs.writeFileSync(credentialsPath, fileContent);
+                        console.log(`[Init] Copied Google credentials from ${configFilePath}`);
+                    } catch (readErr) {
+                        console.error(`[Init] Failed to read credentials file ${configFilePath}:`, readErr.message);
+                    }
+                } else {
+                    console.error(`[Init] Credentials file not found: ${configFilePath}`);
                 }
-                const credentialsPath = path.join(credentialsDir, 'google-service-account.json');
-                fs.writeFileSync(credentialsPath, JSON.stringify(creds, null, 2));
-                console.log('[Init] Wrote Google credentials from HA options');
-            } catch (credErr) {
-                console.error('[Init] Invalid google_credentials JSON:', credErr.message);
+            } else {
+                // It's JSON content directly
+                try {
+                    const creds = JSON.parse(options.google_credentials);
+                    fs.writeFileSync(credentialsPath, JSON.stringify(creds, null, 2));
+                    console.log('[Init] Wrote Google credentials from HA options (inline JSON)');
+                } catch (credErr) {
+                    console.error('[Init] Invalid google_credentials JSON:', credErr.message);
+                }
             }
         }
 
