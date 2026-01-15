@@ -440,8 +440,21 @@ async function fetchCalendarsFromGoogle() {
                 const ev = data[k];
                 if (ev.type === 'VEVENT') {
                     let summary = ev.summary || '';
-                    let isTraining = summary.toLowerCase().includes('träning');
-                    let isMatch = summary.toLowerCase().includes('match');
+                    const summaryLower = summary.toLowerCase();
+
+                    // Detect training - various spellings
+                    let isTraining = summaryLower.includes('träning') ||
+                        summaryLower.includes('training') ||
+                        summaryLower.includes('övning');
+
+                    // Detect match/game events
+                    let isMatch = summaryLower.includes('match') ||
+                        summaryLower.includes('seriematch') ||
+                        summaryLower.includes('cup') ||
+                        summaryLower.includes('turnering') ||
+                        summaryLower.includes(' - ') ||  // "Team A - Team B" format
+                        summaryLower.includes(' vs ') ||
+                        summaryLower.includes(' mot ');
                     let goesToInbox = false;
                     let child = cal.child || null;
                     let category = cal.category || null;
@@ -2339,7 +2352,10 @@ app.post('/api/trash', async (req, res) => {
             }
         }
 
+        // Invalidate cache for instant UI refresh
+        cacheTimestamp = 0;
         console.log(`[Trash] SUCCESS - Event "${summary}" marked as ej aktuell (Google deleted: ${googleDeleted})`);
+        console.log('[Trash] Cache invalidated for instant refresh');
         res.json({ success: true, message: 'Händelse flyttad till papperskorgen', googleDeleted });
     } catch (error) {
         console.error('[Trash] ERROR:', error);
@@ -2418,7 +2434,10 @@ app.delete('/api/trash/:uid', async (req, res) => {
             console.log(`[Trash] No cancelledEventData found for ${uid}, cannot re-create in Google`);
         }
 
+        // Invalidate cache for instant UI refresh
+        cacheTimestamp = 0;
         console.log(`[Trash] SUCCESS - Event restored from trash`);
+        console.log('[Trash] Cache invalidated for instant refresh');
         res.json({ success: true, message: 'Händelse återställd', googleRecreated });
     } catch (error) {
         console.error('Restore from trash error:', error);
@@ -2505,6 +2524,9 @@ app.post('/api/cancel-event', async (req, res) => {
             }
         }
 
+        // Invalidate cache for instant UI refresh
+        cacheTimestamp = 0;
+        console.log('[Cancel] Cache invalidated for instant refresh');
         res.json({ success: true, message: 'Händelse markerad som ej aktuell', googleDeleted });
     } catch (error) {
         console.error('[Cancel] ERROR:', error);
@@ -2902,6 +2924,10 @@ app.post('/api/update-event', async (req, res) => {
         if (assignments) {
             await writeDb(uid, assignments);
         }
+
+        // Invalidate cache for instant UI refresh
+        cacheTimestamp = 0;
+        console.log('[Update] Cache invalidated for instant refresh');
 
         res.json({ success: true });
     } catch (error) {
