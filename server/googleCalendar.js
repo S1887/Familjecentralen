@@ -9,12 +9,31 @@ import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 
-// Calendar IDs configuration
-const CALENDAR_CONFIG = {
-    svante: process.env.CALENDAR_SVANTE || '',
-    sarah: process.env.CALENDAR_SARAH || '',
-    familjen: process.env.CALENDAR_FAMILY || ''
-};
+// Calendar IDs configuration - loaded lazily to ensure env vars are set first
+let _calendarConfig = null;
+
+function getCalendarConfig() {
+    if (!_calendarConfig) {
+        _calendarConfig = {
+            svante: process.env.CALENDAR_SVANTE || '',
+            sarah: process.env.CALENDAR_SARAH || '',
+            familjen: process.env.CALENDAR_FAMILY || ''
+        };
+        console.log('[GoogleCalendar] Config loaded:', {
+            svante: _calendarConfig.svante ? '✓ set' : '✗ empty',
+            sarah: _calendarConfig.sarah ? '✓ set' : '✗ empty',
+            familjen: _calendarConfig.familjen ? '✓ set' : '✗ empty'
+        });
+    }
+    return _calendarConfig;
+}
+
+// For backwards compatibility, expose as getter
+const CALENDAR_CONFIG = new Proxy({}, {
+    get(target, prop) {
+        return getCalendarConfig()[prop];
+    }
+});
 
 // Path to credentials file (set via environment variable or config)
 const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH ||
