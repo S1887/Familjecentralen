@@ -155,21 +155,78 @@ app.get('/api/hero-image', (req, res) => {
 // DB_FILE and LOCAL_EVENTS_FILE defined centrally above
 
 // Calendar sources - private calendars loaded from environment variables
-// SIMPLIFIED: Only Arsenal and ÖIS as view-only subscriptions
-// All other events come from Google Calendar API
+// Calendar sources configuration
+// - viewOnly: Only displayed in Centralen (Arsenal, ÖIS)
+// - syncToGoogle: Events auto-pushed to Google Family Calendar (laget.se, sportadmin, vklass)
 const CALENDARS = [
-    // View-only subscriptions (NOT synced to Google, just displayed in Centralen)
+    // View-only subscriptions (NOT synced to Google)
     {
         id: 'arsenal_fc',
         name: 'Arsenal FC',
         url: 'https://ics.fixtur.es/v2/arsenal.ics',
-        viewOnly: true  // Only show in Centralen, never sync to Google
+        viewOnly: true
     },
     {
         id: 'ois_fotboll',
         name: 'Örgryte IS',
         url: 'https://calendar.google.com/calendar/ical/nahppp38tiqn7nbsahk6l0qncno1rahs%40import.calendar.google.com/public/basic.ics',
         viewOnly: true
+    },
+    // Subscription calendars - synced to Google Family Calendar
+    // Training events go directly to calendar, other events go to inbox
+    {
+        id: 'hkl_p11_p10',
+        name: 'HK Lidköping P11/P10',
+        url: 'https://cal.laget.se/HKL-P11-P10.ics',
+        syncToGoogle: true,
+        child: 'Algot',
+        category: 'Handboll'
+    },
+    {
+        id: 'hkl_handbollsskola',
+        name: 'HK Lidköping Handbollsskola',
+        url: 'https://cal.laget.se/HKLidkoping-Handbollsskola.ics',
+        syncToGoogle: true,
+        child: 'Tuva',
+        category: 'Handboll'
+    },
+    {
+        id: 'rada_bk_f7',
+        name: 'Råda BK F7',
+        url: 'https://cal.laget.se/RadaBK-F7.ics',
+        syncToGoogle: true,
+        child: 'Tuva',
+        category: 'Fotboll'
+    },
+    {
+        id: 'rada_bk_p2015',
+        name: 'Råda BK P2015',
+        url: 'https://cal.laget.se/RadaBK-P2015.ics',
+        syncToGoogle: true,
+        child: 'Algot',
+        category: 'Fotboll'
+    },
+    {
+        id: 'villa_lidkoping_algot',
+        name: 'Villa Lidköping (Algot)',
+        url: 'https://portalweb.sportadmin.se/webcal?id=d9a0805a-8cb5-4c5c-8eb9-679ecb6c70c0',
+        syncToGoogle: true,
+        child: 'Algot',
+        category: 'Bandy'
+    },
+    {
+        id: 'vklass_skola',
+        name: 'Vklass (Skola)',
+        url: 'https://cal.vklass.se/d0cc0c1d-b064-40b8-a82c-0b2c90ba41c4.ics?custodian=true',
+        syncToGoogle: true,
+        isVklass: true
+    },
+    {
+        id: 'vklass_skola_tuva',
+        name: 'Vklass (Skola Tuva)',
+        url: 'https://cal.vklass.se/5bfb5374-1d00-4dc0-b688-4dc5a60765a9.ics?custodian=true',
+        syncToGoogle: true,
+        isVklass: true
     }
 ];
 
@@ -286,15 +343,15 @@ async function fetchCalendarsFromGoogle() {
     isFetching = true;
     console.log('[Cache] Fetching calendar data...');
     const freshEvents = [];
+    const inboxEvents = []; // Events that need approval (non-training subscription events)
+    const eventsToSyncToGoogle = []; // Events to push to Google (training/match from subscriptions)
     let successCount = 0;
     let errorCount = 0;
 
-    // ============ STEP 1: Fetch view-only subscriptions (Arsenal, ÖIS) ============
+    // ============ STEP 1: Fetch ICS subscriptions ============
     for (const cal of CALENDARS) {
-        if (!cal.viewOnly) continue;
-
         try {
-            console.log(`[Cache] Fetching view-only: ${cal.name}...`);
+            console.log(`[Cache] Fetching: ${cal.name}...`);
 
             const opts = {
                 headers: { 'User-Agent': 'Mac OS X/10.15.7 (19H2) CalendarAgent/954' }
@@ -308,24 +365,108 @@ async function fetchCalendarsFromGoogle() {
             for (const k in data) {
                 const ev = data[k];
                 if (ev.type === 'VEVENT') {
-                    freshEvents.push({
+                    let summary = ev.summary || '';
+                    let isTraining = summary.toLowerCase().includes('träning');
+                    let isMatch = summary.toLowerCase().includes('match');
+                    let goesToInbox = false;
+                    let child = cal.child || null;
+                    let category = cal.category || null;
+                    let isLesson = false;
+                    let scheduleOnly = false;
+
+                    // View-only calendars (Arsenal, ÖIS) - always visible, never synced
+                    if (cal.viewOnly) {
+                        freshEvents.push({
+                            uid: ev.uid,
+                            summary: `Svante: ${summary}`,
+                            start: ev.start,
+                            end: ev.end,
+                            location: ev.location || '',
+                            description: ev.description || '',
+                            source: cal.name,
+                            originalSource: cal.name,
+                            inboxOnly: false,
+                            assignees: ['Svante'],
+                            category: 'Sport',
+                            todoList: [],
+                            tags: [],
+                            deleted: false,
+                            scheduleOnly: false,
+                            isViewOnly: true
+                        });
+                        continue;
+                    }
+
+                    // Vklass - parse student codes
+                    if (cal.isVklass) {
+                        let match = summary.match(/\((.*?)\)/);
+                        if (!match && ev.description) {
+                            match = ev.description.match(/\((.*?)\)/);
+                        }
+                        if (match) {
+                            const content = match[1].toLowerCase();
+                            if (content.includes('sth15')) child = 'Algot';
+                            else if (content.includes('sth18')) child = 'Tuva';
+
+                            // Check if it's a lesson code
+                            if (content.includes('__') || /^[a-z]+\d+$/i.test(content)) {
+                                isLesson = true;
+                                scheduleOnly = true;
+                                category = 'Skola';
+                                summary = summary.replace(/\s*\(.*?\)/, '').trim();
+                            }
+                        }
+                        // Non-lesson Vklass events go to inbox
+                        if (!isLesson && !isTraining && !isMatch) {
+                            goesToInbox = true;
+                        }
+                    }
+
+                    // Sport calendars - training/match goes directly, other to inbox
+                    if (cal.syncToGoogle && !cal.isVklass) {
+                        if (!isTraining && !isMatch) {
+                            goesToInbox = true;
+                        }
+                        // Fix Villa Lidköping labeling
+                        if (cal.id === 'villa_lidkoping_algot') {
+                            summary = summary.replace(/Handboll/gi, 'Bandy');
+                        }
+                    }
+
+                    // Add child prefix to summary for Google
+                    const googleSummary = child ? `${child}: ${summary}` : summary;
+
+                    const eventData = {
                         uid: ev.uid,
-                        summary: `Svante: ${ev.summary}`,
+                        summary: googleSummary,
                         start: ev.start,
                         end: ev.end,
                         location: ev.location || '',
                         description: ev.description || '',
                         source: cal.name,
                         originalSource: cal.name,
-                        inboxOnly: false,
-                        assignees: ['Svante'],
-                        category: 'Sport',
+                        inboxOnly: goesToInbox,
+                        assignees: child ? [child] : [],
+                        category: category,
                         todoList: [],
                         tags: [],
                         deleted: false,
-                        scheduleOnly: false,
-                        isViewOnly: true  // Cannot be deleted, only viewed
-                    });
+                        scheduleOnly: scheduleOnly,
+                        isLesson: isLesson,
+                        syncToGoogle: cal.syncToGoogle && !goesToInbox && !scheduleOnly
+                    };
+
+                    if (goesToInbox) {
+                        inboxEvents.push(eventData);
+                    } else if (!scheduleOnly) {
+                        // If Google API is enabled, syncToGoogle events go to separate array
+                        // They will be pushed to Google in STEP 2 and fetched back in STEP 3
+                        if (eventData.syncToGoogle && googleCalendar.isEnabled()) {
+                            eventsToSyncToGoogle.push(eventData);
+                        } else {
+                            freshEvents.push(eventData);
+                        }
+                    }
                 }
             }
         } catch (e) {
@@ -334,9 +475,45 @@ async function fetchCalendarsFromGoogle() {
         }
     }
 
-    isFetching = false;
+    // ============ STEP 2: Auto-push subscription events to Google ============
+    if (googleCalendar.isEnabled() && eventsToSyncToGoogle.length > 0) {
+        console.log(`[Sync] ${eventsToSyncToGoogle.length} events to potentially sync to Google`);
+        let pushedCount = 0;
 
-    // ============ STEP 2: Fetch ALL events from Google Calendar API ============
+        for (const event of eventsToSyncToGoogle) {
+            // Skip if already in Google (check mapping)
+            if (googleCalendar.getMapping(event.uid)) continue;
+
+            // Skip past events
+            if (new Date(event.start) < new Date()) continue;
+
+            try {
+                const googleEvent = {
+                    summary: event.summary,
+                    start: event.start,
+                    end: event.end,
+                    location: event.location,
+                    description: `Källa: ${event.originalSource}`,
+                    assignees: event.assignees
+                };
+
+                const created = await googleCalendar.createEvent(googleEvent);
+                if (created) {
+                    await googleCalendar.saveMapping(event.uid, created.id, googleCalendar.CALENDAR_CONFIG.familjen);
+                    pushedCount++;
+                }
+                await delay(300);
+            } catch (err) {
+                console.error(`[Sync] Failed to push ${event.summary}:`, err.message);
+            }
+        }
+
+        if (pushedCount > 0) {
+            console.log(`[Sync] Pushed ${pushedCount} new events to Google`);
+        }
+    }
+
+    // ============ STEP 3: Fetch ALL events from Google Calendar API ============
     // This is the SINGLE SOURCE OF TRUTH for family events
     if (googleCalendar.isEnabled()) {
         const startTime = new Date();
@@ -474,12 +651,17 @@ async function fetchCalendarsFromGoogle() {
         console.log('[Cache] Google Calendar API not enabled - no events fetched');
     }
 
-    // ============ STEP 3: Update cache ============
-    if (freshEvents.length > 0) {
-        cachedCalendarEvents = freshEvents;
+    isFetching = false;
+
+    // ============ STEP 4: Update cache ============
+    // Include inbox events in cache so /api/inbox can filter them
+    const allEvents = [...freshEvents, ...inboxEvents];
+
+    if (allEvents.length > 0) {
+        cachedCalendarEvents = allEvents;
         cacheTimestamp = Date.now();
         saveCacheToDisk();
-        console.log(`[Cache] Updated with ${freshEvents.length} events (${successCount} sources OK, ${errorCount} failed)`);
+        console.log(`[Cache] Updated with ${allEvents.length} events (${freshEvents.length} calendar + ${inboxEvents.length} inbox, ${successCount} sources OK, ${errorCount} failed)`);
         return true;
     } else if (cachedCalendarEvents.length > 0) {
         console.log(`[Cache] Fetch returned 0 events, keeping old cache`);
