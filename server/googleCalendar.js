@@ -40,7 +40,11 @@ const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH ||
     path.join(process.cwd(), 'server', 'credentials', 'google-service-account.json');
 
 // Path to UID mapping file (source UID → Google Event ID)
-const MAP_PATH = path.join(process.cwd(), 'server', 'google_event_map.json');
+// Use /data/ in HA environment for persistence across container restarts
+const HA_DATA_DIR = '/data';
+const MAP_PATH = fs.existsSync(HA_DATA_DIR)
+    ? path.join(HA_DATA_DIR, 'google_event_map.json')
+    : path.join(process.cwd(), 'server', 'google_event_map.json');
 
 let authClient = null;
 let calendarClient = null;

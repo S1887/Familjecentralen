@@ -624,10 +624,16 @@ async function fetchCalendarsFromGoogle() {
                     const eStart = new Date(e.start.dateTime || e.start.date);
                     const newStart = new Date(event.start);
 
-                    // Match if summary is same (or very similar) and start time within 5 minutes
+                    // Strip child prefix for comparison (e.g., "Algot: Träning" -> "träning")
+                    const stripPrefix = (s) => s.replace(/^(algot|tuva|leon|svante|sarah):\s*/i, '');
+                    const eStripped = stripPrefix(eSummary);
+                    const newStripped = stripPrefix(newSummary);
+
+                    // Match if summary is same (with or without prefix) and start time within 5 minutes
                     const summaryMatch = eSummary === newSummary ||
-                                        eSummary.includes(newSummary) ||
-                                        newSummary.includes(eSummary);
+                                        eStripped === newStripped ||
+                                        eSummary.includes(newStripped) ||
+                                        newSummary.includes(eStripped);
                     const timeMatch = Math.abs(eStart - newStart) < 5 * 60 * 1000; // 5 min tolerance
 
                     return summaryMatch && timeMatch;
