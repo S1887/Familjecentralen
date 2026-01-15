@@ -281,10 +281,10 @@ if (process.env.DATA_DIR && !fs.existsSync(DATA_DIR)) {
 }
 
 // === VERSION UPGRADE CLEANUP ===
-// One-time cleanup when upgrading to v4.0.2+ to prevent duplicates
+// One-time cleanup when upgrading to prevent duplicates
 // This clears sync-related files but preserves user data (tasks, local_events, etc.)
 const VERSION_FILE = path.join(DATA_DIR, 'last_version.txt');
-const CURRENT_VERSION = '4.0.2';
+const CURRENT_VERSION = '4.0.4';
 
 function performVersionUpgradeCleanup() {
     let lastVersion = '';
