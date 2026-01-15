@@ -632,9 +632,9 @@ async function fetchCalendarsFromGoogle() {
 
                     // Match if summary is same (with or without prefix) and start time within 5 minutes
                     const summaryMatch = eSummary === newSummary ||
-                                        eStripped === newStripped ||
-                                        eSummary.includes(newStripped) ||
-                                        newSummary.includes(eStripped);
+                        eStripped === newStripped ||
+                        eSummary.includes(newStripped) ||
+                        newSummary.includes(eStripped);
                     const timeMatch = Math.abs(eStart - newStart) < 5 * 60 * 1000; // 5 min tolerance
 
                     return summaryMatch && timeMatch;
@@ -2464,7 +2464,7 @@ app.post('/api/cancel-event', async (req, res) => {
                     console.error('[Cancel] Failed to delete from Google via mapping:', googleError.message);
                 }
             }
-            
+
             // For events from personal calendars (Svante/Sarah/Family) - delete directly
             if (!googleDeleted && source && (source.toLowerCase().includes('svante') || source.toLowerCase().includes('sarah') || source.toLowerCase().includes('familje') || source.toLowerCase().includes('örtendahl'))) {
                 try {
@@ -2776,6 +2776,12 @@ app.post('/api/create-event', async (req, res) => {
         }
 
         res.json({ success: true, event: newEvent, googlePushed: !!googleResult });
+
+        // Invalidate cache after creation so next GET fetches fresh data from Google
+        if (googleResult) {
+            cacheTimestamp = 0;
+            console.log('[CreateEvent] Cache invalidated for instant refresh');
+        }
     } catch (error) {
         console.error('Events fetch error:', error);
         try {
@@ -3088,9 +3094,9 @@ async function startServer() {
         const isSubscriptionUid = (uid) => {
             if (!uid) return false;
             return uid.includes('@laget.se') ||
-                   uid.includes('@sportadmin') ||
-                   uid.includes('vklass') ||
-                   uid.includes('@maak-agenda.nl');
+                uid.includes('@sportadmin') ||
+                uid.includes('vklass') ||
+                uid.includes('@maak-agenda.nl');
         };
 
         const cleanedEvents = localEvents.filter(event => {
