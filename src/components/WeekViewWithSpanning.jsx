@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import Icon from './Icon';
 
 const WeekViewWithSpanning = ({
@@ -17,7 +17,28 @@ const WeekViewWithSpanning = ({
 }) => {
     // Scroll to Today on Mount/Update
 
+    // Responsive Logic
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const columnStyle = isMobile ? {
+        flex: '1 0 auto',
+        width: 'calc((100vw - 60px) / 3)',
+        minWidth: 'min(150px, calc((100vw - 60px) / 3))',
+        maxWidth: '100%'
+    } : {
+        flex: 1,
+        width: 'auto',
+        minWidth: 0,
+        maxWidth: 'none'
+    };
 
     const containerRef = useRef(null);
     const days = [];
@@ -197,7 +218,8 @@ const WeekViewWithSpanning = ({
                 overflowX: 'auto',
                 overflowY: 'visible',
                 border: '1px solid var(--border-color)',
-                scrollBehavior: 'smooth'
+                scrollBehavior: 'smooth',
+                scrollSnapType: 'x mandatory'
             }}
         >
 
@@ -219,8 +241,8 @@ const WeekViewWithSpanning = ({
                             key={d.toString()}
                             id={isToday ? 'today-column-header' : undefined}
                             style={{
-                                flex: 1,
-                                minWidth: '130px', // Min width for mobile
+                                ...columnStyle,
+                                scrollSnapAlign: 'start',
                                 textAlign: 'center',
                                 padding: '0.5rem',
                                 background: isToday ? 'rgba(46, 213, 115, 0.1)' : 'transparent',
@@ -352,8 +374,8 @@ const WeekViewWithSpanning = ({
 
                             return (
                                 <div key={d.toString()} style={{
-                                    flex: 1,
-                                    minWidth: '130px', // Min width for mobile
+                                    ...columnStyle,
+                                    scrollSnapAlign: 'start',
                                     borderRight: '1px solid var(--border-color)',
                                     position: 'relative',
                                     background: isToday ? 'rgba(46, 213, 115, 0.02)' : 'transparent',

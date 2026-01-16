@@ -1,0 +1,185 @@
+.mobile-grid-week-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(4, minmax(100px, auto));
+    gap: 4px;
+    padding: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    max-width: 100vw;
+}
+
+.mobile-day-card {
+    background-color: var(--bg-surface, #1e1e1e);
+    border-radius: 6px;
+    padding: 2px 2px 6px 2px;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color, #333);
+    overflow: hidden;
+}
+
+.mobile-day-card.is-today {
+    border: 1px solid var(--primary-color, #4caf50);
+    background-color: rgba(76, 175, 80, 0.08);
+}
+
+.mobile-day-header {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 2px;
+    padding: 2px 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mobile-day-number {
+    font-size: 1.1em;
+    font-weight: 700;
+}
+
+.mobile-day-name {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    letter-spacing: 0.5px;
+}
+
+.mobile-day-events {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    padding: 0 2px;
+}
+
+.mobile-event-compact {
+    padding: 1px 0;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 0;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-main);
+}
+
+/* Color Logic */
+.mobile-event-compact.assigned-svante,
+.mobile-event-compact.source-svante {
+    color: #ff6b81 !important;
+}
+
+.mobile-event-compact.assigned-sarah,
+.mobile-event-compact.source-sarah,
+.mobile-event-compact.source-mamma {
+    color: #f1c40f !important;
+}
+
+.mobile-event-compact.assigned-algot {
+    color: #74b9ff !important;
+}
+
+.mobile-event-compact.assigned-leon {
+    color: #55efc4 !important;
+}
+
+.mobile-event-compact.assigned-tuva {
+    color: #a29bfe !important;
+}
+
+.event-time-compact {
+    font-weight: 700;
+    font-size: 0.9em;
+    opacity: 1;
+    flex-shrink: 0;
+}
+
+.event-summary-compact {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+/* 
+   MINI WEEK GRID (Box 8)
+*/
+.mini-overview-card {
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    grid-column: 2;
+}
+
+.mini-week-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.mini-week-label {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.mini-week-grid {
+    display: flex;
+    gap: 3px;
+    /* Space between days */
+    justify-content: center;
+}
+
+.mini-day-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 14px;
+    /* Fixed width */
+}
+
+.mini-day-initial {
+    font-size: 0.6em;
+    opacity: 0.5;
+    margin-bottom: 1px;
+}
+
+.mini-day-number {
+    font-size: 0.75em;
+    font-weight: 600;
+}
+
+.mini-day-cell.current-day .mini-day-number {
+    color: var(--primary-color, #4caf50);
+    font-weight: 800;
+    /* optional circle? */
+}
+
+.mini-event-dot {
+    width: 3px;
+    height: 3px;
+    background: #666;
+    border-radius: 50%;
+    margin-top: 1px;
+}
+
+.mini-week-grid .current-day .mini-event-dot {
+    background: var(--primary-color);
+}
+
+.mini-month-label {
+    font-size: 0.7em;
+    text-transform: uppercase;
+    margin-top: 4px;
+    opacity: 0.4;
+    letter-spacing: 1px;
+}

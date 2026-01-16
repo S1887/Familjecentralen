@@ -9,6 +9,11 @@ import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Calendar IDs configuration - loaded lazily to ensure env vars are set first
 let _calendarConfig = null;
 
@@ -37,14 +42,14 @@ const CALENDAR_CONFIG = new Proxy({}, {
 
 // Path to credentials file (set via environment variable or config)
 const CREDENTIALS_PATH = process.env.GOOGLE_CREDENTIALS_PATH ||
-    path.join(process.cwd(), 'server', 'credentials', 'google-service-account.json');
+    path.join(__dirname, 'credentials', 'google-service-account.json');
 
 // Path to UID mapping file (source UID → Google Event ID)
 // Use /data/ in HA environment for persistence across container restarts
 const HA_DATA_DIR = '/data';
 const MAP_PATH = fs.existsSync(HA_DATA_DIR)
     ? path.join(HA_DATA_DIR, 'google_event_map.json')
-    : path.join(process.cwd(), 'server', 'google_event_map.json');
+    : path.join(__dirname, 'google_event_map.json');
 
 let authClient = null;
 let calendarClient = null;

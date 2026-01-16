@@ -1,11 +1,16 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { fileURLToPath as _fileURLToPath } from 'url';
+import path from 'path';
+
+// Load .env from project root (parent of server/)
+const __filename_early = _fileURLToPath(import.meta.url);
+const __dirname_early = path.dirname(__filename_early);
+dotenv.config({ path: path.join(__dirname_early, '..', '.env') });
 import express from 'express';
 import cors from 'cors';
 import ical from 'node-ical';
 import bodyParser from 'body-parser';
 import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import {
@@ -30,7 +35,7 @@ import {
 } from './db/mongodb.js';
 import googleCalendar from './googleCalendar.js';
 
-const __filename = fileURLToPath(import.meta.url);
+const __filename = _fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
@@ -97,6 +102,7 @@ function logToFile(msg) {
     try { fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] ${msg}\n`); } catch (e) { }
 }
 logToFile('--- SERVER STARTING ---');
+console.log('--- FAMILY OPS SERVER V5 DIAGNOSTIC START ---');
 
 const PORT = process.env.PORT || 3001;
 
@@ -442,6 +448,7 @@ async function _fetchCalendarsInternal() {
     const freshEvents = [];
     const inboxEvents = []; // Events that need approval (non-training subscription events)
     const eventsToSyncToGoogle = []; // Events to push to Google (training/match from subscriptions)
+    const scheduleOnlyEvents = []; // Vklass lessons for ScheduleViewer
     let successCount = 0;
     let errorCount = 0;
 
@@ -557,6 +564,7 @@ async function _fetchCalendarsInternal() {
                         originalSource: cal.name,
                         inboxOnly: goesToInbox,
                         assignees: child ? [child] : [],
+                        student: child || null, // For ScheduleViewer filtering
                         category: category,
                         todoList: [],
                         tags: [],
@@ -576,6 +584,9 @@ async function _fetchCalendarsInternal() {
                         } else {
                             freshEvents.push(eventData);
                         }
+                    } else {
+                        // scheduleOnly events (Vklass lessons) - add to dedicated array
+                        scheduleOnlyEvents.push(eventData);
                     }
                 }
             }
@@ -851,14 +862,14 @@ async function _fetchCalendarsInternal() {
     isFetching = false;
 
     // ============ STEP 4: Update cache ============
-    // Include inbox events in cache so /api/inbox can filter them
-    const allEvents = [...freshEvents, ...inboxEvents];
+    // Include inbox events and schedule-only events in cache
+    const allEvents = [...freshEvents, ...inboxEvents, ...scheduleOnlyEvents];
 
     if (allEvents.length > 0) {
         cachedCalendarEvents = allEvents;
         cacheTimestamp = Date.now();
         saveCacheToDisk();
-        console.log(`[Cache] Updated with ${allEvents.length} events (${freshEvents.length} calendar + ${inboxEvents.length} inbox, ${successCount} sources OK, ${errorCount} failed)`);
+        console.log(`[Cache] Updated with ${allEvents.length} events (${freshEvents.length} calendar + ${inboxEvents.length} inbox + ${scheduleOnlyEvents.length} schedule, ${successCount} sources OK, ${errorCount} failed)`);
         return true;
     } else if (cachedCalendarEvents.length > 0) {
         console.log(`[Cache] Fetch returned 0 events, keeping old cache`);
@@ -3070,29 +3081,133 @@ app.post('/api/update-event', async (req, res) => {
 
 app.post('/api/restore-event', async (req, res) => {
     const { uid } = req.body;
+    console.log(`[Restore] Request received for UID: ${uid}`);
 
     try {
         let events = await readLocalEvents();
         const existingIndex = events.findIndex(e => e.uid === uid);
 
-        if (existingIndex >= 0) {
-            events[existingIndex].deleted = false;
-            events[existingIndex].cancelled = false;
-            delete events[existingIndex].deletedAt;
+        let oldEvent = null;
 
-            // Update in MongoDB if connected
-            if (isMongoConnected()) {
-                await updateLocalEvent(uid, { deleted: false, cancelled: false, deletedAt: null });
+        if (existingIndex >= 0) {
+            oldEvent = events[existingIndex];
+        } else {
+            // Fallback: Check in trash.json
+            const trashItems = readTrashFile();
+            const trashItem = trashItems.find(t => t.eventId === uid);
+            if (trashItem) {
+                console.log(`[Restore] Found event in trash.json: ${uid}`);
+
+                // Handle missing end date - default to start + 1 hour
+                let endDate = trashItem.end;
+                if (!endDate && trashItem.start) {
+                    const startMs = new Date(trashItem.start).getTime();
+                    endDate = new Date(startMs + 60 * 60 * 1000).toISOString(); // +1 hour
+                    console.log(`[Restore] Missing end date, defaulting to: ${endDate}`);
+                }
+
+                oldEvent = {
+                    ...trashItem,
+                    uid: trashItem.eventId,
+                    source: trashItem.source || 'Papperskorgen',
+                    summary: trashItem.summary || 'Återställd händelse',
+                    start: trashItem.start,
+                    end: endDate
+                };
+            }
+        }
+
+        if (oldEvent) {
+            // 1. Create Fresh Event (Clone)
+            const newUid = uuidv4();
+            const newEvent = {
+                ...oldEvent,
+                uid: newUid,
+                deleted: false,
+                cancelled: false,
+                source: 'Örtendahls familjekalender',
+                originalSource: oldEvent.source || 'Återställd',
+                createdBy: 'restored',
+                description: `Återställd från: ${oldEvent.summary}\nKälla: ${oldEvent.source || 'Okänd'}`,
+                created: new Date().toISOString(),
+                lastUpdated: new Date().toISOString()
+            };
+
+            // Cleanup internal fields
+            delete newEvent.deletedAt;
+            delete newEvent._id;
+
+            console.log(`[Restore] Cloning event ${uid} -> ${newUid}`);
+
+            // 2. Migrate Assignments (Database)
+            const db = await readDb();
+            if (db[uid]) {
+                db[newUid] = { ...db[uid] };
+                await writeDb(newUid, db[newUid]);
+                console.log(`[Restore] Migrated assignments to new UID`);
             }
 
+            // 3. Google Calendar Sync (Create as NEW)
+            if (googleCalendar.isEnabled()) {
+                try {
+                    // Date validation
+                    const sDate = new Date(newEvent.start);
+                    const eDate = new Date(newEvent.end);
+
+                    if (isNaN(sDate.getTime()) || isNaN(eDate.getTime())) {
+                        console.warn(`[Restore] Invalid dates for Google Sync: ${newEvent.start} - ${newEvent.end}`);
+                    } else {
+                        const googleEvent = await googleCalendar.createEvent(newEvent);
+                        if (googleEvent) {
+                            await googleCalendar.saveMapping(newUid, googleEvent.id, googleCalendar.getTargetCalendarId(newEvent.assignees));
+                            console.log(`[Restore] Created new event in Google Calendar: ${googleEvent.id}`);
+                        }
+                    }
+                } catch (googleError) {
+                    console.error('[Restore] Failed to sync to Google:', googleError.message);
+                }
+            }
+
+            // 4. Persistence
+            // Add new
+            events.push(newEvent);
+            if (isMongoConnected()) {
+                await createLocalEvent(newEvent);
+            }
+
+            // Remove old (Hard delete from list) IF it existed locally
+            if (existingIndex >= 0) {
+                events.splice(existingIndex, 1);
+                if (isMongoConnected()) {
+                    await deleteLocalEvent(uid);
+                }
+            }
+
+            // Always remove from trash (DB and File)
+            if (isMongoConnected()) {
+                await removeFromTrash(uid);
+            }
+            const trashItems = readTrashFile();
+            const newTrashItems = trashItems.filter(t => t.eventId !== uid);
+            writeTrashFile(newTrashItems);
+
             await writeLocalEvents(events);
-            res.json({ success: true });
-        } else {
-            res.status(404).json({ error: 'Event not found in local db' });
+
+            // Invalidate cache
+            cacheTimestamp = 0;
+
+            res.json({ success: true, newUid });
+            return;
         }
+
+        // Not found
+        res.status(404).json({ error: 'Event not found in local db' });
+
     } catch (error) {
-        console.error('Restore event error:', error);
-        res.status(500).json({ error: 'Kunde inte återställa händelse' });
+        console.error('RESTORE CRASH DIAGNOSTIC:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'CRITCAL ERROR: ' + error.message });
+        }
     }
 });
 

@@ -3,6 +3,7 @@ import './App.css'
 import LoginPage from './components/LoginPage'
 import ScheduleViewer from './components/ScheduleViewer'
 import WeekViewWithSpanning from './components/WeekViewWithSpanning'
+import MobileGridWeekView from './components/MobileGridWeekView' // NEW IMPORT
 import MonthViewWithSpanning from './components/MonthViewWithSpanning'
 import Icon from './components/Icon'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
@@ -448,7 +449,7 @@ function App() {
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [showFamilyMenu, setShowFamilyMenu] = useState(false);
   const [selectedTodoWeek, setSelectedTodoWeek] = useState(getWeekNumber(new Date()));
-  const [viewMode, setViewMode] = useState('week');
+  const [viewMode, setViewMode] = useState(() => window.innerWidth < 1100 ? 'mobile_grid' : 'week');
   const [activeAssignment, setActiveAssignment] = useState(null);
   const [showMobileTaskForm, setShowMobileTaskForm] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -973,7 +974,7 @@ function App() {
   const navigateView = (direction) => {
     // Bottom Calendar Navigation: Change Week or Month
     const newDate = new Date(selectedDate);
-    if (viewMode === 'week') {
+    if (viewMode === 'week' || viewMode === 'mobile_grid') {
       newDate.setDate(selectedDate.getDate() + (direction * 7));
     } else if (viewMode === 'month') {
       newDate.setMonth(selectedDate.getMonth() + direction);
@@ -1532,9 +1533,19 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid })
     })
-      .then(() => {
-        fetchTrash();
-        fetchEvents();
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert('Händelse återställd som ny! Den synkas nu även till Google Kalender.');
+          fetchTrash();
+          fetchEvents(true);
+        } else {
+          alert('Fel vid återställning: ' + (data.error || 'Okänt fel'));
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Ett nätverksfel uppstod vid återställning.');
       });
   };
 
@@ -3292,6 +3303,7 @@ function App() {
                 }}>
                   {[
                     { id: 'upcoming', label: 'Kommande' },
+                    { id: 'mobile_grid', label: 'Mobilvecka' },
                     { id: 'week', label: `Vecka ${getWeekNumber(selectedDate)}` },
                     { id: 'month', label: selectedDate.toLocaleDateString('sv-SE', { month: 'long' }) },
                     { id: 'history', label: 'Historik' }
@@ -3323,16 +3335,16 @@ function App() {
               </div>
 
               <div className="timeline">
-                <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  {(viewMode === 'week' || viewMode === 'month') ? (
+                <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1.2rem', margin: '0.5rem 0', paddingRight: '1rem' }}>
+                  {(viewMode === 'week' || viewMode === 'month' || viewMode === 'mobile_grid') ? (
                     <>
-                      <button onClick={() => navigateView(-1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>◀</button>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Icon name="calendar" size={24} style={{ color: '#a29bfe' }} />
-                        {viewMode === 'week' ? `Vecka ${getWeekNumber(selectedDate)}` :
+                      <button onClick={() => navigateView(-1)} style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-main)', padding: '0 0.5rem' }}>◀</button>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '1.1rem' }}>
+                        <Icon name="calendar" size={20} style={{ color: '#a29bfe' }} />
+                        {(viewMode === 'week' || viewMode === 'mobile_grid') ? `Vecka ${getWeekNumber(selectedDate)}` :
                           viewMode === 'month' ? `${selectedDate.toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' })}` : ''}
                       </span>
-                      <button onClick={() => navigateView(1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>▶</button>
+                      <button onClick={() => navigateView(1)} style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-main)', padding: '0 0.5rem' }}>▶</button>
                     </>
                   ) : (
                     <span style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -3381,9 +3393,20 @@ function App() {
                   />
                 )}
 
+                {/* MOBILE GRID VIEW */}
+                {viewMode === 'mobile_grid' && (
+                  <MobileGridWeekView
+                    selectedDate={selectedDate}
+                    filteredEventsList={filteredEventsList}
+                    isSameDay={isSameDay}
+                    getEventColorClass={getEventColorClass}
+                    openEditModal={openEditModal}
+                  />
+                )}
+
 
                 {/* DEFAULT LIST VIEW (Upcoming, History, Next 3 Days) */}
-                {viewMode !== 'month' && viewMode !== 'week' && (
+                {viewMode !== 'month' && viewMode !== 'week' && viewMode !== 'mobile_grid' && (
                   otherEvents.length === 0 ? (
                     <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Inga kommande händelser matchar filtret.</p>
                   ) : (
