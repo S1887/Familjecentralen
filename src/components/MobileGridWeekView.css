@@ -67,32 +67,45 @@
     color: var(--text-main);
 }
 
-/* Color Logic */
-.mobile-event-compact.assigned-svante,
-.mobile-event-compact.source-svante {
-    color: #ff6b81 !important;
+/* Color Logic - Dots */
+.mobile-event-compact::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 2px;
+    flex-shrink: 0;
+    background-color: var(--text-muted, #555);
+    /* Default if no class matches */
 }
 
-.mobile-event-compact.assigned-sarah,
-.mobile-event-compact.source-sarah,
-.mobile-event-compact.source-mamma {
-    color: #f1c40f !important;
+/* Specific Colors for Dots */
+.mobile-event-compact.assigned-svante::before,
+.mobile-event-compact.source-svante::before {
+    background-color: #ff6b81;
 }
 
-.mobile-event-compact.assigned-algot {
-    color: #74b9ff !important;
+.mobile-event-compact.assigned-sarah::before,
+.mobile-event-compact.source-sarah::before,
+.mobile-event-compact.source-mamma::before {
+    background-color: #f1c40f;
 }
 
-.mobile-event-compact.assigned-leon {
-    color: #e67e22 !important;
+.mobile-event-compact.assigned-algot::before {
+    background-color: #74b9ff;
 }
 
-.mobile-event-compact.assigned-family {
-    color: #2ed573 !important;
+.mobile-event-compact.assigned-leon::before {
+    background-color: #e67e22;
 }
 
-.mobile-event-compact.assigned-tuva {
-    color: #a29bfe !important;
+.mobile-event-compact.assigned-family::before {
+    background-color: #2ed573;
+}
+
+.mobile-event-compact.assigned-tuva::before {
+    background-color: #a29bfe;
 }
 
 .event-time-compact {
