@@ -284,7 +284,7 @@ if (process.env.DATA_DIR && !fs.existsSync(DATA_DIR)) {
 // One-time cleanup when upgrading to prevent duplicates
 // This clears sync-related files but preserves user data (tasks, local_events, etc.)
 const VERSION_FILE = path.join(DATA_DIR, 'last_version.txt');
-const CURRENT_VERSION = '4.1.1';
+const CURRENT_VERSION = '5.0.0';
 
 function performVersionUpgradeCleanup() {
     let lastVersion = '';
@@ -407,8 +407,31 @@ function saveCacheToDisk() {
     }
 }
 
-// Fetch calendars (internal function)
+// Promise to track active fetch
+let fetchingPromise = null;
+
+// Wrapper to handle concurrent fetches
 async function fetchCalendarsFromGoogle() {
+    if (fetchingPromise) {
+        console.log('[Cache] Already fetching, attaching to existing promise...');
+        return fetchingPromise;
+    }
+
+    fetchingPromise = (async () => {
+        try {
+            const result = await _fetchCalendarsInternal();
+            return result;
+        } finally {
+            fetchingPromise = null;
+        }
+    })();
+
+    return fetchingPromise;
+}
+
+// Fetch calendars (internal function)
+// Internal fetch logic
+async function _fetchCalendarsInternal() {
     if (isFetching) {
         console.log('[Cache] Already fetching, skipping...');
         return false;
@@ -846,14 +869,18 @@ async function fetchCalendarsFromGoogle() {
 }
 
 // Public function to get cached calendars
-async function fetchAndCacheCalendars() {
+async function fetchAndCacheCalendars(forceRefresh = false) {
     const now = Date.now();
     const cacheAge = now - cacheTimestamp;
 
-    // Return cache if still valid
-    if (cachedCalendarEvents.length > 0 && cacheAge < CACHE_DURATION_MS) {
+    // Return cache if still valid (and not forced)
+    if (!forceRefresh && cachedCalendarEvents.length > 0 && cacheAge < CACHE_DURATION_MS) {
         console.log(`[Cache] Returning cached data (age: ${Math.round(cacheAge / 1000 / 60)} min)`);
         return cachedCalendarEvents;
+    }
+
+    if (forceRefresh) {
+        console.log('[Cache] FORCE REFRESH requested - bypassing cache limit');
     }
 
     // Try to fetch fresh data
@@ -1540,9 +1567,10 @@ app.get('/api/events', async (req, res) => {
     try {
         const assignments = await readDb();
         const includeTrash = req.query.includeTrash === 'true';
+        const forceRefresh = req.query.force === 'true';
 
         // Get events from Google Calendar cache
-        const fetchedEvents = await fetchAndCacheCalendars();
+        const fetchedEvents = await fetchAndCacheCalendars(forceRefresh);
 
         // Get LOCAL events (includes shadow edits and locally created events)
         const localEvents = await readLocalEvents();
@@ -1609,12 +1637,20 @@ app.get('/api/events', async (req, res) => {
         localEvents.forEach(le => {
             // Check if this is a purely local event (not just an override of a Google event)
             const existsInGoogle = fetchedEvents.some(ge => ge.uid === le.uid);
-            if (!existsInGoogle && le.source && (le.source.includes('FamilyOps') || le.source.includes('Familjen'))) {
+
+            // Logic to include local event:
+            // 1. Not already in Google list
+            // 2. AND (Marked as FamilyOps OR has createdBy (user created) OR Source is missing (assume local))
+            const isLocalSource = !le.source || le.source.includes('FamilyOps') || le.source.includes('Familjen');
+            const isUserCreated = !!le.createdBy;
+
+            if (!existsInGoogle && (isLocalSource || isUserCreated)) {
                 allEvents.push(le);
             }
         });
 
-
+        // NOTE: Sync-check for Google deletions removed - was causing issues with newly created events.
+        // Manual refresh button still works to pull latest data from Google.
         // Filtrera bort gamla events (före datumet vi satte)
         const FILTER_DATE = new Date('2025-11-01');
         allEvents = allEvents.filter(event => new Date(event.start) >= FILTER_DATE);
@@ -1746,10 +1782,31 @@ app.get('/api/events', async (req, res) => {
                     return true;
                 }
 
+                // EXEMPTION REMOVED: User-created events should NOT be exempt from deduplication. 
+                // If they exist in Google, we want to show the Google version (or hide the local one).
+                // if (ev.source === 'Familjen' || ev.source === 'FamilyOps' || ev.createdBy) {
+                //    return true;
+                // }
+
                 // Check 1: Does this event map to a known Google Event ID that is currently present?
                 if (googleMap[ev.uid] && currentUids.has(googleMap[ev.uid])) {
                     // console.log(`[Dedupe] Hiding mapped event: ${ev.summary} (Mapped to: ${googleMap[ev.uid]})`);
                     return false;
+                }
+
+                // Check 1b: ZOMBIE DETECTION (Ghost Events)
+                // If event HAS a mapping, but the Google ID is NOT in currentUids, 
+                // it means it was deleted from Google (or not fetched).
+                // We should hide it unless it's very new (grace period for sync lag).
+                if (googleMap[ev.uid] && !currentUids.has(googleMap[ev.uid])) {
+                    const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+                    const createdAt = ev.createdAt ? new Date(ev.createdAt).getTime() : 0;
+                    const now = Date.now();
+
+                    if (now - createdAt > STALE_THRESHOLD_MS) {
+                        console.log(`[Dedupe] Hiding ZOMBIE event (Deleted in Google): ${ev.summary} (${ev.uid})`);
+                        return false;
+                    }
                 }
 
                 // Check 2: Is this event's UID directly present in the active set (via linkedSourceUid)?
@@ -2535,6 +2592,7 @@ app.post('/api/cancel-event', async (req, res) => {
 });
 
 // Delete event permanently (remove from Google Calendar)
+// Delete event permanently (remove from Google Calendar)
 app.post('/api/delete-event', async (req, res) => {
     try {
         const { uid, summary, start, source } = req.body;
@@ -2547,8 +2605,16 @@ app.post('/api/delete-event', async (req, res) => {
         const existing = localEvents.find(e => e.uid === uid);
         if (existing) {
             existing.deleted = true;
+            existing.deletedAt = new Date().toISOString();
         } else {
-            localEvents.push({ uid, deleted: true, summary, start, source });
+            localEvents.push({
+                uid,
+                deleted: true,
+                deletedAt: new Date().toISOString(),
+                summary,
+                start,
+                source
+            });
         }
         await writeLocalEvents(localEvents);
 
@@ -2569,21 +2635,84 @@ app.post('/api/delete-event', async (req, res) => {
         // DELETE from Google Calendar (permanent)
         let googleDeleted = false;
         if (googleCalendar.isEnabled()) {
+            // 1. Try via mapping (for events we pushed from ICS feeds or created locally)
             const mapping = googleCalendar.getMapping(uid);
             if (mapping) {
                 try {
                     await googleCalendar.deleteEvent(mapping.googleEventId, mapping.calendarId);
-                    console.log(`[Delete] Event deleted from Google: ${mapping.googleEventId}`);
+                    console.log(`[Delete] Event deleted from Google via mapping: ${mapping.googleEventId}`);
+                    // Remove mapping since it's gone
+                    googleCalendar.removeMapping(uid);
                     googleDeleted = true;
                 } catch (googleError) {
-                    console.error('[Delete] Failed to delete from Google:', googleError.message);
+                    console.error('[Delete] Failed to delete from Google via mapping:', googleError.message);
+                }
+            }
+
+            // 1.5. Fallback: Search for event by Extended Property (familjecentralenUid)
+            // This catches cases where mapping is lost but event exists in Google with our UID
+            if (!googleDeleted) {
+                const calendarsToSearch = [
+                    googleCalendar.CALENDAR_CONFIG.familjen,
+                    googleCalendar.CALENDAR_CONFIG.svante,
+                    googleCalendar.CALENDAR_CONFIG.sarah
+                ].filter(c => c);
+
+                for (const calId of calendarsToSearch) {
+                    if (googleDeleted) break;
+                    try {
+                        const foundEvent = await googleCalendar.findEventByUid(uid, calId);
+                        if (foundEvent) {
+                            console.log(`[Delete] Found lost event in Google (${calId}) via extended property. Deleting ID: ${foundEvent.id}`);
+                            const success = await googleCalendar.deleteEvent(foundEvent.id, calId);
+                            if (success) {
+                                googleDeleted = true;
+                                // Restore mapping momentarily just to ensure it's clean (optional, but good practice if we had it)
+                            }
+                        }
+                    } catch (searchError) {
+                        console.error('[Delete] Search fallback failed:', searchError.message);
+                    }
+                }
+            }
+
+            // 2. Fallback: If UID looks like a Google Event ID (no @, long string), delete directly
+            // This handles events that were pulled FROM Google (where uid = google event id)
+            if (!googleDeleted && uid && !uid.includes('@') && uid.length > 10) {
+                const calendarsToTry = [
+                    googleCalendar.CALENDAR_CONFIG.familjen,
+                    googleCalendar.CALENDAR_CONFIG.svante,
+                    googleCalendar.CALENDAR_CONFIG.sarah
+                ].filter(c => c);
+
+                for (const calId of calendarsToTry) {
+                    if (googleDeleted) break;
+                    try {
+                        console.log(`[Delete] Trying direct delete from calendar ${calId}...`);
+                        const wasDeleted = await googleCalendar.deleteEvent(uid, calId);
+
+                        if (wasDeleted) {
+                            console.log(`[Delete] Event deleted from Google directly (${calId})`);
+                            googleDeleted = true;
+                        } else {
+                            console.log(`[Delete] Could not delete from ${calId} (not found or error)`);
+                        }
+                    } catch (deleteError) {
+                        // Ignore 404 (not found in this calendar)
+                        if (!deleteError.message?.includes('404')) {
+                            console.error(`[Delete] Direct delete failed type:`, deleteError.message);
+                        }
+                    }
                 }
             }
         }
 
         res.json({ success: true, message: 'Händelse borttagen', googleDeleted });
     } catch (error) {
-        console.error('[Delete] ERROR:', error);
+        console.error(`[Delete] ERROR for UID ${req.body.uid}:`, error.message);
+        if (error.response) {
+            console.error('[Delete] Google API Error:', JSON.stringify(error.response.data));
+        }
         res.status(500).json({ error: 'Kunde inte ta bort händelse' });
     }
 });
@@ -2732,7 +2861,7 @@ app.get('/api/trash', async (req, res) => {
 });
 
 app.post('/api/create-event', async (req, res) => {
-    const { summary, location, coords, start, end, description, createdBy, assignee, assignees, category } = req.body;
+    const { summary, location, coords, start, end, description, createdBy, assignee, assignees, category, assignments } = req.body;
 
     if (!summary || !start) {
         return res.status(400).json({ error: 'Titel och starttid krävs' });
@@ -2750,10 +2879,13 @@ app.post('/api/create-event', async (req, res) => {
             description: description || '',
             assignee: assignee || 'Hela familjen',
             assignees: assignees || [],
+            assignments: assignments || {}, // Save assignments
             category: category || null,
             todoList: [],
             createdBy,
             createdAt: new Date().toISOString(),
+            // CRITICAL: Set source so it survives filter in GET /api/events
+            source: 'Familjen',
             deleted: false,
             cancelled: false
         };
@@ -2797,13 +2929,11 @@ app.post('/api/create-event', async (req, res) => {
             }
         }
 
-        res.json({ success: true, event: newEvent, googlePushed: !!googleResult });
+        // Invalidate cache for instant UI refresh
+        cacheTimestamp = 0;
+        console.log('[CreateEvent] Cache invalidated for instant refresh');
 
-        // Invalidate cache after creation so next GET fetches fresh data from Google
-        if (googleResult) {
-            cacheTimestamp = 0;
-            console.log('[CreateEvent] Cache invalidated for instant refresh');
-        }
+        res.json({ success: true, event: newEvent, googlePushed: !!googleResult });
     } catch (error) {
         console.error('Events fetch error:', error);
         try {
@@ -2880,6 +3010,7 @@ app.post('/api/update-event', async (req, res) => {
             events[existingIndex] = {
                 ...events[existingIndex],
                 summary, location, coords, start, end, description, todoList,
+                assignments: assignments || events[existingIndex].assignments || { driver: null, packer: null },
                 assignee: assignee || events[existingIndex].assignee,
                 assignees: assignees || events[existingIndex].assignees || [],
                 category: category || events[existingIndex].category,
@@ -2902,6 +3033,7 @@ app.post('/api/update-event', async (req, res) => {
                 end,
                 description: description || '',
                 todoList: todoList || [],
+                assignments: assignments || { driver: null, packer: null },
                 assignee: assignee || '',
                 assignees: assignees || [],
                 category: category || null,
@@ -2933,89 +3065,6 @@ app.post('/api/update-event', async (req, res) => {
     } catch (error) {
         console.error('Update event error:', error);
         res.status(500).json({ error: 'Kunde inte uppdatera händelse' });
-    }
-});
-
-app.post('/api/delete-event', async (req, res) => {
-    const { uid, summary, start, end, source } = req.body;
-
-    try {
-        let events = await readLocalEvents();
-        const existingIndex = events.findIndex(e => e.uid === uid);
-
-        if (existingIndex >= 0) {
-            events[existingIndex].deleted = true;
-            events[existingIndex].deletedAt = new Date().toISOString();
-
-            // Update in MongoDB if connected
-            if (isMongoConnected()) {
-                await updateLocalEvent(uid, { deleted: true, deletedAt: events[existingIndex].deletedAt });
-            }
-        } else {
-            const shadowEvent = {
-                uid,
-                summary: summary || 'Borttaget event',
-                start,
-                end,
-                source: source || 'Externt',
-                deleted: true,
-                deletedAt: new Date().toISOString()
-            };
-            events.push(shadowEvent);
-
-            // Save to MongoDB if connected
-            if (isMongoConnected()) {
-                await createLocalEvent(shadowEvent);
-            }
-        }
-
-        await writeLocalEvents(events);
-
-        // Delete from Google Calendar if API is enabled
-        let googleDeleted = false;
-        if (googleCalendar.isEnabled()) {
-            try {
-                // Check if we have a mapping for this event
-                const mapping = googleCalendar.getMapping(uid);
-                if (mapping) {
-                    await googleCalendar.deleteEvent(mapping.googleEventId, mapping.calendarId);
-                    googleCalendar.removeMapping(uid);
-                    googleDeleted = true;
-                    console.log(`[Delete] Removed from Google via mapping: ${mapping.googleEventId}`);
-                }
-                // Try direct deletion if UID looks like a Google event ID
-                else if (uid && !uid.includes('@') && uid.length > 10) {
-                    const calendarsToTry = [
-                        googleCalendar.CALENDAR_CONFIG.familjen,
-                        googleCalendar.CALENDAR_CONFIG.svante,
-                        googleCalendar.CALENDAR_CONFIG.sarah
-                    ].filter(c => c);
-
-                    for (const calId of calendarsToTry) {
-                        if (googleDeleted) break;
-                        try {
-                            await googleCalendar.deleteEvent(uid, calId);
-                            googleDeleted = true;
-                            console.log(`[Delete] Removed from Google: ${uid}`);
-                        } catch (e) {
-                            // 404 = not in this calendar, try next
-                        }
-                    }
-                }
-            } catch (err) {
-                console.error('[Delete] Google deletion failed:', err.message);
-            }
-
-            // Invalidate cache so deleted event disappears on refresh
-            if (googleDeleted) {
-                cacheTimestamp = 0;
-            }
-        }
-
-        res.json({ success: true, googleDeleted });
-    } catch (error) {
-        console.error('Delete event error:', error);
-        res.status(500).json({ error: 'Kunde inte ta bort händelse' });
     }
 });
 

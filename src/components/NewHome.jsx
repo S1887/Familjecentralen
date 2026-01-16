@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getTravelTime, formatDuration } from '../mapService';
+import Icon from './Icon';
 
 // Hero image is served from HA's /config folder via API
 const getHeroImageUrl = () => {
@@ -81,12 +82,12 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
         bgOverlay: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85))',
         cardBg: '#282828',
         cardBgHighlight: '#333333',
-        accent: '#1DB954',
+        accent: '#2ed573', // Flat Green
         textMain: '#ffffff',
         cardText: '#ffffff',
         textMuted: '#b3b3b3',
-        success: '#2ed573',
-        warning: '#ffa502',
+        success: '#2ed573', // Flat Green
+        warning: '#ffa502', // Flat Orange
         weatherWidgetBg: 'rgba(255,255,255,0.08)',
         weatherWidgetBorder: 'rgba(255,255,255,0.1)',
         nextEventBg: 'linear-gradient(135deg, #333333 0%, #282828 100%)',
@@ -96,12 +97,12 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
         bgOverlay: 'none',
         cardBg: '#ffffff',
         cardBgHighlight: '#f8f9fa',
-        accent: '#00b894',
+        accent: '#2ed573', // Flat Green
         textMain: '#2d3436',
         cardText: '#2d3436',
         textMuted: '#636e72',
-        success: '#00b894',
-        warning: '#e67e22',
+        success: '#2ed573', // Flat Green
+        warning: '#ffa502', // Flat Orange
         weatherWidgetBg: 'rgba(255,255,255,0.8)',
         weatherWidgetBorder: 'rgba(0,0,0,0.1)',
         nextEventBg: '#ffffff',
@@ -336,7 +337,8 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                                                 overflow: 'hidden',
                                                                 textOverflow: 'ellipsis'
                                                             }}>
-                                                                📍 {event.location}
+                                                                <Icon name="mapPin" size={16} style={{ color: '#ff7675', marginRight: '0.5rem' }} />
+                                                                {event.location}
                                                             </div>
                                                         )}
                                                     </div>
@@ -367,12 +369,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         <Card onClick={() => setActiveTab('timeline')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                             <div style={{ marginBottom: '0.8rem', color: '#a29bfe' }}>
                                 {/* Calendar Icon */}
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
+                                <Icon name="calendar" size={40} />
                             </div>
                             <div style={{ fontSize: '1rem', fontWeight: '500' }}>Kalender</div>
                         </Card>
@@ -382,10 +379,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         <Card onClick={() => setActiveTab('todos')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                             <div style={{ marginBottom: '0.8rem', color: theme.success }}>
                                 {/* Check/Todo Icon */}
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                </svg>
+                                <Icon name="check" size={40} />
                             </div>
                             <div style={{ fontSize: '1rem', fontWeight: '500' }}>Att göra</div>
                             {(() => {
@@ -415,10 +409,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                             <Card onClick={() => setActiveTab('schedule')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                                 <div style={{ marginBottom: '0.8rem', color: '#ff9f43' }}>
                                     {/* School/Book Icon */}
-                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                                    </svg>
+                                    <Icon name="school" size={40} />
                                 </div>
                                 <div style={{ fontSize: '1rem', fontWeight: '500' }}>Skolschema</div>
                             </Card>
@@ -428,11 +419,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         <Card onClick={() => setActiveTab('matsedel')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                             <div style={{ marginBottom: '0.8rem', color: '#ff7675' }}>
                                 {/* Utensils Icon */}
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
-                                    <path d="M7 2v20"></path>
-                                    <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"></path>
-                                </svg>
+                                <Icon name="utensils" size={40} />
                             </div>
                             <div style={{ fontSize: '1rem', fontWeight: '500' }}>Matsedel</div>
                         </Card>
@@ -466,16 +453,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                 >
                                     <div style={{ marginBottom: '0.8rem', color: isArsenal ? '#ff4757' : '#2e86de' }}>
                                         {/* Football Icon */}
-                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <path d="M12 12l4.8 2.4"></path>
-                                            <path d="M12 12l0 -5"></path>
-                                            <path d="M12 12l-4.8 2.4"></path>
-                                            <path d="M12 7l4.3 -2.5"></path>
-                                            <path d="M12 7l-4.3 -2.5"></path>
-                                            <path d="M16.8 14.4l2.2 3.8"></path>
-                                            <path d="M7.2 14.4l-2.2 3.8"></path>
-                                        </svg>
+                                        <Icon name="football" size={40} />
                                     </div>
                                     <div style={{ fontSize: '1rem', fontWeight: '500', marginBottom: '0.2rem' }}>
                                         Nästa match
@@ -495,10 +473,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         <Card onClick={() => setActiveTab('create-event')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                             <div style={{ marginBottom: '0.5rem', color: theme.cardText }}>
                                 {/* Plus Icon */}
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
+                                <Icon name="plus" size={40} />
                             </div>
                             <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Ny händelse</div>
                         </Card>

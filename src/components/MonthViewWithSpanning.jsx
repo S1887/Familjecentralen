@@ -16,8 +16,32 @@ const MonthViewWithSpanning = ({
     setActiveTab,
     newEvent,
     holidays = [],
-    changeDay
+    changeDay,
+    onSwipe
 }) => {
+    // Swipe Logic
+    const touchStart = React.useRef(null);
+    const touchEnd = React.useRef(null);
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e) => {
+        touchEnd.current = null;
+        touchStart.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchMove = (e) => {
+        touchEnd.current = e.targetTouches[0].clientX;
+    };
+
+    const onTouchEnd = () => {
+        if (!touchStart.current || !touchEnd.current) return;
+        const distance = touchStart.current - touchEnd.current;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+
+        if (isLeftSwipe && onSwipe) onSwipe(1); // Next
+        if (isRightSwipe && onSwipe) onSwipe(-1); // Prev
+    };
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
     const firstDayOfMonth = new Date(year, month, 1);
@@ -124,7 +148,13 @@ const MonthViewWithSpanning = ({
     }
 
     return (
-        <div className="calendar-grid-month" style={{ position: 'relative' }}>
+        <div
+            className="calendar-grid-month"
+            style={{ position: 'relative', touchAction: 'pan-y' }}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+        >
             {/* Header row */}
             {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map(d => (
                 <div key={d} className="calendar-day-header">{d}</div>
@@ -199,7 +229,7 @@ const MonthViewWithSpanning = ({
                                         textDecoration: ev.isTrashed || ev.cancelled ? 'line-through' : 'none'
                                     }}
                                     onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
-                                    title={ev.summary}
+                                    title={`${ev.summary}${ev.location && ev.location !== 'Okänd plats' ? `\n📍 ${ev.location}` : ''}${ev.assignments && (ev.assignments.driver || ev.assignments.packer) ? `\n${ev.assignments.driver ? `Bil: ${ev.assignments.driver}` : ''}${ev.assignments.driver && ev.assignments.packer ? ' • ' : ''}${ev.assignments.packer ? `Ryggsäck: ${ev.assignments.packer}` : ''}` : ''}`}
                                 >
                                     {ev.isTrashed && <span style={{ color: '#9b59b6', marginRight: '0.2rem' }}>EJ</span>}
                                     {ev.cancelled ? '🚫 ' : ''}{ev.summary}
@@ -218,11 +248,17 @@ const MonthViewWithSpanning = ({
                                         textDecoration: ev.cancelled || ev.isTrashed ? 'line-through' : 'none',
                                         opacity: ev.cancelled || ev.isTrashed ? 0.6 : 1
                                     }}
-                                    title={ev.summary}
+                                    title={`${ev.summary}${ev.location && ev.location !== 'Okänd plats' ? `\n📍 ${ev.location}` : ''}${ev.assignments && (ev.assignments.driver || ev.assignments.packer) ? `\n${ev.assignments.driver ? `Bil: ${ev.assignments.driver}` : ''}${ev.assignments.driver && ev.assignments.packer ? ' • ' : ''}${ev.assignments.packer ? `Ryggsäck: ${ev.assignments.packer}` : ''}` : ''}`}
                                     onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                                 >
                                     {ev.isTrashed && <span style={{ color: '#9b59b6', marginRight: '0.2rem' }}>EJ</span>}
-                                    {ev.cancelled ? '🚫 ' : ''}{ev.summary}
+                                    {ev.cancelled ? '🚫 ' : ''}
+                                    {!isAllDayEvent(ev) && (
+                                        <span style={{ fontWeight: 'normal', opacity: 0.9, marginRight: '4px' }}>
+                                            {new Date(ev.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    )}
+                                    {ev.summary}
                                 </div>
                             );
                         })}

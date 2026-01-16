@@ -4,6 +4,7 @@ import LoginPage from './components/LoginPage'
 import ScheduleViewer from './components/ScheduleViewer'
 import WeekViewWithSpanning from './components/WeekViewWithSpanning'
 import MonthViewWithSpanning from './components/MonthViewWithSpanning'
+import Icon from './components/Icon'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -115,7 +116,7 @@ const LocationAutocomplete = ({ value, onChange, placeholder, ...props }) => {
             fontSize: '1.2rem', textDecoration: 'none', cursor: 'pointer'
           }}
         >
-          🔎
+          <Icon name="search" size={16} />
         </a>
       </div>
 
@@ -162,6 +163,7 @@ const MapUpdater = ({ route, center }) => {
 import InboxModal from './components/InboxModal';
 import NewHome from './components/NewHome';
 import EventDetailModal from './components/EventDetailModal';
+import TwoStepEditModal from './components/TwoStepEditModal';
 import MealPlanner from './components/MealPlanner';
 
 function App() {
@@ -294,13 +296,13 @@ function App() {
   };
 
   const getWeatherIcon = (code, isDay = true) => {
-    if (code === 0) return isDay ? '☀️' : '🌙'; // Clear
-    if (code >= 1 && code <= 3) return isDay ? '⛅' : '☁️'; // Cloudy (Sun behind cloud vs just Cloud - or Moon behind cloud? '🌥️' / '☁️')
-    if (code >= 45 && code <= 48) return '🌫️';
-    if (code >= 51 && code <= 67) return '🌧️';
-    if (code >= 71 && code <= 77) return '❄️';
-    if (code >= 95) return '⚡';
-    return isDay ? '🌤️' : '☁️';
+    if (code === 0) return isDay ? 'Soligt' : 'Klar natt'; // Clear
+    if (code >= 1 && code <= 3) return isDay ? 'Växlande molnighet' : 'Molnigt'; // Cloudy
+    if (code >= 45 && code <= 48) return 'Dimma';
+    if (code >= 51 && code <= 67) return 'Regn';
+    if (code >= 71 && code <= 77) return 'Snö';
+    if (code >= 95) return 'Åska';
+    return isDay ? 'Växlande molnighet' : 'Molnigt';
   };
 
   const getHeroClass = () => {
@@ -342,13 +344,13 @@ function App() {
 
 
 
-  // Name colors for standardizing across the app
+  // Name colors for standardizing across the app (Flat/Neon Palette)
   const NAME_COLORS = {
     'Svante': '#ff4757',
-    'Sarah': '#5352ed',
-    'Algot': '#2ed573',
-    'Tuva': '#ff6b81',
-    'Leon': '#1e90ff'
+    'Sarah': '#f1c40f',
+    'Algot': '#2e86de',
+    'Tuva': '#a29bfe',
+    'Leon': '#2ed573'
   };
 
   // Google Calendar Mapping
@@ -428,6 +430,7 @@ function App() {
   };
 
   const [events, setEvents] = useState([]);
+  const [pendingDeletes, setPendingDeletes] = useState([]); // UIDs of events being deleted (optimistic)
   const [tasks, setTasks] = useState([]); // Standalone tasks
 
   // Persist Admin State - now derived from currentUser
@@ -544,11 +547,59 @@ function App() {
 
 
   useEffect(() => {
-    fetchEvents();
-    fetchTasks();
+    const refreshData = () => {
+      fetchEvents();
+      fetchInbox(); // Inbox is lightweight, always fetch
+      // Tasks/Schedule/Holidays change less often, maybe skip them for lightweight polling
+      // But for consistency let's fetch essential volatile data
+      fetchTasks();
+    };
+
+    // 1. Initial Fetch
+    refreshData();
     fetchSchedule();
     fetchHolidays();
+
+    // 2. Poll every 60 seconds (Standard poll, respects cache)
+    const intervalId = setInterval(() => {
+      console.log('Background polling...');
+      refreshData();
+    }, 60000);
+
+    // 3. Focus/Visibility Refresh (Standard refresh, respects cache)
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('App focused/visible, checking updates...');
+        refreshData();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
   }, []);
+
+  // Force refresh from Google (bypasses cache)
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const forceRefreshFromGoogle = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    console.log('[Manual Refresh] Forcing cache refresh from Google...');
+    try {
+      await fetch(getApiUrl('api/cache/refresh'), { method: 'POST' });
+      await fetchEvents();
+      console.log('[Manual Refresh] Complete!');
+    } catch (err) {
+      console.error('[Manual Refresh] Failed:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Poll for inbox updates - Re-run if user changes to ensure correct "seen" filter
   useEffect(() => {
@@ -635,8 +686,8 @@ function App() {
         });
 
         // 2. DEDUPLICATE (on cleaned data)
-        const localEvents = cleanedData.filter(e => e.source === 'FamilyOps' || e.createdBy);
-        const externalEvents = cleanedData.filter(e => e.source !== 'FamilyOps' && !e.createdBy);
+        const localEvents = cleanedData.filter(e => e.source === 'FamilyOps' || e.source === 'Familjen' || e.createdBy);
+        const externalEvents = cleanedData.filter(e => e.source !== 'FamilyOps' && e.source !== 'Familjen' && !e.createdBy);
 
         const uniqueExternal = externalEvents.filter(ext => {
           const isDuplicate = localEvents.some(loc => {
@@ -649,9 +700,41 @@ function App() {
 
         const processedData = [...localEvents, ...uniqueExternal];
 
-        setEvents(processedData);
+        // DEBUG: Log what we got from the server
+        console.log(`[Debug fetchEvents] Total from server: ${data.length}, Local: ${localEvents.length}, External: ${externalEvents.length}, Unique External: ${uniqueExternal.length}`);
+        if (localEvents.length > 0) {
+          console.log('[Debug] Local events:', localEvents.map(e => `${e.summary} (${e.source})`));
+        }
+
+        // MERGE instead of REPLACE to preserve optimistic events
+        setEvents(prevEvents => {
+          // 1. Keep optimistic events (not yet confirmed by server)
+          const optimisticEvents = prevEvents.filter(e => e.isOptimistic);
+
+          // 2. Create set of server UIDs for quick lookup
+          const serverUids = new Set(processedData.map(e => e.uid));
+
+          // 3. Filter out optimistic events that now exist on server (= saved successfully)
+          const stillPendingOptimistic = optimisticEvents.filter(oe => !serverUids.has(oe.uid));
+
+          // 4. Filter out events that are pending delete
+          const filteredServerData = processedData.filter(e => !pendingDeletes.includes(e.uid));
+
+          // 5. Merge: Server data + still-pending optimistic
+          return [...filteredServerData, ...stillPendingOptimistic];
+        });
+
         // Försök hämta koordinater och restid för events (asynkront i bakgrunden)
-        enrichEventsWithGeo(processedData).then(enriched => setEvents(enriched));
+        enrichEventsWithGeo(processedData).then(enriched => {
+          setEvents(prevEvents => {
+            // Same merge logic for geo enrichment
+            const optimisticEvents = prevEvents.filter(e => e.isOptimistic);
+            const serverUids = new Set(enriched.map(e => e.uid));
+            const stillPendingOptimistic = optimisticEvents.filter(oe => !serverUids.has(oe.uid));
+            const filteredEnriched = enriched.filter(e => !pendingDeletes.includes(e.uid));
+            return [...filteredEnriched, ...stillPendingOptimistic];
+          });
+        });
       })
       .catch(err => console.error("Error fetching events:", err));
   };
@@ -1133,11 +1216,17 @@ function App() {
     const assignedTo = assignments[role];
     const isDriver = role === 'driver';
     const label = isDriver ? 'Vem kör?' : 'Vem packar?';
-    const icon = isDriver ? '🚗' : '🎒';
+    const iconName = isDriver ? 'car' : 'backpack';
+    const iconColor = isDriver ? '#74b9ff' : '#a29bfe';
 
     // Om redan tilldelad, visa badge
     if (assignedTo) {
-      return <div className="assignment-badge">{icon} <strong>{assignedTo}</strong> {isDriver ? 'kör' : 'packar'}</div>;
+      return (
+        <div className="assignment-badge">
+          <Icon name={iconName} size={14} style={{ color: iconColor, marginRight: '0.25rem' }} />
+          <strong>{assignedTo}</strong> {isDriver ? 'kör' : 'packar'}
+        </div>
+      );
     }
 
     // Annars visa ingenting (användaren vill inte ha knapparna direkt på kortet)
@@ -1160,6 +1249,10 @@ function App() {
       time: new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
       endTime: new Date(event.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
       todoList: event.todoList || [],
+      assignments: event.assignments || { driver: null, packer: null },
+      // Sync driver/packer from assignments for edit form
+      driver: event.assignments?.driver || '',
+      packer: event.assignments?.packer || '',
       isExternalSource, // Flag for origin
       isLocked: isExternalSource // Default lock state (can be unlocked by user)
     });
@@ -1181,6 +1274,31 @@ function App() {
       finalTodoList = [...finalTodoList, { id: Date.now(), text: todoInput.value.trim(), done: false }];
     }
 
+    // Optimistic Update
+    const optimisticEvent = {
+      ...editEventData, // Base on current edit data (has all fields)
+      summary: editEventData.summary,
+      location: editEventData.location,
+      coords: editEventData.coords,
+      description: editEventData.description,
+      start: startDateTime.toISOString(),
+      end: endDateTime.toISOString(),
+      todoList: finalTodoList,
+      assignments: editEventData.assignments,
+      assignees: editEventData.assignees || [], // Ensure array
+      assignee: (editEventData.assignees || []).join(', '),
+      category: editEventData.category || null,
+      source: editEventData.source.includes('(Redigerad)') ? editEventData.source : `${editEventData.source} (Sparar...)`
+    };
+
+    // Store previous state for rollback
+    const previousEvents = [...events];
+
+    // Update UI immediately
+    setEvents(prev => prev.map(ev => ev.uid === editEventData.uid ? optimisticEvent : ev));
+    setIsEditingEvent(false);
+    setEditEventData(null);
+
     try {
       await fetch(getApiUrl('api/update-event'), {
         method: 'POST',
@@ -1189,43 +1307,50 @@ function App() {
           uid: editEventData.uid,
           summary: editEventData.summary,
           location: editEventData.location,
-          coords: editEventData.coords, // Send coords
+          coords: editEventData.coords,
           description: editEventData.description,
           start: startDateTime.toISOString(),
           end: endDateTime.toISOString(),
           todoList: finalTodoList,
           assignments: editEventData.assignments,
           assignees: editEventData.assignees || [],
-          assignee: (editEventData.assignees || []).join(', '), // For backwards compatibility
+          assignee: (editEventData.assignees || []).join(', '),
           category: editEventData.category || null,
           source: editEventData.source,
-          cancelled: editEventData.cancelled // Preserve cancelled status
+          cancelled: editEventData.cancelled
         })
       });
 
-      setIsEditingEvent(false);
-      setEditEventData(null);
-      fetchEvents(); // Reload to show changes/shadowed event
+      // Success - Silent refresh to ensure sync
+      console.log('Event updated successfully (optimistic)');
+      // Delay fetch slightly to allow server propagation to Google if needed
+      // But since we have local shadow, we don't strictly need to fetch immediately if we trust our shadow.
+      // However, to get the "Clean" source string back, we should eventually fetch.
+      fetchEvents();
+
     } catch (err) {
       console.error("Could not update event", err);
-      alert("Något gick fel vid uppdatering.");
+      alert("Något gick fel vid uppdatering. Återställer...");
+      setEvents(previousEvents); // Rollback
     }
   };
 
   // Helper to update summary with smart prefix
   const updateSummaryWithPrefix = (currentSummary, newAssignees) => {
-    // 1. Identify valid names for prefix
-    const allowedNames = ['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'];
+    // 1. Names that CAN appear in prefix (for cleaning)
+    const allNames = ['Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'];
+    // 2. Names that SHOULD trigger a new prefix (Children only)
+    const prefixTargetNames = ['Algot', 'Tuva', 'Leon'];
 
-    // 2. Clean existing prefix
+    // 3. Clean existing prefix
     // Matches "Name: " or "Name1 & Name2: "
-    const namePattern = allowedNames.join('|');
+    const namePattern = allNames.join('|');
     const prefixRegex = new RegExp(`^(${namePattern})( & (${namePattern}))?:\\s*`, 'i');
     const cleanSummary = currentSummary.replace(prefixRegex, '');
 
-    // 3. Generate new prefix
-    // Filter to only include allowed names (exclude "Hela Familjen" or others)
-    const relevantAssignees = newAssignees.filter(n => allowedNames.includes(n));
+    // 4. Generate new prefix
+    // Filter to only include names that should trigger a prefix
+    const relevantAssignees = newAssignees.filter(n => prefixTargetNames.includes(n));
 
     let prefix = '';
     if (relevantAssignees.length === 1) {
@@ -1235,6 +1360,7 @@ function App() {
       prefix = `${sorted[0]} & ${sorted[1]}: `;
     }
     // 3+ items -> No prefix
+    // Parents only -> No prefix
 
     return prefix + cleanSummary;
   };
@@ -1242,55 +1368,97 @@ function App() {
   const createEvent = async (e) => {
     e.preventDefault();
 
-    // This function now creates BOTH locally and in Google Calendar via API
-    // Backend automatically determines the correct calendar based on assignees
-
+    // Optimistic UI Implementation
+    // 1. Prepare Data
     const startDateTime = new Date(`${newEvent.date}T${newEvent.time}`);
-    // Use endDate if set, otherwise fall back to start date
     const effectiveEndDate = newEvent.endDate || newEvent.date;
     const endDateTime = new Date(`${effectiveEndDate}T${newEvent.endTime}`);
 
+    // 2. Optimistic Update (Instant Feedback)
+    const tempUid = 'temp-' + Date.now();
+    const optimisticEvent = {
+      uid: tempUid,
+      summary: newEvent.summary,
+      location: newEvent.location,
+      coords: newEvent.coords,
+      description: newEvent.description,
+      start: startDateTime.toISOString(),
+      end: endDateTime.toISOString(),
+      assignees: newEvent.assignees || [],
+      assignee: (newEvent.assignees || []).join(', '),
+      assignments: newEvent.assignments || { driver: '', packer: '' }, // Add assignments
+      category: newEvent.category || null,
+      source: 'Familjen (Sparar...)', // Visual indicator
+      isOptimistic: true,
+      todoList: [],
+      createdAt: new Date().toISOString()
+    };
+
+    // Close modal and reset form immediately
+    setActiveTab('timeline');
+    setNewEvent({
+      summary: '',
+      location: '',
+      description: '',
+      assignees: [],
+      assignments: { driver: '', packer: '' }, // Reset assignments
+      category: null,
+      date: new Date().toISOString().split('T')[0],
+      time: '12:00',
+      endTime: '13:00'
+    });
+
+    setEvents(prev => [...prev, optimisticEvent]);
+
     try {
+      // 3. API Call (Background)
       const response = await fetch(getApiUrl('api/create-event'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          summary: newEvent.summary,
-          location: newEvent.location,
-          coords: newEvent.coords,
-          description: newEvent.description,
-          start: startDateTime.toISOString(),
-          end: endDateTime.toISOString(),
-          assignees: newEvent.assignees || [],
-          assignee: (newEvent.assignees || []).join(', '),
-          category: newEvent.category || null,
+          summary: optimisticEvent.summary,
+          location: optimisticEvent.location,
+          coords: optimisticEvent.coords,
+          description: optimisticEvent.description,
+          start: optimisticEvent.start,
+          end: optimisticEvent.end,
+          assignees: optimisticEvent.assignees,
+          assignee: optimisticEvent.assignee,
+          assignments: optimisticEvent.assignments, // Send assignments
+          category: optimisticEvent.category,
           source: 'FamilyOps'
         })
       });
 
       const result = await response.json();
 
-      if (result.success) {
-        console.log('Event created successfully', result.googlePushed ? '(synced to Google Calendar)' : '(local only)');
+      if (result.success && result.event) {
+        console.log('Event created successfully', result.googlePushed ? '(synced to Google)' : '(local only)');
+
+        // 4. Success: Swap temp for real event
+        // KEEP isOptimistic flag to protect from being filtered out during focus refresh
+        const protectedEvent = { ...result.event, isOptimistic: true };
+        setEvents(prev => prev.map(ev =>
+          ev.uid === tempUid ? protectedEvent : ev
+        ));
+
+        // Clear the protection flag after 60 seconds (enough time for Google cache to update)
+        setTimeout(() => {
+          setEvents(prev => prev.map(ev =>
+            ev.uid === protectedEvent.uid ? { ...ev, isOptimistic: false } : ev
+          ));
+          console.log(`[Create] Protection cleared for event ${protectedEvent.uid}`);
+        }, 60000);
+
+        console.log('Event saved with 60s protection period.');
+      } else {
+        throw new Error('Server reported failure');
       }
-
-      // Close modal and reset form
-      setActiveTab('timeline'); // Return to calendar/timeline view
-      setNewEvent({
-        summary: '',
-        location: '',
-        description: '',
-        assignees: [],
-        category: null,
-        date: new Date().toISOString().split('T')[0],
-        time: '12:00',
-        endTime: '13:00'
-      });
-
-      fetchEvents();
     } catch (err) {
       console.error("Could not create event", err);
-      alert("Något gick fel vid skapande av händelse.");
+      // Revert on error
+      setEvents(prev => prev.filter(ev => ev.uid !== tempUid));
+      alert("Kunde inte spara händelse. Kontrollera nätverket.");
     }
   };
 
@@ -1301,7 +1469,10 @@ function App() {
     if (!event.travelTime) return null;
     return (
       <div className="travel-info">
-        <div className="travel-badge">🚗 {formatDuration(event.travelTime.duration)}</div>
+        <div className="travel-badge">
+          <Icon name="car" size={14} style={{ color: '#74b9ff', marginRight: '0.25rem' }} />
+          {formatDuration(event.travelTime.duration)}
+        </div>
         {event.travelTime.distance < 10000 && (
           <>
             {event.travelTimeBike && <div className="travel-badge">🚲 {formatDuration(event.travelTimeBike.duration)}</div>}
@@ -1368,30 +1539,49 @@ function App() {
   };
 
   const deleteEvent = (event) => {
-    if (!window.confirm('Är du säker på att du vill ta bort denna händelse?')) return;
+    // Confirmation handled by caller (TwoStepEditModal) usually, 
+    // but if called directly we might want a check. 
+    // However, since TwoStepEditModal calls this AFTER confirm, we skip confirm here 
+    // or we assume it's confirmed.
 
+    // 1. Optimistic Update
+    const eventId = event.uid;
+    const previousEvents = [...events];
+
+    // Add to pending deletes (prevents resurrection on next fetch)
+    setPendingDeletes(prev => [...prev, eventId]);
+
+    // Remove immediately
+    setEvents(prev => prev.filter(e => e.uid !== eventId));
+    setIsEditingEvent(false); // Close modal immediately
+
+    // 2. API Call (Background)
     fetch(getApiUrl('api/delete-event'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...event, uid: event.uid })
+      body: JSON.stringify({ ...event, uid: eventId })
     })
-      .then(() => {
-        setIsEditingEvent(false);
-        fetchEvents();
-        // Check if external event
-        if (event.source !== 'Familjen (Eget)' && event.source !== 'FamilyOps') {
-          // Construct Google Calendar Date URL
-          const date = new Date(event.start);
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
-          const day = String(date.getDate()).padStart(2, '0');
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Delete failed');
 
-          // Open day view
-          const gcalUrl = `https://calendar.google.com/calendar/u/0/r/day/${year}/${month}/${day}`;
+        // Success - keep in pendingDeletes for a bit longer to prevent race
+        console.log(`[Optimistic Delete] Event ${eventId} deleted permanently`);
 
-          alert('Händelsen är borttagen lokalt. Öppnar nu Google Kalender så att du kan ta bort den permanent där.');
-          window.open(gcalUrl, '_blank');
-        }
+        // Clear from pendingDeletes after a delay (next poll will have correct data)
+        setTimeout(() => {
+          setPendingDeletes(prev => prev.filter(id => id !== eventId));
+        }, 5000);
+
+        // Refresh trash count
+        fetchTrash();
+      })
+      .catch(err => {
+        console.error("Optimistic delete failed:", err);
+        // Revert UI
+        setEvents(previousEvents);
+        // Clear from pending deletes
+        setPendingDeletes(prev => prev.filter(id => id !== eventId));
+        alert("Kunde inte ta bort händelsen. Kontrollera nätverket.");
       });
   };
 
@@ -1470,547 +1660,7 @@ function App() {
 
 
           {/* Modal för att redigera event */}
-          {
-            isEditingEvent && editEventData && (
-              <div className="modal-overlay">
-                <div className="modal" style={{ padding: '2rem', position: 'relative', color: 'var(--card-text)' }}>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingEvent(false)}
-                    style={{
-                      position: 'absolute',
-                      top: '1rem',
-                      right: '1rem',
-                      background: 'transparent',
-                      border: 'none',
-                      fontSize: '1.5rem',
-                      cursor: 'pointer',
-                      color: 'var(--card-text)',
-                      padding: '0.25rem',
-                      lineHeight: 1
-                    }}
-                    aria-label="Stäng"
-                  >×</button>
-                  <h2>✏️ Redigera händelse</h2>
 
-                  {/* Show info banner for external events */}
-                  {editEventData.isExternalSource && (
-                    <div style={{
-                      background: (editEventData.source?.includes('Svante') || editEventData.source?.includes('Sarah') || editEventData.source?.includes('Örtendahls familjekalender'))
-                        ? 'linear-gradient(135deg, #4285f4, #34a853)'
-                        : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                      padding: '0.75rem 1rem',
-                      borderRadius: '8px',
-                      marginBottom: '1rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      flexWrap: 'wrap'
-                    }}>
-                      <span>🔒</span>
-                      <span style={{ color: 'white', fontSize: '0.85rem', flex: 1 }}>
-                        {(() => {
-                          const rawSource = editEventData.originalSource || editEventData.source || 'Familjen';
-                          let source = rawSource.split(' (')[0];
-                          if (source === 'Familjen') source = 'Örtendahls familjekalender';
-
-                          const isValidSource = source.includes('Svante') || source.includes('Sarah') || source.includes('Örtendahls familjekalender');
-                          const subscriptionSources = ['Villa Lidköping', 'HK Lidköping', 'Råda BK', 'Örgryte IS', 'Vklass', 'Arsenal'];
-                          const hasSubscriptionSource = subscriptionSources.some(sub => source.includes(sub));
-
-
-                          // Clean up source name - remove (Privat), (Redigerad), etc.
-                          let displaySource = source.split(' (')[0];
-
-                          // Replace "Familjen" with "Örtendahls familjekalender"
-                          if (displaySource === 'Familjen' || displaySource.includes('Familjen')) {
-                            displaySource = displaySource.replace('Familjen', 'Örtendahls familjekalender');
-                          }
-
-                          // Format message based on source type
-                          if (hasSubscriptionSource) {
-                            return `Källa: ${source}`;
-                          }
-                          return `Källa: ${displaySource}`; // keep it simple
-                        })()}
-                      </span>
-
-                      {/* Unified Edit Lock UI - ALL events use same interface */}
-                      {(() => {
-                        // External sources (HKL, Råda, Villa, etc.) require unlock confirmation
-                        if (editEventData.isExternalSource && editEventData.isLocked) {
-                          return (
-                            <div style={{ marginTop: '0.5rem' }}>
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  if (window.confirm(`Vill du redigera den här händelsen trots att källan är från ${editEventData.source}?`)) {
-                                    setEditEventData({ ...editEventData, isLocked: false });
-                                  }
-                                }}
-                                style={{ padding: '6px 12px', fontSize: '0.85rem', cursor: 'pointer', background: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '4px', fontWeight: '500' }}
-                              >
-                                🔓 Redigera händelse
-                              </button>
-                            </div>
-                          );
-                        }
-                        // Sara/Svante/Family events - no lock, no special UI needed
-                        return null;
-                      })()}
-                    </div>
-                  )}
-
-                  <form onSubmit={updateEvent} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div>
-                      <label>Vad händer? {(editEventData.isLocked || !isAdmin) && <span style={{ fontSize: '0.75rem', color: '#888' }}>{editEventData.isLocked ? '(låst)' : '(visa)'}</span>}</label>
-                      <input
-                        type="text"
-                        required
-                        value={editEventData.summary}
-                        onChange={e => isAdmin && !editEventData.isLocked && setEditEventData({ ...editEventData, summary: e.target.value })}
-                        readOnly={editEventData.isLocked || !isAdmin}
-                        style={(editEventData.isLocked || !isAdmin)
-                          ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
-                          : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
-                        }
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <div style={{ flex: 1 }}>
-                        <label>Startdatum {editEventData.isLocked && <span style={{ fontSize: '0.75rem', color: '#888' }}>(låst)</span>}</label>
-                        <input
-                          type="date"
-                          required
-                          value={editEventData.date}
-                          onChange={e => !editEventData.isLocked && setEditEventData({ ...editEventData, date: e.target.value })}
-                          readOnly={editEventData.isLocked}
-                          style={editEventData.isLocked
-                            ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
-                            : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
-                          }
-                        />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label>Slutdatum {editEventData.isLocked && <span style={{ fontSize: '0.75rem', color: '#888' }}>(låst)</span>}</label>
-                        <input
-                          type="date"
-                          required
-                          value={editEventData.endDate}
-                          onChange={e => !editEventData.isLocked && setEditEventData({ ...editEventData, endDate: e.target.value })}
-                          readOnly={editEventData.isLocked}
-                          style={editEventData.isLocked
-                            ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
-                            : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <div style={{ flex: 1 }}>
-                        <label>Tid start {editEventData.isLocked && <span style={{ fontSize: '0.75rem', color: '#888' }}>(låst)</span>}</label>
-                        <input
-                          type="time"
-                          required
-                          value={editEventData.time}
-                          onChange={e => !editEventData.isLocked && setEditEventData({ ...editEventData, time: e.target.value })}
-                          readOnly={editEventData.isLocked}
-                          style={editEventData.isLocked
-                            ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
-                            : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
-                          }
-                        />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label>Tid slut {editEventData.isLocked && <span style={{ fontSize: '0.75rem', color: '#888' }}>(låst)</span>}</label>
-                        <input
-                          type="time"
-                          required
-                          value={editEventData.endTime}
-                          onChange={e => !editEventData.isLocked && setEditEventData({ ...editEventData, endTime: e.target.value })}
-                          readOnly={editEventData.isLocked}
-                          style={editEventData.isLocked
-                            ? { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: '#555', color: 'white', cursor: 'not-allowed' }
-                            : { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <div style={{ flex: 1 }}>
-                        <label>Plats {editEventData.isLocked && <span style={{ fontSize: '0.75rem', color: '#888' }}>(låst)</span>}</label>
-                        <LocationAutocomplete
-                          placeholder="T.ex. Valhalla IP"
-                          value={editEventData.location}
-                          onChange={val => !editEventData.isLocked && isAdmin && setEditEventData({ ...editEventData, location: val })}
-                          onSelect={coords => !editEventData.isLocked && isAdmin && setEditEventData({ ...editEventData, coords })}
-                          disabled={!isAdmin || editEventData.isLocked}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Who is this event for? */}
-                    <div>
-                      <label>👥 Vem gäller det? {!isAdmin && <span style={{ fontSize: '0.75rem', color: '#888' }}>(visa)</span>}</label>
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                        {['Hela Familjen', 'Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(name => {
-                          const assignees = editEventData.assignees || [];
-                          const isSelected = name === 'Hela Familjen'
-                            ? assignees.length === 0
-                            : assignees.includes(name);
-                          return (
-                            <button
-                              key={name}
-                              type="button"
-                              onClick={() => {
-                                if (!isAdmin) return; // Prevent children from editing
-                                let newAssignees;
-                                let newSummary = editEventData.summary || '';
-
-                                if (name === 'Hela Familjen') {
-                                  // Remove all name prefixes when selecting "Hela Familjen"
-                                  newAssignees = [];
-                                } else {
-                                  const current = (editEventData.assignees || []).filter(n => n !== 'Hela Familjen');
-                                  if (current.includes(name)) {
-                                    // Deselecting
-                                    newAssignees = current.filter(n => n !== name);
-                                  } else {
-                                    // Selecting
-                                    newAssignees = [...current, name];
-                                  }
-                                }
-
-                                newSummary = updateSummaryWithPrefix(newSummary, newAssignees);
-                                setEditEventData({ ...editEventData, assignees: newAssignees, summary: newSummary });
-                              }}
-                              disabled={!isAdmin}
-                              style={{
-                                padding: '0.4rem 0.8rem',
-                                borderRadius: '15px',
-                                border: '1px solid var(--border-color)',
-                                background: isSelected ? '#2ed573' : 'var(--input-bg)',
-                                color: isSelected ? 'white' : 'var(--card-text)',
-                                fontSize: '0.8rem',
-                                cursor: isAdmin ? 'pointer' : 'not-allowed',
-                                opacity: isAdmin ? 1 : 0.6,
-                                transition: 'all 0.2s'
-                              }}
-                            >
-                              {isSelected ? '✓ ' : ''}{name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Category selection */}
-                    <div>
-                      <label>📂 Kategori {!isAdmin && <span style={{ fontSize: '0.75rem', color: '#888' }}>(visa)</span>}</label>
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                        {['Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => {
-                          const isSelected = editEventData.category === cat;
-                          return (
-                            <button
-                              key={cat}
-                              type="button"
-                              onClick={() => isAdmin && setEditEventData({ ...editEventData, category: cat })}
-                              disabled={!isAdmin}
-                              style={{
-                                padding: '0.4rem 0.8rem',
-                                borderRadius: '15px',
-                                border: '1px solid var(--border-color)',
-                                background: isSelected ? '#646cff' : 'var(--input-bg)',
-                                color: isSelected ? 'white' : 'var(--card-text)',
-                                fontSize: '0.8rem',
-                                cursor: isAdmin ? 'pointer' : 'not-allowed',
-                                opacity: isAdmin ? 1 : 0.6,
-                                transition: 'all 0.2s'
-                              }}
-                            >
-                              {isSelected ? '✓ ' : ''}{cat}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label>Beskrivning & Anteckningar {!isAdmin && <span style={{ fontSize: '0.75rem', color: '#888' }}>(visa)</span>}</label>
-                      <textarea
-                        placeholder="Anteckningar..."
-                        value={editEventData.description}
-                        onChange={e => isAdmin && !editEventData.isExternalSource && setEditEventData({ ...editEventData, description: e.target.value })}
-                        readOnly={editEventData.isExternalSource || !isAdmin}
-                        style={{
-                          width: '100%',
-                          padding: '0.5rem',
-                          borderRadius: '4px',
-                          border: '1px solid var(--input-border)',
-                          minHeight: '80px',
-                          background: (editEventData.isExternalSource || !isAdmin) ? '#555' : 'var(--input-bg)',
-                          color: (editEventData.isExternalSource || !isAdmin) ? 'white' : 'var(--text-main)',
-                          cursor: (editEventData.isExternalSource || !isAdmin) ? 'not-allowed' : 'text',
-                          opacity: (editEventData.isExternalSource || !isAdmin) ? 0.7 : 1
-                        }}
-                      ></textarea>
-                    </div>
-
-                    {/* Assignment Controls in Modal - Visible for all, editable only for admin */}
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <div style={{ flex: 1 }}>
-                        <label>🚗 Vem kör? {!isAdmin && <span style={{ fontSize: '0.75rem', color: '#888' }}>(visa)</span>}</label>
-                        <select
-                          value={editEventData.assignments?.driver || ''}
-                          onChange={e => setEditEventData({
-                            ...editEventData,
-                            assignments: { ...editEventData.assignments, driver: e.target.value || null }
-                          })}
-                          disabled={!isAdmin}
-                          style={{
-                            width: '100%',
-                            padding: '0.5rem',
-                            borderRadius: '4px',
-                            border: '1px solid var(--input-border)',
-                            background: isAdmin ? 'var(--input-bg)' : '#555',
-                            color: 'var(--text-main)',
-                            cursor: isAdmin ? 'pointer' : 'not-allowed',
-                            opacity: isAdmin ? 1 : 0.7
-                          }}
-                        >
-                          <option value="">Välj...</option>
-                          <option value="Svante">Svante</option>
-                          <option value="Sarah">Sarah</option>
-                        </select>
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label>🎒 Vem packar? {!isAdmin && <span style={{ fontSize: '0.75rem', color: '#888' }}>(visa)</span>}</label>
-                        <select
-                          value={editEventData.assignments?.packer || ''}
-                          onChange={e => setEditEventData({
-                            ...editEventData,
-                            assignments: { ...editEventData.assignments, packer: e.target.value || null }
-                          })}
-                          disabled={!isAdmin}
-                          style={{
-                            width: '100%',
-                            padding: '0.5rem',
-                            borderRadius: '4px',
-                            border: '1px solid var(--input-border)',
-                            background: isAdmin ? 'var(--input-bg)' : '#555',
-                            color: 'var(--text-main)',
-                            cursor: isAdmin ? 'pointer' : 'not-allowed',
-                            opacity: isAdmin ? 1 : 0.7
-                          }}
-                        >
-                          <option value="">Välj...</option>
-                          <option value="Svante">Svante</option>
-                          <option value="Sarah">Sarah</option>
-                          <option value="Algot">Algot</option>
-                          <option value="Tuva">Tuva</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Todo List Section */}
-                    <div style={{ borderTop: '1px solid #eee', paddingTop: '1rem' }}>
-                      <label style={{ fontWeight: 'bold' }}>Att-göra-lista inför eventet:</label>
-                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                        <input
-                          type="text"
-                          placeholder="Lägg till uppgift..."
-                          id="newTodoInput"
-                          style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              const text = e.target.value;
-                              if (text) {
-                                // Auto-prefix child's name for non-admin users
-                                const finalText = !isAdmin && currentUser?.name
-                                  ? `${currentUser.name} ${text}`
-                                  : text;
-                                setEditEventData({
-                                  ...editEventData,
-                                  todoList: [...(editEventData.todoList || []), { id: Date.now(), text: finalText, done: false }]
-                                });
-                                e.target.value = '';
-                              }
-                            }
-                          }}
-                        />
-                        <button type="button" onClick={() => {
-                          const input = document.getElementById('newTodoInput');
-                          const text = input.value;
-                          if (text) {
-                            // Auto-prefix child's name for non-admin users
-                            const finalText = !isAdmin && currentUser?.name
-                              ? `${currentUser.name} ${text}`
-                              : text;
-                            setEditEventData({
-                              ...editEventData,
-                              todoList: [...(editEventData.todoList || []), { id: Date.now(), text: finalText, done: false }]
-                            });
-                            input.value = '';
-                          }
-                        }} style={{ padding: '0.5rem 1rem', borderRadius: '4px', background: '#646cff', color: 'white', border: 'none', cursor: 'pointer' }}>+</button>
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {(editEventData.todoList || []).map(todo => (
-                          <div key={todo.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f9f9f9', padding: '0.5rem', borderRadius: '4px' }}>
-                            <input
-                              type="checkbox"
-                              checked={todo.done}
-                              onChange={() => {
-                                const newTodos = editEventData.todoList.map(t => t.id === todo.id ? { ...t, done: !t.done } : t);
-                                setEditEventData({ ...editEventData, todoList: newTodos });
-                              }}
-                            />
-                            <span style={{ flex: 1, textDecoration: todo.done ? 'line-through' : 'none', color: todo.done ? '#999' : 'inherit' }}>{todo.text}</span>
-                            <button type="button" onClick={() => {
-                              const newTodos = editEventData.todoList.filter(t => t.id !== todo.id);
-                              setEditEventData({ ...editEventData, todoList: newTodos });
-                            }} style={{ color: 'red', border: 'none', background: 'transparent', cursor: 'pointer' }}>🗑️</button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.5rem' }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                        {/* Delete button - only for pure local events (not Google, not Subscriptions) */}
-
-                        {isAdmin && !editEventData.isExternalSource &&
-                          !['svante', 'sarah', 'familje', 'örtendahls'].some(n => (editEventData.source || '').toLowerCase().includes(n)) &&
-                          !['villa', 'råda', 'hk', 'lidköping', 'arsenal', 'öis', 'örgryte', 'vklass', 'sportadmin', 'laget', 'helgdag'].some(k => (editEventData.source || '').toLowerCase().includes(k)) && (
-                            <button type="button" onClick={() => deleteEvent(editEventData)} style={{
-                              padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ff4757', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
-                            }} title="Ta bort event">
-                              <span>🗑️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ta bort</span>
-                            </button>
-                          )}
-
-                        {/* Cancel and Delete buttons - available for ALL events */}
-                        {isAdmin && (
-                          <>
-                            <button type="button" onClick={async () => {
-                              if (window.confirm(`Markera "${editEventData.summary}" som ej aktuell? Händelsen blir överstruken men kan återställas.`)) {
-                                try {
-                                  const response = await fetch(getApiUrl('api/trash'), {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ uid: editEventData.uid, summary: editEventData.summary, source: editEventData.source, start: editEventData.start })
-                                  });
-                                  if (response.ok) {
-                                    // Mark as trashed in local state AND editEventData
-                                    setEditEventData(prev => ({ ...prev, isTrashed: true }));
-                                    setEvents(prev => prev.map(e =>
-                                      e.uid === editEventData.uid ? { ...e, isTrashed: true } : e
-                                    ));
-                                    alert('Händelsen markerad som ej aktuell. Klicka Återställ för att ångra.');
-                                    console.log(`[Trash] Event "${editEventData.summary}" marked as ej aktuell`);
-                                  }
-                                } catch (error) {
-                                  console.error('Failed to trash event:', error);
-                                  alert('Kunde inte markera händelsen som ej aktuell');
-                                }
-                              }
-                            }} style={{
-                              padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#ffa502', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
-                            }} title="Markera som ej aktuell (överstruken, kan återställas)">
-                              <span>❌</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ej aktuell</span>
-                            </button>
-
-                            <button type="button" onClick={async () => {
-                              if (window.confirm(`Ta bort "${editEventData.summary}" permanent? Händelsen flyttas till papperskorgen.`)) {
-                                try {
-                                  const response = await fetch(getApiUrl('api/delete-event'), {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                      uid: editEventData.uid,
-                                      summary: editEventData.summary,
-                                      start: editEventData.start,
-                                      source: editEventData.source
-                                    })
-                                  });
-                                  if (response.ok) {
-                                    setEvents(prev => prev.filter(e => e.uid !== editEventData.uid));
-                                    setIsEditingEvent(false);
-                                    console.log(`[Delete] Event "${editEventData.summary}" deleted`);
-                                  }
-                                } catch (error) {
-                                  console.error('Failed to delete event:', error);
-                                  alert('Kunde inte ta bort händelsen');
-                                }
-                              }
-                            }} style={{
-                              padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#e74c3c', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
-                            }} title="Ta bort permanent (papperskorg)">
-                              <span>🗑️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Ta bort</span>
-                            </button>
-
-                            {/* Restore button - only for cancelled events */}
-                            {editEventData.cancelled && (
-                              <button type="button" onClick={async () => {
-                                if (window.confirm(`Återställ "${editEventData.summary}"?`)) {
-                                  try {
-                                    const response = await fetch(getApiUrl(`api/trash/${editEventData.uid}`), {
-                                      method: 'DELETE'
-                                    });
-                                    if (response.ok) {
-                                      setEditEventData(prev => ({ ...prev, cancelled: false }));
-                                      setEvents(prev => prev.map(e =>
-                                        e.uid === editEventData.uid ? { ...e, cancelled: false } : e
-                                      ));
-                                      alert('Händelsen återställd');
-                                    }
-                                  } catch (error) {
-                                    console.error('Failed to restore event:', error);
-                                    alert('Kunde inte återställa händelsen');
-                                  }
-                                }
-                              }} style={{
-                                padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#2ed573', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
-                              }} title="Återställ händelse">
-                                <span>↩️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Återställ</span>
-                              </button>
-                            )}
-                          </>
-                        )}
-                        {/* Directions button for all users */}
-                        {editEventData.coords && (
-                          <button type="button" onClick={() => {
-                            const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${editEventData.coords.lat},${editEventData.coords.lon}`;
-                            window.open(googleMapsUrl, '_blank');
-                          }} style={{
-                            padding: '0.5rem 0.8rem', borderRadius: '8px', border: 'none', background: '#4285f4', color: 'white', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.3rem'
-                          }} title="Vägbeskrivning">
-                            <span>🗺️</span> <span style={{ display: isMobile ? 'none' : 'inline' }}>Väg</span>
-                          </button>
-                        )}
-                      </div>
-
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                        <button type="button" onClick={() => setIsEditingEvent(false)} style={{
-                          padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontSize: '0.9rem'
-                        }}>Stäng</button>
-                        {isAdmin && (
-                          <button type="submit" style={{
-                            padding: '0.5rem 1.5rem', borderRadius: '8px', border: 'none', background: '#646cff', color: 'white', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(100, 108, 255, 0.3)'
-                          }}>Spara</button>
-                        )}
-                      </div>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )
-          }
 
           {/* Admin Login Modal */}
           {
@@ -2060,7 +1710,10 @@ function App() {
                   boxShadow: '0 10px 25px rgba(0,0,0,0.2)', textAlign: 'left', color: 'var(--text-main)'
                 }} onClick={e => e.stopPropagation()}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h2>🗑️ Papperskorg</h2>
+                    <h2>
+                      <Icon name="trash" size={20} style={{ color: '#ff4757', marginRight: '0.5rem' }} />
+                      Papperskorg
+                    </h2>
                     <button onClick={() => setViewTrash(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>✕</button>
                   </div>
 
@@ -2177,7 +1830,8 @@ function App() {
                           <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{match.summary}</div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--card-text-muted)' }}>
-                            <span>📍</span> {arena}
+                            <Icon name="mapPin" size={16} style={{ color: '#ff7675', marginRight: '0.5rem' }} />
+                            {arena}
                           </div>
                         </div>
                       );
@@ -2230,12 +1884,7 @@ function App() {
                   justifyContent: 'center'
                 }}
               >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
+                <Icon name="users" size={22} strokeWidth="2" />
               </button>
 
               {/* Quick Links - only show in HA environment */}
@@ -2244,38 +1893,16 @@ function App() {
                 window.location.hostname.includes('homeassistant') ||
                 window.location.hostname.includes('nabu.casa')) && [
                   {
-                    name: 'Översikt', url: '/lovelace/Oversikt', icon: (
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                      </svg>
-                    )
+                    name: 'Översikt', url: '/lovelace/Oversikt', icon: <Icon name="home" size={22} strokeWidth="2" />
                   },
                   {
-                    name: 'Belysning', url: '/lovelace/hue', icon: (
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M9 18h6" />
-                        <path d="M10 22h4" />
-                        <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z" />
-                      </svg>
-                    )
+                    name: 'Belysning', url: '/lovelace/hue', icon: <Icon name="lightbulb" size={22} strokeWidth="2" />
                   },
                   {
-                    name: 'Larm', url: '/lovelace/larm', icon: (
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                      </svg>
-                    )
+                    name: 'Larm', url: '/lovelace/larm', icon: <Icon name="bell" size={22} strokeWidth="2" />
                   },
                   {
-                    name: 'Bil', url: '/lovelace/bil', icon: (
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
-                        <circle cx="7" cy="17" r="2" />
-                        <circle cx="17" cy="17" r="2" />
-                        <path d="M14 17H9" />
-                      </svg>
-                    )
+                    name: 'Bil', url: '/lovelace/bil', icon: <Icon name="car" size={22} strokeWidth="2" />
                   }
                 ].map((link, i) => (
                   <div
@@ -2351,7 +1978,7 @@ function App() {
                     position: 'relative' // For badge positioning
                   }}
                 >
-                  ☰
+                  <Icon name="menu" size={24} />
                   {inboxCount > 0 && currentUser?.role !== 'child' && (
                     <div style={{
                       position: 'absolute',
@@ -2430,7 +2057,7 @@ function App() {
                           }}
                         >
                           <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            📥 Inkorg
+                            <Icon name="mail" size={20} style={{ color: '#646cff' }} /> Inkorg
                           </span>
                           {inboxCount > 0 && (
                             <span style={{
@@ -2465,7 +2092,7 @@ function App() {
                             whiteSpace: 'nowrap'
                           }}
                         >
-                          🗑️ Papperskorg
+                          <Icon name="trash" size={20} style={{ color: '#646cff' }} /> Papperskorg
                         </button>
                       )}
                       <button
@@ -2486,7 +2113,11 @@ function App() {
                           whiteSpace: 'nowrap'
                         }}
                       >
-                        {darkMode ? '☀️ Ljust läge' : '🌙 Mörkt läge'}
+                        {darkMode ? (
+                          <><Icon name="sun" size={20} style={{ color: '#f1c40f' }} /> Ljust läge</>
+                        ) : (
+                          <><Icon name="moon" size={20} style={{ color: '#34495e' }} /> Mörkt läge</>
+                        )}
                       </button>
                       {currentUser && (currentUser.name === 'Svante' || currentUser.name === 'Sarah') && (
                         <button
@@ -2507,7 +2138,7 @@ function App() {
                             whiteSpace: 'nowrap'
                           }}
                         >
-                          📊 Gamla Dashboarden
+                          <Icon name="barChart" size={20} style={{ color: '#646cff' }} /> Gamla Dashboarden
                         </button>
                       )}
                       <button
@@ -2527,7 +2158,7 @@ function App() {
                           whiteSpace: 'nowrap'
                         }}
                       >
-                        🚪 Logga ut
+                        <Icon name="logOut" size={20} style={{ color: '#ff4757' }} /> Logga ut
                       </button>
                     </div>
                   </>
@@ -2555,37 +2186,82 @@ function App() {
               >
                 ‹ Tillbaka till start
               </button>
-              <button
-                onClick={() => {
-                  setNewEvent({
-                    summary: '',
-                    location: '',
-                    description: '',
-                    assignees: [],
-                    category: null,
-                    date: selectedDate.toLocaleDateString('sv-SE'),
-                    time: '12:00',
-                    endTime: '13:00'
-                  });
-                  setActiveTab('create-event');
-                }}
-                style={{
-                  background: 'var(--accent)',
-                  border: 'none',
-                  borderRadius: '20px',
-                  padding: '0.5rem 1rem',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  color: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.3rem',
-                  fontWeight: 600,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                }}
-              >
-                + Lägg till händelse
-              </button>
+
+
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button
+                  onClick={() => {
+                    const now = new Date();
+                    const nextHour = new Date(now);
+                    nextHour.setHours(now.getHours() + 1, 0, 0, 0);
+                    const startStr = nextHour.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+
+                    const endHour = new Date(nextHour);
+                    endHour.setHours(nextHour.getHours() + 1);
+                    const endStr = endHour.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+
+                    setNewEvent({
+                      summary: '',
+                      location: '',
+                      description: '',
+                      assignees: [],
+                      assignments: { driver: '', packer: '' },
+                      category: null,
+                      date: selectedDate.toLocaleDateString('sv-SE'),
+                      time: startStr,
+                      endTime: endStr
+                    });
+                    setActiveTab('create-event');
+                  }}
+                  style={{
+                    background: 'var(--accent)',
+                    border: 'none',
+                    borderRadius: '24px',
+                    padding: '0.6rem 1.2rem',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    fontWeight: 600,
+                    boxShadow: '0 4px 12px rgba(29, 185, 84, 0.3)',
+                    transition: 'transform 0.2s'
+                  }}
+                >
+                  <Icon name="plus" size={18} /> Lägg till
+                </button>
+                {/* Refresh Button */}
+                <button
+                  onClick={forceRefreshFromGoogle}
+                  disabled={isRefreshing}
+                  title="Synka med Google Kalender"
+                  style={{
+                    background: isRefreshing ? 'transparent' : 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    padding: 0,
+                    cursor: isRefreshing ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: isRefreshing ? 0.5 : 1,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                    transition: 'background 0.2s'
+                  }}
+                >
+                  <Icon
+                    name="refresh"
+                    size={20}
+                    style={{
+                      color: 'var(--text-muted)',
+                      animation: isRefreshing ? 'spin 1s linear infinite' : 'none'
+                    }}
+                  />
+                </button>
+              </div>
             </div>
           )
         }
@@ -2647,7 +2323,7 @@ function App() {
               setSelectedDate={setSelectedDate}
               setViewMode={setViewMode}
               holidays={holidays}
-              onOpenEventDetail={setSelectedEventForDetail}
+              onOpenEventDetail={openEditModal}
               onOpenMatchModal={() => setShowMatchModal(true)}
               darkMode={darkMode}
             />
@@ -2730,7 +2406,21 @@ function App() {
                       type="time"
                       required
                       value={newEvent.time}
-                      onChange={e => setNewEvent({ ...newEvent, time: e.target.value })}
+                      onChange={e => {
+                        const newStart = e.target.value;
+                        setNewEvent(prev => {
+                          if (!newStart) return { ...prev, time: newStart };
+                          try {
+                            const [h, m] = newStart.split(':').map(Number);
+                            const d = new Date();
+                            d.setHours(h + 1, m);
+                            const newEnd = d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+                            return { ...prev, time: newStart, endTime: newEnd };
+                          } catch (err) {
+                            return { ...prev, time: newStart };
+                          }
+                        });
+                      }}
                       style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
                     />
                   </div>
@@ -2831,6 +2521,49 @@ function App() {
                   </div>
                 </div>
 
+                {/* Driver and Packer Selection */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <div>
+                    <label>
+                      <Icon name="car" size={16} style={{ color: '#74b9ff', marginRight: '0.5rem' }} />
+                      Vem kör?
+                    </label>
+                    <select
+                      value={newEvent.assignments?.driver || ''}
+                      onChange={e => setNewEvent({
+                        ...newEvent,
+                        assignments: { ...newEvent.assignments, driver: e.target.value || '' }
+                      })}
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
+                    >
+                      <option value="">Välj...</option>
+                      <option value="Svante">Svante</option>
+                      <option value="Sarah">Sarah</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label>
+                      <Icon name="backpack" size={16} style={{ color: '#a29bfe', marginRight: '0.5rem' }} />
+                      Vem packar?
+                    </label>
+                    <select
+                      value={newEvent.assignments?.packer || ''}
+                      onChange={e => setNewEvent({
+                        ...newEvent,
+                        assignments: { ...newEvent.assignments, packer: e.target.value || '' }
+                      })}
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
+                    >
+                      <option value="">Välj...</option>
+                      <option value="Svante">Svante</option>
+                      <option value="Sarah">Sarah</option>
+                      <option value="Leon">Leon</option>
+                      <option value="Tuva">Tuva</option>
+                      <option value="Algot">Algot</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div>
                   <label>Beskrivning</label>
                   <textarea
@@ -2850,7 +2583,7 @@ function App() {
                   }}>Skapa händelse</button>
                 </div>
               </form>
-            </div>
+            </div >
           )
         }
 
@@ -2969,8 +2702,6 @@ function App() {
                             cursor: 'pointer',
                             background: 'var(--card-bg)',
                             color: 'var(--text-main)',
-                            padding: '0.8rem',
-                            borderRadius: '12px',
                             border: '1px solid var(--border-color)',
                             marginBottom: '0.5rem',
                             ...(event.cancelled ? { opacity: 0.6, textDecoration: 'line-through' } : {})
@@ -2987,7 +2718,8 @@ function App() {
                           <h3 style={{ fontSize: '1.2rem', margin: '0 0 0.3rem 0', lineHeight: '1.3' }}>{event.summary}</h3>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                            <span>📍 {event.location || 'Plats ej angiven'}</span>
+                            <Icon name="mapPin" size={14} />
+                            <span>{event.location || 'Plats ej angiven'}</span>
                           </div>
 
                           {event.travelTime && (
@@ -3198,9 +2930,16 @@ function App() {
                           <h3 style={{ margin: '0 0 0.1rem 0', fontSize: isMobile ? '0.65rem' : '0.9rem' }}>
                             Dagens händelser
                           </h3>
-                          <p style={{ margin: 0, fontSize: isMobile ? '0.65rem' : '0.8rem' }}>
-                            📅 {heroEvents.length}
-                            {heroTasks.length > 0 && ` • ✅ ${heroTasks.length}`}
+                          <p style={{ margin: 0, fontSize: isMobile ? '0.65rem' : '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
+                            <Icon name="calendar" size={12} style={{ color: 'white' }} />
+                            {heroEvents.length}
+                            {heroTasks.length > 0 && (
+                              <>
+                                <span style={{ opacity: 0.6 }}>•</span>
+                                <Icon name="check" size={12} style={{ color: 'var(--accent)' }} />
+                                {heroTasks.length}
+                              </>
+                            )}
                           </p>
                           <div style={{ marginTop: '0.2rem', fontSize: '0.65rem', opacity: 0.8, fontStyle: 'italic', display: isMobile ? 'none' : 'block' }}>
                             Klicka för detaljer
@@ -3301,7 +3040,10 @@ function App() {
                                 if (!event.travelTime) return null;
                                 return (
                                   <div className="travel-info" style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}>
-                                    <div className="travel-badge">🚗 {formatDuration(event.travelTime.duration)}</div>
+                                    <div className="travel-badge">
+                                      <Icon name="car" size={14} style={{ color: '#74b9ff', marginRight: '0.25rem' }} />
+                                      {formatDuration(event.travelTime.duration)}
+                                    </div>
                                     {event.travelTime.distance < 10000 && (
                                       <>
                                         {event.travelTimeBike && <div className="travel-badge">🚲 {formatDuration(event.travelTimeBike.duration)}</div>}
@@ -3340,7 +3082,8 @@ function App() {
                                     }}
                                     style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'inherit', textDecoration: event.coords ? 'underline' : 'none' }}
                                     title="Klicka för att se detaljer">
-                                    📍 {event.location || 'Hemma/Okänd plats'}
+                                    <Icon name="mapPin" size={14} style={{ color: '#ff7675', marginRight: '0.25rem' }} />
+                                    {event.location || 'Hemma/Okänd plats'}
                                   </p>
 
                                   {renderTravelInfoLocal()}
@@ -3443,7 +3186,7 @@ function App() {
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     {/* Family Filter Section */}
                     <div style={{ flex: 1 }}>
-                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}>👨‍👩‍👧‍👦 Familj</h4>
+                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}><Icon name="users" size={14} style={{ marginRight: '0.3rem' }} />Familj</h4>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         {children.map(child => (
                           <button
@@ -3584,15 +3327,17 @@ function App() {
                   {(viewMode === 'week' || viewMode === 'month') ? (
                     <>
                       <button onClick={() => navigateView(-1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>◀</button>
-                      <span>
-                        📅 {viewMode === 'week' ? `Vecka ${getWeekNumber(selectedDate)}` :
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Icon name="calendar" size={24} style={{ color: '#a29bfe' }} />
+                        {viewMode === 'week' ? `Vecka ${getWeekNumber(selectedDate)}` :
                           viewMode === 'month' ? `${selectedDate.toLocaleDateString('sv-SE', { month: 'long', year: 'numeric' })}` : ''}
                       </span>
                       <button onClick={() => navigateView(1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>▶</button>
                     </>
                   ) : (
-                    <span style={{ color: 'var(--text-main)' }}>
-                      📅 {viewMode === 'history' ? 'Historik' : 'Kommande händelser'}
+                    <span style={{ color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Icon name="calendar" size={24} style={{ color: '#a29bfe' }} />
+                      {viewMode === 'history' ? 'Historik' : 'Kommande händelser'}
                     </span>
                   )}
                 </h2>
@@ -3614,6 +3359,7 @@ function App() {
                     newEvent={newEvent}
                     holidays={holidays}
                     changeDay={changeDay}
+                    onSwipe={navigateView}
                   />
                 )}
 
@@ -3631,6 +3377,7 @@ function App() {
                     setNewEvent={setNewEvent}
                     setActiveTab={setActiveTab}
                     newEvent={newEvent}
+                    onSwipe={navigateView}
                   />
                 )}
 
@@ -3756,8 +3503,8 @@ function App() {
                                 const shouldStrikethrough = event.cancelled || event.isTrashed || isPast;
                                 return (
                                   <h3 style={{ textDecoration: shouldStrikethrough ? 'line-through' : 'none', color: shouldStrikethrough ? 'var(--text-muted)' : 'var(--card-text)', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.2rem 0', opacity: (isPast || event.isTrashed) ? 0.6 : 1 }}>
-                                    {event.isTrashed && <span style={{ color: '#9b59b6', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>EJ AKTUELL</span>}
-                                    {event.cancelled && !event.isTrashed && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>INSTÄLLD</span>}
+                                    {event.isTrashed && <span style={{ color: '#9b59b6', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Icon name="ban" size={14} /> EJ AKTUELL</span>}
+                                    {event.cancelled && !event.isTrashed && <span style={{ color: '#ff4757', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Icon name="ban" size={14} /> INSTÄLLD</span>}
                                     {isPast && !event.cancelled && !event.isTrashed && <span style={{ color: 'var(--text-muted)', marginRight: '0.5rem', fontSize: '0.8em', textDecoration: 'none', display: 'inline-block' }}>PASSERAD</span>}
                                     {event.summary}
                                   </h3>
@@ -3766,7 +3513,8 @@ function App() {
                               <p className="location" onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
                                 style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'var(--text-muted)', textDecoration: event.coords ? 'underline' : 'none', fontSize: '0.9rem', margin: '0' }}
                                 title={event.coords ? "Se på karta" : "Ingen plats"}>
-                                📍 {event.location || 'Hemma/Okänd plats'}
+                                <Icon name="mapPin" size={14} style={{ color: '#ff7675', marginRight: '0.25rem' }} />
+                                {event.location || 'Hemma/Okänd plats'}
                               </p>
                               {renderTravelInfo(event)}
                               <div className="actions" onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
@@ -3790,8 +3538,8 @@ function App() {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderLeft: '4px solid #2ed573', paddingLeft: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <h2 style={{ margin: 0 }}>
-                    ✅ Att göra
+                  <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Icon name="check" size={24} style={{ color: '#2ed573' }} /> Att göra
                   </h2>
                   {/* Navigation for specific views */}
                   {(activeTab === 'todos' || viewMode === 'week') && (
@@ -4081,7 +3829,7 @@ function App() {
                               justifyContent: 'center'
                             }}
                           >
-                            🗑️
+                            <Icon name="trash" size={20} />
                           </button>
                         )}
                         {task.isEventTodo && (
@@ -4103,7 +3851,7 @@ function App() {
                               justifyContent: 'center'
                             }}
                           >
-                            🗑️
+                            <Icon name="trash" size={20} />
                           </button>
                         )}
                       </div>
@@ -4134,7 +3882,8 @@ function App() {
           selectedEventForDetail && (
             <EventDetailModal
               event={selectedEventForDetail}
-              allEvents={allEvents}
+              allEvents={events}
+              isAdmin={isAdmin}
               onClose={() => setSelectedEventForDetail(null)}
               onEdit={openEditModal}
               onNavigate={setSelectedEventForDetail}
@@ -4178,8 +3927,24 @@ function App() {
           )
         }
 
+        {/* Two-Step Edit Modal */}
+        {
+          isEditingEvent && editEventData && (
+            <TwoStepEditModal
+              editEventData={editEventData}
+              setEditEventData={setEditEventData}
+              isAdmin={isAdmin}
+              isMobile={isMobile}
+              updateEvent={updateEvent}
+              deleteEvent={deleteEvent}
+              setIsEditingEvent={setIsEditingEvent}
+              getApiUrl={getApiUrl}
+            />
+          )
+        }
+
       </div >
-    </div>
+    </div >
   )
 }
 

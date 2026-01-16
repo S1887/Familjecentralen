@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { formatDuration } from '../mapService';
+import Icon from './Icon';
 
 // Helper to check if event is all-day (starts at 00:00 and ends at 00:00 or 23:59)
 const isAllDayEvent = (event) => {
@@ -13,13 +14,15 @@ const isAllDayEvent = (event) => {
     return startHour === 0 && startMin === 0 && ((endHour === 0 && endMin === 0) || (endHour === 23 && endMin === 59));
 };
 
-const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onShowAllUpcoming, onTrash, getGoogleCalendarLink }) => {
+const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onShowAllUpcoming, onTrash, getGoogleCalendarLink, isAdmin }) => {
     if (!event) return null;
 
     // Sort events chronologically (upcoming only)
     const now = new Date();
     // Filter duplicates and sort
-    const uniqueEvents = [...allEvents].reduce((acc, current) => {
+
+    const uniqueEvents = [...(allEvents || [])].reduce((acc, current) => {
+        if (!current || !current.uid) return acc;
         const x = acc.find(item => item.uid === current.uid);
         if (!x) {
             return acc.concat([current]);
@@ -78,7 +81,10 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
     };
 
     const eventDate = new Date(event.start);
+
     const eventEnd = new Date(event.end);
+
+    if (isNaN(eventDate.getTime())) return null;
 
     const formatDate = (date) => {
         const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
@@ -164,7 +170,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                     onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                     onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
-                    ✕
+                    <Icon name="x" size={20} />
                 </button>
 
                 {/* Content */}
@@ -185,7 +191,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
                         {/* Date */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem' }}>
-                            <span style={{ fontSize: '1.5rem' }}>📅</span>
+                            <Icon name="calendar" size={24} />
                             <span style={{ color: 'rgba(255, 255, 255, 0.9)', textTransform: 'capitalize' }}>
                                 {formatDate(eventDate)}
                             </span>
@@ -193,7 +199,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
 
                         {/* Time */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem' }}>
-                            <span style={{ fontSize: '1.5rem' }}>🕐</span>
+                            <Icon name="clock" size={24} />
                             <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                                 {isAllDayEvent(event) ? 'Heldag' : `${eventDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })} - ${eventEnd.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}`}
                             </span>
@@ -202,7 +208,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                         {/* Location */}
                         {event.location && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem' }}>
-                                <span style={{ fontSize: '1.5rem' }}>📍</span>
+                                <Icon name="mapPin" size={24} style={{ color: '#ff7675' }} />
                                 <span style={{ color: accentColor, fontWeight: '500' }}>
                                     {event.location}
                                 </span>
@@ -212,7 +218,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                         {/* Travel Time */}
                         {event.travelTime && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem' }}>
-                                <span style={{ fontSize: '1.5rem' }}>🚗</span>
+                                <Icon name="car" size={24} style={{ color: '#74b9ff' }} />
                                 <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                                     {formatDuration(event.travelTime.duration)} ({Math.round(event.travelTime.distance / 1000)} km)
                                 </span>
@@ -222,7 +228,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                         {/* Assignees */}
                         {event.assignees && event.assignees.length > 0 && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem' }}>
-                                <span style={{ fontSize: '1.5rem' }}>👥</span>
+                                <Icon name="users" size={24} />
                                 <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                                     {event.assignees.join(', ')}
                                 </span>
@@ -232,7 +238,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                         {/* Category */}
                         {event.category && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem' }}>
-                                <span style={{ fontSize: '1.5rem' }}>📂</span>
+                                <Icon name="folder" size={24} />
                                 <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                                     {event.category}
                                 </span>
@@ -244,7 +250,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 {event.assignments.driver && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1rem' }}>
-                                        <span style={{ fontSize: '1.3rem' }}>🚗</span>
+                                        <Icon name="car" size={20} style={{ color: '#74b9ff' }} />
                                         <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                                             <strong>{event.assignments.driver}</strong> kör
                                         </span>
@@ -252,7 +258,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                                 )}
                                 {event.assignments.packer && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1rem' }}>
-                                        <span style={{ fontSize: '1.3rem' }}>🎒</span>
+                                        <Icon name="backpack" size={20} style={{ color: '#a29bfe' }} />
                                         <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                                             <strong>{event.assignments.packer}</strong> packar
                                         </span>
@@ -280,8 +286,8 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                     {/* Todo List */}
                     {event.todoList && event.todoList.length > 0 && (
                         <div style={{ marginBottom: '1.5rem' }}>
-                            <h3 style={{ fontSize: '1.2rem', marginBottom: '0.75rem', color: 'white' }}>
-                                ✓ Att göra
+                            <h3 style={{ fontSize: '1.2rem', marginBottom: '0.75rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Icon name="check" size={20} /> Att göra
                             </h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 {event.todoList.map((todo) => (
@@ -294,7 +300,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                                         borderRadius: '8px'
                                     }}>
                                         <span style={{ fontSize: '1.2rem' }}>
-                                            {todo.done ? '✅' : '⬜'}
+                                            {todo.done ? <Icon name="check" size={16} /> : ''}
                                         </span>
                                         <span style={{
                                             color: 'rgba(255, 255, 255, 0.9)',
@@ -331,7 +337,8 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                         >
-                            ✏️ Redigera
+                            <Icon name="edit" size={16} style={{ color: '#646cff', marginRight: '0.5rem' }} />
+                            Redigera
                         </button>
 
                         {getGoogleCalendarLink && event.source && (event.source.includes('Svante') || event.source.includes('Sarah') || event.source.includes('Familjen')) && (
@@ -357,7 +364,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                                     gap: '0.5rem'
                                 }}
                             >
-                                📅 Google Kalender
+                                <Icon name="calendar" size={16} /> Google Kalender
                             </a>
                         )}
 
@@ -397,7 +404,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                                     onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                                     onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                 >
-                                    🚫 Ej aktuell
+                                    <Icon name="ban" size={16} style={{ marginRight: '0.3rem' }} /> Ej aktuell
                                 </button>
                             );
                         })()}

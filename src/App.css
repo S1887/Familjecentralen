@@ -23,11 +23,12 @@
   --shadow-color: rgba(0, 0, 0, 0.1);
   --header-border: #e0e0e0;
 
-  --accent: #1DB954;
-  --accent-muted: #1ed760;
-  --success: #00b894;
-  --warning: #fdcb6e;
-  --error: #d63031;
+  /* Flat/Neon Palette Updates */
+  --accent: #2ed573;
+  --accent-muted: #26af61;
+  --success: #2ed573;
+  --warning: #ffa502;
+  --error: #ff4757;
 
   --week-header-bg: #f8f9fa;
   --week-header-text: #2d3436;
@@ -74,8 +75,9 @@
   --shadow-color: rgba(0, 0, 0, 0.5);
   --header-border: #282828;
 
-  --accent: #1DB954;
-  --accent-muted: #1ed760;
+  /* Flat/Neon Palette Updates */
+  --accent: #2ed573;
+  --accent-muted: #26af61;
   --success: #2ed573;
   --warning: #ffa502;
   --error: #ff4757;
@@ -90,29 +92,29 @@
 /* Event card color classes - applies border-left based on assignee/source */
 .card.assigned-svante,
 .card.source-svante {
-  border-left: 4px solid #ff7675 !important;
-  /* Red for Svante/Arsenal/ÖIS */
+  border-left: 6px solid #ff4757 !important;
+  /* Red */
 }
 
 .card.assigned-sarah,
 .card.source-sarah {
-  border-left: 4px solid #f1c40f !important;
-  /* Yellow for Sarah */
+  border-left: 6px solid #f1c40f !important;
+  /* Yellow */
 }
 
 .card.assigned-algot {
-  border-left: 4px solid #3498db !important;
-  /* Blue for Algot/Lidköping */
+  border-left: 6px solid #2e86de !important;
+  /* Blue */
 }
 
 .card.assigned-leon {
-  border-left: 4px solid #2ed573 !important;
-  /* Green for Leon */
+  border-left: 6px solid #2ed573 !important;
+  /* Green */
 }
 
 .card.assigned-tuva {
-  border-left: 4px solid #9b59b6 !important;
-  /* Purple for Tuva */
+  border-left: 6px solid #a29bfe !important;
+  /* Purple */
 }
 
 /* Calendar event color classes (for month/week grid views) */
@@ -120,8 +122,8 @@
 .calendar-event.source-svante,
 .calendar-event-spanning.assigned-svante,
 .calendar-event-spanning.source-svante {
-  border-left: 3px solid #ff7675 !important;
-  background: rgba(255, 118, 117, 0.3) !important;
+  border-left: 3px solid #ff4757 !important;
+  background: rgba(255, 71, 87, 0.25) !important;
   color: var(--text-main) !important;
 }
 
@@ -130,28 +132,28 @@
 .calendar-event-spanning.assigned-sarah,
 .calendar-event-spanning.source-sarah {
   border-left: 3px solid #f1c40f !important;
-  background: rgba(241, 196, 15, 0.3) !important;
+  background: rgba(241, 196, 15, 0.25) !important;
   color: var(--text-main) !important;
 }
 
 .calendar-event.assigned-algot,
 .calendar-event-spanning.assigned-algot {
-  border-left: 3px solid #3498db !important;
-  background: rgba(52, 152, 219, 0.3) !important;
+  border-left: 3px solid #2e86de !important;
+  background: rgba(46, 134, 222, 0.25) !important;
   color: var(--text-main) !important;
 }
 
 .calendar-event.assigned-leon,
 .calendar-event-spanning.assigned-leon {
   border-left: 3px solid #2ed573 !important;
-  background: rgba(46, 213, 115, 0.3) !important;
+  background: rgba(46, 213, 115, 0.25) !important;
   color: var(--text-main) !important;
 }
 
 .calendar-event.assigned-tuva,
 .calendar-event-spanning.assigned-tuva {
-  border-left: 3px solid #9b59b6 !important;
-  background: rgba(155, 89, 182, 0.3) !important;
+  border-left: 3px solid #a29bfe !important;
+  background: rgba(162, 155, 254, 0.25) !important;
   color: var(--text-main) !important;
 }
 
@@ -429,19 +431,18 @@ body {
 
 .card {
   background: var(--card-bg);
-  border-radius: 10px;
-  padding: 0.75rem;
+  border-radius: 24px;
+  padding: 1rem 1.2rem;
   /* Mobile: compact */
-  margin-bottom: 0.5rem;
-  box-shadow: 0 2px 4px var(--shadow-color);
+  margin-bottom: 0.8rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   text-align: left;
-  border-left: 4px solid var(--card-border-left);
-  transition: transform 0.2s;
+  border-left: 6px solid var(--card-border-left);
+  transition: transform 0.2s, box-shadow 0.2s;
   position: relative;
   overflow: hidden;
-  overflow: hidden;
   color: var(--card-text);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   /* Mobile: slightly smaller */
 }
 
@@ -452,33 +453,30 @@ body {
   /* Transparent blue works on dark too */
 }
 
-.card.source-svante,
-.card.assigned-svante {
-  border-left-color: #ff7675;
-  /* Soft Red/Coral for Svante */
+
+.card.assigned-svante,
+.card.source-svante {
+  border-left: 6px solid #ff7675;
 }
 
-.card.source-mamma,
+.card.assigned-sarah,
 .card.source-sarah,
-.card.assigned-sarah {
-  border-left-color: #ffeaa7;
-  /* Soft Yellow/Cream for Sarah */
+.card.source-mamma {
+  border-left: 6px solid #ffeaa7;
 }
 
 .card.assigned-algot {
-  border-left-color: #74b9ff;
-  /* Soft Blue for Algot */
+  border-left: 6px solid #74b9ff;
 }
 
 .card.assigned-leon {
-  border-left-color: #55efc4;
-  /* Soft Green/Mint for Leon */
+  border-left: 6px solid #55efc4;
 }
 
 .card.assigned-tuva {
-  border-left-color: #a29bfe;
-  /* Soft Purple/Lavender for Tuva */
+  border-left: 6px solid #a29bfe;
 }
+
 
 .card.assigned {
   opacity: 0.9;
@@ -699,7 +697,7 @@ h3 {
   /* Match main bg */
   min-height: 90px;
   /* Reduced from 100px */
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 
   padding: 0.5rem;
@@ -724,16 +722,16 @@ h3 {
 }
 
 .calendar-cell.today {
-  background: rgba(46, 213, 115, 0.15);
-  border: 1px solid rgba(46, 213, 115, 0.3);
+  background: rgba(163, 190, 140, 0.25);
+  border: 1px solid rgba(163, 190, 140, 0.5);
   font-weight: bold;
 }
 
 .calendar-event {
   background: #74b9ff;
   color: #2d3436;
-  padding: 2px 4px;
-  border-radius: 3px;
+  padding: 3px 6px;
+  border-radius: 8px;
   margin-bottom: 2px;
   font-size: 0.75rem;
   white-space: nowrap;
@@ -772,7 +770,7 @@ h3 {
   /* Fixed width for horizontal scroll on mobile */
   min-width: 100px;
   background: var(--card-bg);
-  border-radius: 8px;
+  border-radius: 16px;
   border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
@@ -1294,5 +1292,16 @@ body.modal-open {
   .week-view-grid {
     grid-template-columns: repeat(7, 1fr) !important;
     min-width: auto;
+  }
+}
+
+/* Spin animation for refresh button */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
   }
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getApiUrl } from '../utils/api';
 import SavedRecipes from './SavedRecipes';
+import Icon from './Icon';
 
 // Get ISO week number and year
 const getWeekInfo = (date) => {
@@ -174,7 +175,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                     type: selectedMeal.type
                 })
             });
-            alert('✅ Recept sparat!' + (newMealName !== selectedMeal.name ? ` Rättnamn uppdaterat till "${newMealName}"` : ''));
+            alert('Recept sparat!' + (newMealName !== selectedMeal.name ? ` Rättnamn uppdaterat till "${newMealName}"` : ''));
         } catch (error) {
             console.error('Error saving recipe:', error);
         }
@@ -448,7 +449,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                     gap: '0.5rem'
                 }}
             >
-                📚 Sparade recept
+                <Icon name="book" size={16} style={{ marginRight: '0.3rem' }} />Sparade recept
             </button>
 
             {/* Header (unchanged) */}
@@ -471,7 +472,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                         color: theme.text
                     }}
                 >
-                    ◀
+                    ‹ Föregående
                 </button>
 
                 <div style={{ textAlign: 'center' }}>
@@ -499,7 +500,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                         color: theme.text
                     }}
                 >
-                    ▶
+                    Nästa ›
                 </button>
             </div>
 
@@ -514,7 +515,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                     border: `1px solid ${theme.border}`
                 }}>
                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '1.2rem' }}>👩‍🍳</span>
+                        <Icon name="bot" size={20} />
                         <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>AI-Kock</span>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -548,7 +549,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                 whiteSpace: 'nowrap'
                             }}
                         >
-                            {suggesting ? '...Tänker' : '✨ Förslag'}
+                            {suggesting ? '...Tänker' : <><Icon name="search" size={14} style={{ marginRight: '0.3rem' }} />Förslag</>}
                         </button>
                     </div>
                     {aiInstructions && (
@@ -700,12 +701,12 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                                 Lunch
                                                 {dayMeals.authors?.lunch && (
                                                     <span style={{ marginLeft: '0.3rem', fontSize: '0.7rem' }} title={dayMeals.authors.lunch}>
-                                                        {dayMeals.authors.lunch === 'AI' ? '🤖' : dayMeals.authors.lunch === 'Svante' ? '👨' : dayMeals.authors.lunch === 'Sarah' ? '👩' : '✏️'}
+                                                        {dayMeals.authors.lunch === 'AI' ? <Icon name="bot" size={12} /> : dayMeals.authors.lunch === 'Svante' ? <Icon name="user" size={12} /> : dayMeals.authors.lunch === 'Sarah' ? <Icon name="user" size={12} /> : <Icon name="edit" size={12} />}
                                                     </span>
                                                 )}
                                             </span>
                                             <span style={{ color: theme.text, fontSize: '0.7rem', fontWeight: 'bold', minHeight: '1rem' }}>
-                                                {dayMeals.times?.lunch ? `🕒 ${dayMeals.times.lunch}` : ''}
+                                                {dayMeals.times?.lunch ? <><Icon name="clock" size={10} style={{ marginRight: '0.2rem' }} />{dayMeals.times.lunch}</> : ''}
                                             </span>
                                         </div>
                                         <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -757,12 +758,12 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                                 Middag
                                                 {dayMeals.authors?.dinner && (
                                                     <span style={{ marginLeft: '0.3rem', fontSize: '0.7rem' }} title={dayMeals.authors.dinner}>
-                                                        {dayMeals.authors.dinner === 'AI' ? '🤖' : dayMeals.authors.dinner === 'Svante' ? '👨' : dayMeals.authors.dinner === 'Sarah' ? '👩' : '✏️'}
+                                                        {dayMeals.authors.dinner === 'AI' ? <Icon name="bot" size={12} /> : dayMeals.authors.dinner === 'Svante' ? <Icon name="user" size={12} /> : dayMeals.authors.dinner === 'Sarah' ? <Icon name="user" size={12} /> : <Icon name="edit" size={12} />}
                                                     </span>
                                                 )}
                                             </span>
                                             <span style={{ color: theme.text, fontSize: '0.7rem', fontWeight: 'bold', minHeight: '1rem' }}>
-                                                {dayMeals.times?.dinner ? `🕒 ${dayMeals.times.dinner}` : ''}
+                                                {dayMeals.times?.dinner ? <><Icon name="clock" size={10} style={{ marginRight: '0.2rem' }} />{dayMeals.times.dinner}</> : ''}
                                             </span>
                                         </div>
                                         <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -942,10 +943,11 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                         {/* Header */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                             <h3 style={{ margin: 0, color: theme.text, fontSize: '1.2rem' }}>
-                                {selectedMeal.type === 'lunch' ? '🍽️ Lunch' : '🍽️ Middag'}
+                                <Icon name="utensils" size={18} style={{ marginRight: '0.3rem' }} />
+                                {selectedMeal.type === 'lunch' ? 'Lunch' : 'Middag'}
                                 {selectedMeal.authors && (
                                     <span style={{ marginLeft: '0.5rem', fontSize: '0.9rem' }}>
-                                        {selectedMeal.author === 'AI' ? '🤖' : selectedMeal.author === 'Svante' ? '👨' : selectedMeal.author === 'Sarah' ? '👩' : '✏️'}
+                                        {selectedMeal.author === 'AI' ? <Icon name="bot" size={16} /> : selectedMeal.author === 'Svante' ? <Icon name="user" size={16} /> : selectedMeal.author === 'Sarah' ? <Icon name="user" size={16} /> : <Icon name="edit" size={16} />}
                                     </span>
                                 )}
                             </h3>
@@ -953,7 +955,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                 onClick={() => setMealDetailOpen(false)}
                                 style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: theme.textMuted }}
                             >
-                                ✕
+                                <Icon name="x" size={20} />
                             </button>
                         </div>
 
@@ -970,7 +972,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                             </div>
                             {selectedMeal.time && (
                                 <div style={{ fontSize: '0.9rem', color: theme.textMuted, marginTop: '0.5rem' }}>
-                                    🕒 {selectedMeal.time}
+                                    <Icon name="clock" size={14} style={{ marginRight: '0.3rem' }} />{selectedMeal.time}
                                 </div>
                             )}
                         </div>

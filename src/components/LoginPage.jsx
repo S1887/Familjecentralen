@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import './LoginPage.css';
 import { getApiUrl } from '../utils/api';
+import Icon from './Icon';
 
 // User list for display ONLY - No PINs here!
 const USERS = [
@@ -107,7 +108,7 @@ function LoginPage({ onLogin }) {
     return (
         <div className="login-container">
             <div className="login-card">
-                <h1>🏠 Örtendahls familjecentral</h1>
+                <h1><Icon name="home" size={24} style={{ marginRight: '0.5rem' }} />Örtendahls familjecentral</h1>
                 <p>Vem är du?</p>
 
                 <div className="user-buttons">

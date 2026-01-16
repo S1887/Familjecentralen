@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Icon from './Icon';
 
 const SavedRecipes = ({ darkMode, getApiUrl, onBack }) => {
     const [recipes, setRecipes] = useState([]);
@@ -262,7 +263,7 @@ const SavedRecipes = ({ darkMode, getApiUrl, onBack }) => {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="🔍 Sök recept..."
+                    placeholder="Sök recept..."
                     style={{
                         flex: 1,
                         minWidth: '200px',
@@ -323,7 +324,7 @@ const SavedRecipes = ({ darkMode, getApiUrl, onBack }) => {
                 }}>
                     {recipes.length === 0
                         ? '📝 Inga sparade recept ännu. Spara ett recept från matsedeln!'
-                        : '🔍 Inga recept matchar din sökning.'}
+                        : 'Inga recept matchar din sökning.'}
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -374,7 +375,7 @@ const SavedRecipes = ({ darkMode, getApiUrl, onBack }) => {
                                         }}
                                         title="Redigera"
                                     >
-                                        ✏️
+                                        <Icon name="edit" size={16} />
                                     </button>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); deleteRecipe(recipe.id); }}
@@ -388,7 +389,7 @@ const SavedRecipes = ({ darkMode, getApiUrl, onBack }) => {
                                         }}
                                         title="Ta bort"
                                     >
-                                        🗑️
+                                        <Icon name="trash" size={16} />
                                     </button>
                                     <span style={{ color: theme.textMuted, fontSize: '1.2rem' }}>
                                         {expandedRecipe === recipe.id ? '▼' : '▶'}
@@ -502,7 +503,8 @@ const SavedRecipes = ({ darkMode, getApiUrl, onBack }) => {
                                                         cursor: 'pointer'
                                                     }}
                                                 >
-                                                    ❌ Avbryt
+                                                    <Icon name="x" size={16} style={{ marginRight: '0.5rem' }} />
+                                                    Avbryt
                                                 </button>
                                             </div>
                                         </div>

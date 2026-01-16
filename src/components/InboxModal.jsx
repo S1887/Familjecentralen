@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getApiUrl } from '../utils/api';
+import Icon from './Icon';
 
 
 export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink }) {
@@ -102,8 +103,8 @@ export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink })
             }} onClick={e => e.stopPropagation()}>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h2>📥 Inkorg Händelser</h2>
-                    <button onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>✕</button>
+                    <h2><Icon name="mail" size={20} style={{ marginRight: '0.5rem' }} />Inkorg Händelser</h2>
+                    <button onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}><Icon name="x" size={20} /></button>
                 </div>
 
                 {loading && <p>Laddar...</p>}
@@ -158,7 +159,7 @@ export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink })
                                         borderRadius: '4px',
                                         fontWeight: 'bold'
                                     }}>
-                                        ✓ TILLAGD
+                                        <Icon name="check" size={12} style={{ marginRight: '4px' }} /> TILLAGD
                                     </div>
                                 )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -213,7 +214,7 @@ export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink })
                                                 minWidth: '120px'
                                             }}
                                         >
-                                            ✅ Aktuell
+                                            <Icon name="check" size={16} /> Aktuell
                                         </button>
                                     )}
 
@@ -247,7 +248,7 @@ export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink })
                                             fontWeight: 600
                                         }}
                                     >
-                                        🚫 Ej aktuell
+                                        <Icon name="ban" size={16} style={{ marginRight: '0.3rem' }} /> Ej aktuell
                                     </button>
                                 </div>
                             </div>

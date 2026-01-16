@@ -301,6 +301,11 @@ async function deleteEvent(eventId, calendarId = CALENDAR_CONFIG.familjen) {
         console.log(`[GoogleCalendar] Deleted event: ${eventId}`);
         return true;
     } catch (error) {
+        // If event is already gone (404), consider it a success so we can clean up locally
+        if (error.code === 404 || (error.message && error.message.includes('404'))) {
+            console.log(`[GoogleCalendar] Event ${eventId} already deleted from Google (404)`);
+            return true;
+        }
         console.error('[GoogleCalendar] Delete event failed:', error.message);
         return false;
     }
