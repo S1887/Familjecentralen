@@ -1472,7 +1472,10 @@ function App() {
     } catch (err) {
       console.error("Could not create event", err);
       // Revert on error
-      setEvents(prev => prev.filter(ev => ev.uid !== tempUid));
+      setEvents(prev => {
+        if (!prev || !Array.isArray(prev)) return [];
+        return prev.filter(ev => ev.uid !== tempUid);
+      });
       alert("Kunde inte spara händelse. Kontrollera nätverket.");
     }
   };
