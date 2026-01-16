@@ -2431,6 +2431,41 @@ app.post('/api/trash', async (req, res) => {
     }
 });
 
+// Permanently delete from trash (and local storage)
+app.delete('/api/trash/:uid/permanent', async (req, res) => {
+    try {
+        const { uid } = req.params;
+        if (!uid) return res.status(400).json({ error: 'UID krävs' });
+
+        console.log(`[Trash] Permanently deleting event ${uid}`);
+
+        // 1. Remove from trash.json
+        const trashItems = readTrashFile();
+        const updatedTrash = trashItems.filter(t => t.eventId !== uid);
+        writeTrashFile(updatedTrash);
+
+        // 2. Remove from local_events.json (if it exists)
+        const localEvents = await readLocalEvents();
+        const updatedLocal = localEvents.filter(e => e.uid !== uid);
+        if (localEvents.length !== updatedLocal.length) {
+            await writeLocalEvents(updatedLocal);
+            console.log(`[Trash] Removed ${uid} from local_events.json`);
+        }
+
+        // 3. DO NOT remove from ignored_events.json (we want to keep ignoring it from feeds)
+
+        if (isMongoConnected()) {
+            await removeFromTrash(uid);
+            // Optionally remove from MongoDB local events if you sync them
+        }
+
+        res.json({ success: true, message: 'Händelse permanent borttagen' });
+    } catch (error) {
+        console.error('[Trash] Permanent delete error:', error);
+        res.status(500).json({ error: 'Kunde inte ta bort händelse permanent' });
+    }
+});
+
 // Restore event from trash
 app.delete('/api/trash/:uid', async (req, res) => {
     try {

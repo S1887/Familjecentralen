@@ -72,3 +72,18 @@ server/delete_*.mjs
 server/cleanup_*.mjs
 server/diagnose_*.mjs
 server/deduplicate_*.mjs
+
+# Root-level debug/test scripts (one-time use)
+analyze_*.js
+check_*.js
+probe_*.js
+fix_event.js
+restore_script.js
+test_*.js
+cleanup_*.mjs
+diagnose_*.mjs
+deduplicate_*.mjs
+
+# Test data dumps
+test_*.json
+sportadmin.ics

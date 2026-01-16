@@ -468,8 +468,12 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                             );
                         })()}
 
+
+
+
+
                         {/* 6. Create New (Button) */}
-                        {/* 5. Create New (Button) */}
+                        {/* 6. Create New (Button) */}
                         <Card onClick={() => setActiveTab('create-event')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                             <div style={{ marginBottom: '0.5rem', color: theme.cardText }}>
                                 {/* Plus Icon */}

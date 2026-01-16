@@ -236,6 +236,8 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const [showViewMenu, setShowViewMenu] = useState(false);
+
   const getWeekNumber = (d) => {
     d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -351,7 +353,7 @@ function App() {
     'Sarah': '#f1c40f',
     'Algot': '#2e86de',
     'Tuva': '#a29bfe',
-    'Leon': '#2ed573'
+    'Leon': '#e67e22'
   };
 
   // Google Calendar Mapping
@@ -501,7 +503,8 @@ function App() {
     if (assignees.includes('Leon')) return 'assigned-leon';
     if (assignees.includes('Tuva')) return 'assigned-tuva';
 
-    return ''; // Default, no special color
+    // Priority 4: Default / Family (Green)
+    return 'assigned-family'; // Default for everything else (Family/Unassigned)
   };
 
   // State för att skapa nytt event
@@ -1751,11 +1754,31 @@ function App() {
                               )}
                             </div>
                           </div>
-                          <button onClick={() => restoreEvent(item.eventId || item.uid)} style={{
-                            background: '#2ed573', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '20px', cursor: 'pointer'
-                          }}>
-                            ♻️ Återställ
-                          </button>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button onClick={async () => {
+                              if (window.confirm('Är du säker på att du vill ta bort denna händelse permanent? Detta går ej att ångra.')) {
+                                try {
+                                  const res = await fetch(getApiUrl(`api/trash/${item.eventId || item.uid}/permanent`), { method: 'DELETE' });
+                                  if (res.ok) {
+                                    setTrashItems(prev => prev.filter(t => (t.eventId || t.uid) !== (item.eventId || item.uid)));
+                                  } else {
+                                    alert('Kunde inte ta bort händelsen');
+                                  }
+                                } catch (err) {
+                                  console.error(err);
+                                }
+                              }
+                            }} style={{
+                              background: '#ef5350', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '20px', cursor: 'pointer'
+                            }}>
+                              🗑️ Ta bort
+                            </button>
+                            <button onClick={() => restoreEvent(item.eventId || item.uid)} style={{
+                              background: '#2ed573', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '20px', cursor: 'pointer'
+                            }}>
+                              ♻️ Återställ
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -2084,6 +2107,31 @@ function App() {
                           )}
                         </button>
                       )}
+
+                      <button
+                        onClick={() => {
+                          setViewMode('history');
+                          setActiveTab('timeline');
+                          setShowMoreMenu(false);
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '0.8rem 1rem',
+                          background: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid var(--border-color)',
+                          color: 'var(--card-text)',
+                          fontSize: '0.95rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          textAlign: 'left',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        <Icon name="clock" size={20} style={{ color: '#646cff' }} /> Kalenderhistorik
+                      </button>
                       {isAdmin && (
                         <button
                           onClick={() => { fetchTrash(); setViewTrash(true); setShowMoreMenu(false); }}
@@ -3120,28 +3168,127 @@ function App() {
 
           {/* Combined Filter Button */}
           <div style={{ marginBottom: '0.5rem' }}>
-            <button
-              onClick={() => setShowFilterMenu(!showFilterMenu)}
-              style={{
-                width: '100%',
-                padding: '0.8rem 1rem',
-                background: 'var(--card-bg)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '12px',
-                color: 'var(--card-text)',
-                fontSize: '0.9rem',
-                textAlign: 'left',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                cursor: 'pointer'
-              }}
-            >
-              <span>
-                🔍 Filter: <strong>{filterChild === 'Alla' ? 'Hela Familjen' : filterChild}</strong> • <strong>{filterCategory}</strong>
-              </span>
-              <span>{showFilterMenu ? '▲' : '▼'}</span>
-            </button>
+            {/* SIDE-BY-SIDE HEADER: Filter & View Mode */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.2rem', padding: '0 0.2rem' }}>
+              {/* 1. FILTER BUTTON */}
+              <button
+                onClick={() => setShowFilterMenu(!showFilterMenu)}
+                style={{
+                  flex: 1,
+                  padding: '0.4rem 0.5rem',
+                  background: 'var(--card-bg)', // Slight background for contrast
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  color: 'var(--card-text)',
+                  fontSize: '0.85rem',
+                  textAlign: 'left',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <span style={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                  Filter: <strong>{filterChild === 'Alla' ? 'Familj' : filterChild}</strong> • {filterCategory}
+                </span>
+                <span style={{ fontSize: '0.7em', opacity: 0.7 }}>▼</span>
+              </button>
+
+              {/* 2. VIEW BUTTON */}
+              <button
+                onClick={() => setShowViewMenu(!showViewMenu)}
+                style={{
+                  flex: 1,
+                  padding: '0.4rem 0.5rem',
+                  background: 'var(--card-bg)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  color: 'var(--card-text)',
+                  fontSize: '0.85rem',
+                  textAlign: 'left', // Keep text left-aligned for symmetry
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <span>
+                  Vy: {
+                    viewMode === 'upcoming' ? 'Lista' :
+                      viewMode === 'mobile_grid' ? 'Mobil' :
+                        viewMode === 'week' ? `V.${getWeekNumber(selectedDate)}` :
+                          viewMode === 'month' ? selectedDate.toLocaleDateString('sv-SE', { month: 'short' }) :
+                            'Historik'
+                  }
+                </span>
+                <span style={{ fontSize: '0.7em', opacity: 0.7 }}>▼</span>
+              </button>
+            </div>
+
+            {/* VIEW MODE MODAL */}
+            {showViewMenu && (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(0,0,0,0.5)',
+                  zIndex: 1000,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '1rem'
+                }}
+                onClick={() => setShowViewMenu(false)}
+              >
+                <div
+                  style={{
+                    background: 'var(--card-bg)',
+                    borderRadius: '16px',
+                    padding: '1.5rem',
+                    maxWidth: '300px',
+                    width: '100%',
+                    color: 'var(--card-text)'
+                  }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h3 style={{ margin: 0 }}>Välj Vy</h3>
+                    <button onClick={() => setShowViewMenu(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: 'var(--card-text)', cursor: 'pointer' }}>✕</button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {[
+                      { id: 'upcoming', label: '📜 Lista' },
+                      { id: 'mobile_grid', label: '📱 Mobilvecka' },
+                      { id: 'week', label: `📅 Vecka ${getWeekNumber(selectedDate)}` },
+
+                      { id: 'month', label: `🗓️ Månad (${selectedDate.toLocaleDateString('sv-SE', { month: 'short' })})` }
+                    ].map(option => (
+                      <button
+                        key={option.id}
+                        onClick={() => { setViewMode(option.id); setShowViewMenu(false); }}
+                        style={{
+                          padding: '1rem',
+                          background: viewMode === option.id ? '#2ed573' : 'transparent',
+                          color: viewMode === option.id ? 'white' : 'var(--card-text)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '8px',
+                          textAlign: 'left',
+                          fontSize: '1rem',
+                          fontWeight: viewMode === option.id ? 'bold' : 'normal'
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* COMBINED FILTER BUTTON REPLACED ABOVE */}
 
             {/* Filter Modal */}
             {showFilterMenu && (
@@ -3282,60 +3429,10 @@ function App() {
             }}>
 
 
-              {/* View Mode Selector - now inside timeline section to appear above calendar but below todo on mobile */}
-              <div className="view-mode-selector" style={{
-                display: 'flex',
-                justifyContent: 'center',
-                margin: '0 0 1rem 0',
-                padding: '0'
-              }}>
-                <div style={{
-                  background: 'var(--button-bg)',
-                  borderRadius: '30px',
-                  padding: '0.2rem',
-                  display: 'flex',
-                  gap: '0rem',
-                  width: '100%',
-                  maxWidth: '600px',
-                  overflowX: 'auto',
-                  WebkitOverflowScrolling: 'touch',
-                  justifyContent: 'space-between'
-                }}>
-                  {[
-                    { id: 'upcoming', label: 'Kommande' },
-                    { id: 'mobile_grid', label: 'Mobilvecka' },
-                    { id: 'week', label: `Vecka ${getWeekNumber(selectedDate)}` },
-                    { id: 'month', label: selectedDate.toLocaleDateString('sv-SE', { month: 'long' }) },
-                    { id: 'history', label: 'Historik' }
-                  ].map(view => (
-                    <button
-                      key={view.id}
-                      onClick={() => setViewMode(view.id)}
-                      style={{
-                        background: viewMode === view.id ? 'var(--card-bg)' : 'transparent',
-                        color: viewMode === view.id ? 'var(--card-text)' : 'var(--text-muted)',
-                        border: 'none',
-                        borderRadius: '24px',
-                        padding: '0.6rem 1rem',
-                        fontSize: '0.9rem',
-                        cursor: 'pointer',
-                        fontWeight: viewMode === view.id ? '600' : '500',
-                        boxShadow: viewMode === view.id ? '0 4px 12px rgba(0,0,0,0.2)' : 'none',
-                        transition: 'all 0.2s ease',
-                        whiteSpace: 'nowrap',
-                        flex: 1,
-                        textAlign: 'center',
-                        opacity: viewMode === view.id ? 1 : 0.7
-                      }}
-                    >
-                      {view.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* View Mode Selector - REMOVED (Replaced by View Button above) */}
 
               <div className="timeline">
-                <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1.2rem', margin: '0.5rem 0', paddingRight: '1rem' }}>
+                <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1rem', margin: '0.1rem 0', paddingRight: '1rem' }}>
                   {(viewMode === 'week' || viewMode === 'month' || viewMode === 'mobile_grid') ? (
                     <>
                       <button onClick={() => navigateView(-1)} style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-main)', padding: '0 0.5rem' }}>◀</button>
@@ -3625,7 +3722,7 @@ function App() {
                             if (name === 'Sarah') bg = '#f1c40f';
                             if (name === 'Algot') bg = '#3498db';
                             if (name === 'Tuva') bg = '#9b59b6';
-                            if (name === 'Leon') bg = '#2ed573';
+                            if (name === 'Leon') bg = '#e67e22';
                           }
 
                           return (

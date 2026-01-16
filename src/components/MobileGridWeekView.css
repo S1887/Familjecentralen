@@ -84,7 +84,11 @@
 }
 
 .mobile-event-compact.assigned-leon {
-    color: #55efc4 !important;
+    color: #e67e22 !important;
+}
+
+.mobile-event-compact.assigned-family {
+    color: #2ed573 !important;
 }
 
 .mobile-event-compact.assigned-tuva {
