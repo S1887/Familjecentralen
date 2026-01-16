@@ -2954,11 +2954,17 @@ app.post('/api/create-event', async (req, res) => {
                 const calendarId = googleCalendar.getTargetCalendarId(newEvent.assignees);
 
                 // If pushing to Family Calendar with single child assignee, prefix with their name
+                // But ONLY if the summary doesn't already start with their name (to prevent double prefix)
                 if (calendarId === googleCalendar.CALENDAR_CONFIG.familjen && newEvent.assignees && newEvent.assignees.length === 1) {
                     const assignee = newEvent.assignees[0];
                     if (['Algot', 'Leon', 'Tuva'].includes(assignee)) {
-                        googleEvent.summary = `${assignee}: ${googleEvent.summary}`;
-                        console.log(`[CreateEvent] Prefixed summary for Google: ${googleEvent.summary}`);
+                        const prefixPattern = new RegExp(`^${assignee}:\\s*`, 'i');
+                        if (!prefixPattern.test(googleEvent.summary)) {
+                            googleEvent.summary = `${assignee}: ${googleEvent.summary}`;
+                            console.log(`[CreateEvent] Prefixed summary for Google: ${googleEvent.summary}`);
+                        } else {
+                            console.log(`[CreateEvent] Summary already has prefix, skipping: ${googleEvent.summary}`);
+                        }
                     }
                 }
 

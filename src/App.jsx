@@ -693,9 +693,15 @@ function App() {
         const localEvents = cleanedData.filter(e => e.source === 'FamilyOps' || e.source === 'Familjen' || e.createdBy);
         const externalEvents = cleanedData.filter(e => e.source !== 'FamilyOps' && e.source !== 'Familjen' && !e.createdBy);
 
+        // Helper to normalize summary for comparison (strip name prefixes)
+        const normalizeSummary = (summary) => {
+          const prefixRegex = /^(Svante|Sarah|Algot|Leon|Tuva|Familjen|Örtendahls):\s*/i;
+          return (summary || '').replace(prefixRegex, '').trim().toLowerCase();
+        };
+
         const uniqueExternal = externalEvents.filter(ext => {
           const isDuplicate = localEvents.some(loc => {
-            const sameSummary = loc.summary.trim().toLowerCase() === ext.summary.trim().toLowerCase();
+            const sameSummary = normalizeSummary(loc.summary) === normalizeSummary(ext.summary);
             const sameStart = new Date(loc.start).getTime() === new Date(ext.start).getTime();
             return sameSummary && sameStart;
           });
@@ -1433,6 +1439,11 @@ function App() {
           source: 'FamilyOps'
         })
       });
+
+      // Check response status before parsing JSON
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
 
       const result = await response.json();
 
