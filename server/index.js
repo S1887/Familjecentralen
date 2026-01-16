@@ -1669,17 +1669,20 @@ app.get('/api/events', async (req, res) => {
         const trashedUids = new Set(readTrashFile().map(t => t.eventId));
 
         // V2 Fix: Also read mappings to check if the Google ID (mapped from local UID) is in trash
-        const mappings = await readMappings(); // Helper needed to read id_mappings.json
-        const localToGoogleMap = {}; // UID -> GoogleID
-        mappings.forEach(m => {
-            if (m.localIds && Array.isArray(m.localIds)) {
-                m.localIds.forEach(lid => localToGoogleMap[lid] = m.googleEventId);
-            } else if (m.localId) {
-                localToGoogleMap[m.localId] = m.googleEventId;
-            }
-        });
-
-        console.log(`[Debug] Trashed UIDs count: ${trashedUids.size}, Mappings count: ${mappings.length}`);
+        let localToGoogleMap = {}; // UID -> GoogleID
+        try {
+            const mappings = await readMappings(); // Helper needed to read id_mappings.json
+            mappings.forEach(m => {
+                if (m.localIds && Array.isArray(m.localIds)) {
+                    m.localIds.forEach(lid => localToGoogleMap[lid] = m.googleEventId);
+                } else if (m.localId) {
+                    localToGoogleMap[m.localId] = m.googleEventId;
+                }
+            });
+            console.log(`[Debug] Trashed UIDs count: ${trashedUids.size}, Mappings count: ${mappings.length}`);
+        } catch (mapErr) {
+            console.error('[Debug] Failed to process mappings for zombie check:', mapErr);
+        }
 
         // Add LOCAL-ONLY events (created in FamilyOps, not from Google)
         localEvents.forEach(le => {

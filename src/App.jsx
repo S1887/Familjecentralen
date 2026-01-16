@@ -656,8 +656,15 @@ function App() {
 
   const fetchEvents = () => {
     fetch(getApiUrl('api/events'))
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        return res.json();
+      })
       .then(data => {
+        if (!Array.isArray(data)) {
+          console.error("Expected array of events, got:", typeof data);
+          return; // Don't wipe state, just abort
+        }
         // 1. GLOBAL CLEANUP & ENRICHMENT
         // Remove prefixes like "Svante:", tag Football matches, handle cancellation
         const cleanedData = data.map(ev => {
