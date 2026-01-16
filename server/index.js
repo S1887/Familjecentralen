@@ -1644,10 +1644,20 @@ app.get('/api/events', async (req, res) => {
 
         console.log(`[Debug] Merged ${mergedCount} events with local overrides`);
 
+        // Read trashed event UIDs to prevent "zombie" events from reappearing
+        const trashedUids = new Set(readTrashFile().map(t => t.eventId));
+        console.log(`[Debug] Trashed UIDs count: ${trashedUids.size}`);
+
         // Add LOCAL-ONLY events (created in FamilyOps, not from Google)
         localEvents.forEach(le => {
             // Check if this is a purely local event (not just an override of a Google event)
             const existsInGoogle = fetchedEvents.some(ge => ge.uid === le.uid);
+
+            // Skip if event is in trash (prevents zombie events)
+            if (trashedUids.has(le.uid)) {
+                console.log(`[Debug] Skipping trashed local event: ${le.summary}`);
+                return;
+            }
 
             // Logic to include local event:
             // 1. Not already in Google list
