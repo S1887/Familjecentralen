@@ -1425,7 +1425,13 @@ function App() {
       endTime: '13:00'
     });
 
-    setEvents(prev => [...prev, optimisticEvent]);
+    setEvents(prev => {
+      if (!prev || !Array.isArray(prev)) {
+        console.error('[CreateEvent] Events state is invalid, resetting');
+        return [optimisticEvent];
+      }
+      return [...prev, optimisticEvent];
+    });
 
     try {
       // 3. API Call (Background)
