@@ -521,7 +521,8 @@ function App() {
     todoList: [],
     assignees: [], // Array for multiple selection
     coords: null,
-    category: null
+    category: null,
+    isAllDay: false
   });
 
   // Task Input State
@@ -1387,9 +1388,27 @@ function App() {
 
     // Optimistic UI Implementation
     // 1. Prepare Data
-    const startDateTime = new Date(`${newEvent.date}T${newEvent.time}`);
-    const effectiveEndDate = newEvent.endDate || newEvent.date;
-    const endDateTime = new Date(`${effectiveEndDate}T${newEvent.endTime}`);
+    let startDateTime, endDateTime;
+
+    if (newEvent.isAllDay) {
+      // All-day event: Start at midnight of start date, end at midnight of end date (or next day if same)
+      startDateTime = new Date(newEvent.date);
+      startDateTime.setHours(0, 0, 0, 0);
+
+      const effectiveEndDate = newEvent.endDate || newEvent.date;
+      endDateTime = new Date(effectiveEndDate);
+      endDateTime.setHours(0, 0, 0, 0);
+
+      // If single day, end at start of next day (standard all-day format)
+      if (newEvent.date === effectiveEndDate) {
+        endDateTime.setDate(endDateTime.getDate() + 1);
+      }
+    } else {
+      // Timed event: Use specified times
+      startDateTime = new Date(`${newEvent.date}T${newEvent.time}`);
+      const effectiveEndDate = newEvent.endDate || newEvent.date;
+      endDateTime = new Date(`${effectiveEndDate}T${newEvent.endTime}`);
+    }
 
     // 2. Optimistic Update (Instant Feedback)
     const tempUid = 'temp-' + Date.now();
@@ -1407,6 +1426,7 @@ function App() {
       category: newEvent.category || null,
       source: 'Familjen (Sparar...)', // Visual indicator
       isOptimistic: true,
+      allDay: newEvent.isAllDay || false,
       todoList: [],
       createdAt: new Date().toISOString()
     };
@@ -1422,7 +1442,9 @@ function App() {
       category: null,
       date: new Date().toISOString().split('T')[0],
       time: '12:00',
-      endTime: '13:00'
+      endTime: '13:00',
+      endDate: '',
+      isAllDay: false
     });
 
     setEvents(prev => {
@@ -1449,6 +1471,7 @@ function App() {
           assignee: optimisticEvent.assignee,
           assignments: optimisticEvent.assignments, // Send assignments
           category: optimisticEvent.category,
+          allDay: optimisticEvent.allDay || false,
           source: 'FamilyOps'
         })
       });
@@ -2485,50 +2508,66 @@ function App() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <div style={{ flex: 1 }}>
-                    <label>Tid start</label>
+                {/* All-Day Toggle */}
+                <div style={{ marginTop: '0.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}>
                     <input
-                      type="time"
-                      required
-                      value={newEvent.time}
-                      onChange={e => {
-                        const newStart = e.target.value;
-                        setNewEvent(prev => {
-                          if (!newStart) return { ...prev, time: newStart };
-                          try {
-                            const [h, m] = newStart.split(':').map(Number);
-                            const d = new Date();
-                            d.setHours(h + 1, m);
-                            const newEnd = d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
-                            return { ...prev, time: newStart, endTime: newEnd };
-                          } catch (err) {
-                            return { ...prev, time: newStart };
-                          }
-                        });
-                      }}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
+                      type="checkbox"
+                      checked={newEvent.isAllDay}
+                      onChange={e => setNewEvent({ ...newEvent, isAllDay: e.target.checked })}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                     />
+                    <span style={{ fontWeight: '500' }}>🌅 Heldag (ingen specifik tid)</span>
+                  </label>
+                </div>
+
+                {!newEvent.isAllDay && (
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <label>Tid start</label>
+                      <input
+                        type="time"
+                        required
+                        value={newEvent.time}
+                        onChange={e => {
+                          const newStart = e.target.value;
+                          setNewEvent(prev => {
+                            if (!newStart) return { ...prev, time: newStart };
+                            try {
+                              const [h, m] = newStart.split(':').map(Number);
+                              const d = new Date();
+                              d.setHours(h + 1, m);
+                              const newEnd = d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+                              return { ...prev, time: newStart, endTime: newEnd };
+                            } catch (err) {
+                              return { ...prev, time: newStart };
+                            }
+                          });
+                        }}
+                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label>Tid slut</label>
+                      <input
+                        type="time"
+                        required
+                        value={newEvent.endTime}
+                        onChange={e => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
+                      />
+                    </div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <label>Tid slut</label>
-                    <input
-                      type="time"
-                      required
-                      value={newEvent.endTime}
-                      onChange={e => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
-                    />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label>Plats</label>
-                    <LocationAutocomplete
-                      placeholder="T.ex. Valhalla IP"
-                      value={newEvent.location}
-                      onChange={val => setNewEvent({ ...newEvent, location: val })}
-                      onSelect={coords => setNewEvent({ ...newEvent, coords })}
-                    />
-                  </div>
+                )}
+
+                <div>
+                  <label>Plats</label>
+                  <LocationAutocomplete
+                    placeholder="T.ex. Valhalla IP"
+                    value={newEvent.location}
+                    onChange={val => setNewEvent({ ...newEvent, location: val })}
+                    onSelect={coords => setNewEvent({ ...newEvent, coords })}
+                  />
                 </div>
 
                 <div>
@@ -3525,6 +3564,7 @@ function App() {
                     isSameDay={isSameDay}
                     getEventColorClass={getEventColorClass}
                     openEditModal={openEditModal}
+                    isAllDayEvent={isAllDayEvent}
                   />
                 )}
 

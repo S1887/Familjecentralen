@@ -197,14 +197,6 @@ async function createEvent(event) {
             summary: event.summary,
             location: event.location || '',
             description: event.description || '',
-            start: {
-                dateTime: new Date(event.start).toISOString(),
-                timeZone: 'Europe/Stockholm'
-            },
-            end: {
-                dateTime: new Date(event.end).toISOString(),
-                timeZone: 'Europe/Stockholm'
-            },
             // Store original UID for tracking
             extendedProperties: {
                 private: {
@@ -214,12 +206,38 @@ async function createEvent(event) {
             }
         };
 
+        // Handle all-day vs timed events
+        if (event.allDay) {
+            // All-day events use 'date' format (YYYY-MM-DD) instead of 'dateTime'
+            const startDate = new Date(event.start);
+            const endDate = new Date(event.end);
+
+            googleEvent.start = {
+                date: startDate.toISOString().split('T')[0],
+                timeZone: 'Europe/Stockholm'
+            };
+            googleEvent.end = {
+                date: endDate.toISOString().split('T')[0],
+                timeZone: 'Europe/Stockholm'
+            };
+        } else {
+            // Timed events use 'dateTime' format
+            googleEvent.start = {
+                dateTime: new Date(event.start).toISOString(),
+                timeZone: 'Europe/Stockholm'
+            };
+            googleEvent.end = {
+                dateTime: new Date(event.end).toISOString(),
+                timeZone: 'Europe/Stockholm'
+            };
+        }
+
         const result = await calendar.events.insert({
             calendarId,
             resource: googleEvent
         });
 
-        console.log(`[GoogleCalendar] Created event: ${event.summary} -> ${calendarId}`);
+        console.log(`[GoogleCalendar] Created event: ${event.summary} -> ${calendarId}${event.allDay ? ' (all-day)' : ''}`);
         return result.data;
     } catch (error) {
         console.error('[GoogleCalendar] Create event failed:', error.message);

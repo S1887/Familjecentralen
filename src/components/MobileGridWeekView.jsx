@@ -6,7 +6,8 @@ const MobileGridWeekView = ({
     filteredEventsList,
     isSameDay,
     getEventColorClass,
-    openEditModal
+    openEditModal,
+    isAllDayEvent
 }) => {
 
     // Generate dates for the week (Monday -> Sunday)
@@ -63,7 +64,8 @@ const MobileGridWeekView = ({
                         </div>
                         <div className="mobile-day-events">
                             {dayEvents.map(event => {
-                                const timeStr = new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+                                const isAllDay = isAllDayEvent ? isAllDayEvent(event) : false;
+                                const timeStr = isAllDay ? null : new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
                                 const colorClass = getEventColorClass ? getEventColorClass(event) : '';
 
                                 return (
@@ -72,7 +74,7 @@ const MobileGridWeekView = ({
                                         className={`mobile-event-compact ${colorClass}`}
                                         onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
                                     >
-                                        <span className="event-time-compact">{timeStr}</span>
+                                        {timeStr && <span className="event-time-compact">{timeStr}</span>}
                                         <span className="event-summary-compact">{event.summary}</span>
                                     </div>
                                 );
