@@ -18,7 +18,7 @@ const WeekViewWithSpanning = ({
     // Scroll to Today on Mount/Update
 
     // Responsive Logic
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
 
     useEffect(() => {
         const handleResize = () => {
@@ -369,7 +369,76 @@ const WeekViewWithSpanning = ({
 
                         {/* Day Columns & Events */}
                         {days.map((d, dayIndex) => {
-                            const events = timeEventsByDay[dayIndex];
+                            // 1. Get events for this day
+                            let events = [...timeEventsByDay[dayIndex]];
+
+                            // 2. Sort by Start Time (Critical for overlap logic)
+                            events.sort((a, b) => new Date(a.start) - new Date(b.start));
+
+                            // 3. Group into Overlapping Clusters
+                            const clusters = [];
+                            let currentCluster = [];
+                            let clusterEnd = null;
+
+                            events.forEach(event => {
+                                const start = new Date(event.start).getTime();
+                                const end = new Date(event.end).getTime();
+
+                                if (currentCluster.length === 0) {
+                                    currentCluster.push(event);
+                                    clusterEnd = end;
+                                } else {
+                                    // If start is before cluster end, it overlaps (or is contiguous-ish)
+                                    // We use a small buffer if needed, but strict inequality is usually fine for 'visual overlap'
+                                    if (start < clusterEnd) {
+                                        currentCluster.push(event);
+                                        clusterEnd = Math.max(clusterEnd, end);
+                                    } else {
+                                        // Close cluster
+                                        clusters.push(currentCluster);
+                                        currentCluster = [event];
+                                        clusterEnd = end;
+                                    }
+                                }
+                            });
+                            if (currentCluster.length > 0) clusters.push(currentCluster);
+
+                            // 4. Process clusters to assign "Lanes"
+                            const processedEvents = [];
+                            clusters.forEach(cluster => {
+                                const lanes = []; // Array of last_event_end_time for each lane
+
+                                cluster.forEach(event => {
+                                    const start = new Date(event.start).getTime();
+                                    const end = new Date(event.end).getTime();
+                                    let placed = false;
+
+                                    // Try to place in existing lane
+                                    for (let i = 0; i < lanes.length; i++) {
+                                        if (lanes[i] <= start) {
+                                            lanes[i] = end;
+                                            event.laneIndex = i;
+                                            placed = true;
+                                            break;
+                                        }
+                                    }
+
+                                    // New lane
+                                    if (!placed) {
+                                        lanes.push(end);
+                                        event.laneIndex = lanes.length - 1;
+                                    }
+                                });
+
+                                // Assign widths based on max lanes in this cluster
+                                const numLanes = lanes.length;
+                                cluster.forEach(event => {
+                                    event.clusterWidth = 100 / numLanes;
+                                    event.clusterLeft = event.laneIndex * event.clusterWidth;
+                                    processedEvents.push(event);
+                                });
+                            });
+
                             const isToday = isSameDay(d, new Date());
 
                             return (
@@ -432,7 +501,7 @@ const WeekViewWithSpanning = ({
                                     })()}
 
                                     {/* Render Events */}
-                                    {events.map((event) => {
+                                    {processedEvents.map((event, eventIdx) => {
                                         const start = new Date(event.start);
                                         const end = new Date(event.end);
 
@@ -456,25 +525,26 @@ const WeekViewWithSpanning = ({
                                                 style={{
                                                     position: 'absolute',
                                                     top: `${topPx}px`,
-                                                    left: '2px',
-                                                    right: '2px',
+                                                    // SIDE-BY-SIDE LOGIC: Use calculated left/width
+                                                    left: `${event.clusterLeft}%`,
+                                                    width: `calc(${event.clusterWidth}% - 4px)`, // -4px for gap
                                                     height: `${heightPx}px`,
-                                                    padding: '4px 6px',
+                                                    padding: '2px 4px',
                                                     fontSize: '0.75rem',
-                                                    borderRadius: '6px',
+                                                    borderRadius: '2px', // Squared corners
                                                     zIndex: 10,
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)',
                                                     cursor: 'pointer',
                                                     overflow: 'hidden',
-                                                    borderLeftWidth: '3px', /* Thinner border for grid items */
-                                                    background: 'var(--card-bg)',
-                                                    border: '1px solid rgba(0,0,0,0.1)', // Slight border
-                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    lineHeight: '1.2'
                                                 }}
                                             >
-                                                <div style={{ fontWeight: 'bold', fontSize: '0.8em', lineHeight: '1.1' }}>
-                                                    {start.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                                <div style={{ fontSize: '0.65rem', opacity: 0.85, marginBottom: '0px', fontWeight: '400' }}>
+                                                    {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
-                                                <div style={{ fontWeight: '600', lineHeight: '1.2', marginTop: '1px', textDecoration: event.cancelled ? 'line-through' : 'none' }}>
+                                                <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '700', fontSize: '0.75rem' }}>
                                                     {event.summary}
                                                 </div>
                                             </div>
@@ -485,21 +555,6 @@ const WeekViewWithSpanning = ({
                         })}
                     </div>
                 </div>
-
-                {/* Expand/Collapse Button Bottom */}
-                {(END_HOUR < 24 || showFullDay) && (
-                    <button
-                        onClick={() => setShowFullDay(!showFullDay)}
-                        style={{
-                            width: '100%', padding: '0.75rem', background: 'var(--bg-main)', border: 'none', borderTop: '1px solid var(--border-color)',
-                            color: 'white', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem',
-                            letterSpacing: '0.5px'
-                        }}
-                    >
-                        <Icon name={showFullDay ? "minimize" : "maximize"} size={16} />
-                        {showFullDay ? "Återgå till kompakt vy" : `Visa sena timmar (${END_HOUR.toString().padStart(2, '0')}:00 - 24:00)`}
-                    </button>
-                )}
             </div>
         </div>
     );

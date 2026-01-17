@@ -1,12 +1,12 @@
-
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import Icon from './Icon';
 
 const ScheduleViewer = ({ events, initialStudent }) => {
     const validStudents = ['Algot', 'Tuva'];
     const startStudent = validStudents.includes(initialStudent) ? initialStudent : 'Algot';
     const [selectedStudent, setSelectedStudent] = useState(startStudent);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (validStudents.includes(initialStudent)) {
             setSelectedStudent(initialStudent);
         }
@@ -15,30 +15,31 @@ const ScheduleViewer = ({ events, initialStudent }) => {
     const [weekOffset, setWeekOffset] = useState(0);
     const scrollRef = useRef(null);
 
-    // Student colors
+    // Student colors (borders/indicators)
     const studentColors = {
         'Algot': '#89CFF0', // Pastel Blue
         'Tuva': '#DDA0DD'   // Plum/Pastel Purple
     };
 
-    const studentColor = studentColors[selectedStudent] || '#A9A9A9'; // Pastel Grey default
+    const studentColor = studentColors[selectedStudent] || '#A9A9A9';
 
-    // Subject colors for lessons
+    // Subject colors - Updated to be slightly more vibrant/integrated
     const getSubjectColor = (summary) => {
         const subjectLower = (summary || '').toLowerCase();
 
-        if (subjectLower.includes('svenska')) return '#FDFD96'; // Pastel Yellow
-        if (subjectLower.includes('matematik') || subjectLower.includes('matte')) return '#AEC6CF'; // Pastel Blue
-        if (subjectLower.includes('engelska')) return '#FFB7B2'; // Pastel Red
-        if (subjectLower.includes('samhällo') || subjectLower.includes('so')) return '#C3B1E1'; // Pastel Purple-ish
-        if (subjectLower.includes('natur') || subjectLower.includes('no') || subjectLower.includes('biologi')) return '#B2F7EF'; // Pastel Teal/Green
-        if (subjectLower.includes('idrott') || subjectLower.includes('gympa')) return '#FFDAC1'; // Peach/Pastel Pink
-        if (subjectLower.includes('slöjd') || subjectLower.includes('trä')) return '#E2F0CB'; // Pastel Lime
-        if (subjectLower.includes('musik')) return '#FFCCB6'; // Pastel Orange
-        if (subjectLower.includes('bild') || subjectLower.includes('konst')) return '#E0BBE4'; // Pastel Lavender
-        if (subjectLower.includes('teknik')) return '#D4D4D4'; // Pastel Grey
+        // Using slightly more saturated/standard colors to match app theme better
+        if (subjectLower.includes('svenska')) return '#FFF59D'; // Yellow
+        if (subjectLower.includes('matematik') || subjectLower.includes('matte')) return '#90CAF9'; // Blue
+        if (subjectLower.includes('engelska')) return '#EF9A9A'; // Red
+        if (subjectLower.includes('samhällo') || subjectLower.includes('so')) return '#CE93D8'; // Purple
+        if (subjectLower.includes('natur') || subjectLower.includes('no') || subjectLower.includes('biologi')) return '#80CBC4'; // Teal
+        if (subjectLower.includes('idrott') || subjectLower.includes('gympa')) return '#FFCC80'; // Orange
+        if (subjectLower.includes('slöjd') || subjectLower.includes('trä')) return '#C5E1A5'; // Light Green
+        if (subjectLower.includes('musik')) return '#FFAB91'; // Deep Orange
+        if (subjectLower.includes('bild') || subjectLower.includes('konst')) return '#B39DDB'; // Deep Purple
+        if (subjectLower.includes('teknik')) return '#B0BEC5'; // Blue Grey
 
-        return '#444'; // Default darker grey for contrast against light pastel text? No wait, background is pastel. Text needs to be dark.
+        return 'var(--card-bg)'; // Fallback to theme card background
     };
 
     // Filter events for the schedule
@@ -50,7 +51,6 @@ const ScheduleViewer = ({ events, initialStudent }) => {
         });
     }, [events, selectedStudent]);
 
-    // Helper to get week's dates based on offset
     const getWeekDays = (offset) => {
         const now = new Date();
         const currentDay = now.getDay();
@@ -67,7 +67,6 @@ const ScheduleViewer = ({ events, initialStudent }) => {
         return days;
     };
 
-    // Get ISO week number
     const getWeekNumber = (date) => {
         const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
         const dayNum = d.getUTCDay() || 7;
@@ -79,39 +78,101 @@ const ScheduleViewer = ({ events, initialStudent }) => {
     const weekDays = getWeekDays(weekOffset);
     const weekNumber = getWeekNumber(weekDays[0]);
 
-    // Helper to format time
-    const formatTime = (isoString) => {
-        const d = new Date(isoString);
-        return d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+    const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // --- GRID LOGIC ---
+    // UPDATED: Larger height and fixed range 8-16
+    const HOUR_HEIGHT = 100; // Increased from 60
+    const [showFullDay, setShowFullDay] = useState(false);
+
+    // Default Fixed Range 08:00 - 16:00
+    let minHour = 8;
+    let maxHour = 16;
+
+    // Only expand if explicitly requested via showFullDay
+    if (showFullDay) {
+        minHour = 0;
+        maxHour = 24;
+    }
+
+    const START_HOUR = minHour;
+    const END_HOUR = maxHour;
+    const TOTAL_HEIGHT = (END_HOUR - START_HOUR) * HOUR_HEIGHT;
+
+    // Mobile optimization for time axis
+    const timeColWidth = isMobile ? '35px' : '60px';
+
+    // Mobile: Show fewer columns
+    const columnStyle = isMobile ? {
+        flex: `0 0 calc((100vw - ${timeColWidth}) / 3)`, // Show 3 days on mobile
+        minWidth: `calc((100vw - ${timeColWidth}) / 3)`,
+        maxWidth: '100%'
+    } : {
+        flex: 1,
+        width: 'auto',
+        minWidth: 0,
+        maxWidth: 'none'
     };
 
-    // Check if mobile
-    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+    // Find displayed events for this week (for optimization/rendering)
+    const displayedEvents = useMemo(() => {
+        const weekDateStrings = weekDays.map(d => d.toISOString().split('T')[0]);
+        return scheduleEvents.filter(e => weekDateStrings.includes(e.start.split('T')[0]));
+    }, [scheduleEvents, weekDays]);
+
+    useEffect(() => {
+        if (scrollRef.current && isMobile) {
+            let targetIndex = 0;
+            if (weekOffset === 0) {
+                const day = new Date().getDay();
+                // 0=Sun, 1=Mon, ..., 6=Sat
+                if (day === 0 || day === 6) {
+                    targetIndex = 4; // Friday if weekend
+                } else {
+                    targetIndex = Math.max(0, day - 1); // Mon=1 -> 0
+                }
+            } else {
+                targetIndex = 0; // Monday for other weeks
+            }
+
+            const targetCol = document.getElementById(`schedule-col-${targetIndex}`);
+            if (targetCol) {
+                // Ensure we respect the padding when manually scrolling too
+                const offset = targetCol.offsetLeft - parseInt(timeColWidth);
+                scrollRef.current.scrollLeft = Math.max(0, offset);
+            }
+        }
+    }, [weekOffset, isMobile, timeColWidth]);
 
     return (
-        <div className="schedule-viewer-container">
-            {/* Header: Flex Column to prevent overlap */}
+        <div className="schedule-viewer-container" style={{ background: 'var(--bg-surface)', padding: '1rem', borderRadius: '16px' }}>
+            {/* Header */}
             <div className="schedule-header" style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                <h3 style={{ fontSize: '1.8rem', fontWeight: '400', margin: 0 }}>Skolschema</h3>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '500', margin: 0, color: 'var(--text-main)' }}>Skolschema</h3>
                 <div className="student-selector" style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-                    {['Algot', 'Tuva'].map(student => (
+                    {validStudents.map(student => (
                         <button
                             key={student}
                             onClick={() => setSelectedStudent(student)}
                             style={{
                                 background: selectedStudent === student
-                                    ? (student === 'Algot' ? 'linear-gradient(135deg, #89CFF0 0%, #0077BE 100%)' : 'linear-gradient(135deg, #DDA0DD 0%, #800080 100%)')
-                                    : 'var(--button-bg)',
-                                color: 'white',
-                                border: 'none',
-                                padding: '0.8rem 2rem',
-                                borderRadius: '24px',
-                                fontSize: '1rem',
-                                fontWeight: '500',
+                                    ? (student === 'Algot' ? '#89CFF0' : '#DDA0DD')
+                                    : 'var(--bg-element)',
+                                color: selectedStudent === student ? '#2c3e50' : 'var(--text-muted)',
+                                border: `1px solid ${selectedStudent === student ? 'transparent' : 'var(--border-color)'}`,
+                                padding: '0.6rem 1.5rem',
+                                borderRadius: '8px', // Slightly squared buttons too?
+                                fontSize: '0.95rem',
+                                fontWeight: '600',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
-                                opacity: selectedStudent === student ? 1 : 0.7,
-                                transform: selectedStudent === student ? 'scale(1.05)' : 'scale(1)'
+                                transform: selectedStudent === student ? 'scale(1.02)' : 'scale(1)'
                             }}
                         >
                             {student}
@@ -131,40 +192,40 @@ const ScheduleViewer = ({ events, initialStudent }) => {
                 <button
                     onClick={() => setWeekOffset(weekOffset - 1)}
                     style={{
-                        background: 'var(--card-bg)',
+                        background: 'var(--bg-element)',
                         border: '1px solid var(--border-color)',
                         color: 'var(--text-main)',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '0.5rem',
+                        padding: '0.5rem 0.8rem',
+                        borderRadius: '6px',
                         cursor: 'pointer',
-                        fontSize: '1.2rem'
+                        fontSize: '1rem'
                     }}
                 >
                     ◀
                 </button>
                 <span style={{
                     fontWeight: '500',
-                    fontSize: '1.2rem',
-                    minWidth: '120px',
+                    fontSize: '1rem',
+                    minWidth: '100px',
                     textAlign: 'center',
                     color: 'var(--text-main)',
-                    background: 'var(--card-bg)',
+                    background: 'var(--bg-element)',
                     border: '1px solid var(--border-color)',
                     padding: '0.5rem 1rem',
-                    borderRadius: '16px'
+                    borderRadius: '8px'
                 }}>
-                    Vecka {weekNumber}
+                    v.{weekNumber}
                 </span>
                 <button
                     onClick={() => setWeekOffset(weekOffset + 1)}
                     style={{
-                        background: 'var(--card-bg)',
+                        background: 'var(--bg-element)',
                         border: '1px solid var(--border-color)',
                         color: 'var(--text-main)',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '0.5rem',
+                        padding: '0.5rem 0.8rem',
+                        borderRadius: '6px',
                         cursor: 'pointer',
-                        fontSize: '1.2rem'
+                        fontSize: '1rem'
                     }}
                 >
                     ▶
@@ -175,9 +236,10 @@ const ScheduleViewer = ({ events, initialStudent }) => {
                         style={{
                             background: 'transparent',
                             border: 'none',
-                            color: '#646cff',
+                            color: 'var(--accent)',
                             cursor: 'pointer',
-                            fontSize: '0.9rem'
+                            fontSize: '0.9rem',
+                            fontWeight: '500'
                         }}
                     >
                         Idag
@@ -185,91 +247,227 @@ const ScheduleViewer = ({ events, initialStudent }) => {
                 )}
             </div>
 
-            {/* Schedule Grid - Horizontal scroll on mobile */}
+            {/* Main Grid Container */}
             <div
                 ref={scrollRef}
-                className="schedule-grid"
+                className="schedule-grid-container"
                 style={{
+                    width: '100%',
+                    height: 'auto',
                     display: 'flex',
-                    gap: '10px',
+                    flexDirection: 'column',
+                    background: 'var(--bg-main)', // Darker background for grid
+                    borderRadius: '12px',
                     overflowX: 'auto',
+                    overflowY: 'visible',
+                    border: '1px solid var(--border-color)',
+                    scrollBehavior: 'smooth',
                     scrollSnapType: 'x mandatory',
-                    WebkitOverflowScrolling: 'touch',
-                    paddingBottom: '1rem'
+                    // CRITICAL FIX: Ensure scroll snapping respects the sticky column width
+                    scrollPaddingLeft: timeColWidth
                 }}
             >
-                {weekDays.map((day, index) => {
-                    const dayName = day.toLocaleDateString('sv-SE', { weekday: 'short' });
-                    const dateStr = day.toISOString().split('T')[0];
-                    const dayEvents = scheduleEvents.filter(e => e.start.startsWith(dateStr));
-                    dayEvents.sort((a, b) => new Date(a.start) - new Date(b.start));
-                    const isToday = new Date().toISOString().split('T')[0] === dateStr;
-
-                    return (
-                        <div
-                            key={index}
-                            className={`schedule-day-column ${isToday ? 'today' : ''}`}
-                            style={{
-                                flex: isMobile ? '0 0 calc(33.333% - 7px)' : '1',
-                                minWidth: isMobile ? 'calc(33.333% - 7px)' : '140px',
-                                scrollSnapAlign: 'start',
-                                background: 'var(--card-bg)',
-                                borderRadius: '24px',
-                                overflow: 'hidden'
-                            }}
-                        >
+                {/* 1. Header Row */}
+                <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', minHeight: '50px', background: 'var(--bg-surface)' }}>
+                    <div style={{
+                        width: timeColWidth,
+                        flexShrink: 0,
+                        borderRight: '1px solid var(--border-color)',
+                        background: 'var(--bg-surface)',
+                        position: 'sticky',
+                        left: 0,
+                        zIndex: 30
+                    }}></div>
+                    {weekDays.map((d, index) => {
+                        const dateStr = d.toISOString().split('T')[0];
+                        const isToday = new Date().toISOString().split('T')[0] === dateStr;
+                        return (
                             <div
-                                className="day-header"
+                                key={d.toString()}
                                 style={{
-                                    background: isToday ? studentColor : 'transparent',
-                                    color: isToday ? '#2c3e50' : 'var(--text-main)',
-                                    padding: '8px',
+                                    ...columnStyle,
+                                    scrollSnapAlign: 'start',
                                     textAlign: 'center',
-                                    borderRadius: '0',
-                                    borderBottom: isToday ? 'none' : '1px solid var(--border-color)'
+                                    padding: '0.5rem',
+                                    background: isToday ? 'rgba(76, 175, 80, 0.1)' : 'transparent',
+                                    borderRight: '1px solid var(--border-color)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    color: 'var(--text-main)'
                                 }}
                             >
-                                <div className="day-name" style={{ fontWeight: 'bold', textTransform: 'capitalize' }}>{dayName}</div>
-                                <div className="day-date" style={{ fontSize: '0.8em', color: isToday ? 'rgba(0,0,0,0.6)' : 'var(--text-muted)' }}>
-                                    {day.getDate()}/{day.getMonth() + 1}
-                                </div>
+                                <div style={{ fontWeight: 600, color: isToday ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'capitalize', fontSize: '0.85rem' }}>{d.toLocaleDateString('sv-SE', { weekday: 'short' })}</div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: isToday ? 700 : 400, color: isToday ? 'var(--accent)' : 'var(--text-main)' }}>{d.getDate()}</div>
                             </div>
-                            <div className="day-events" style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {dayEvents.length === 0 ? (
-                                    <div className="no-school" style={{ textAlign: 'center', color: '#666', fontStyle: 'italic', padding: '20px 0' }}>Ledig?</div>
-                                ) : (
-                                    dayEvents.map(ev => (
-                                        <div
-                                            key={ev.uid}
-                                            className="schedule-card"
-                                            style={{
-                                                background: getSubjectColor(ev.summary),
-                                                padding: isMobile ? '8px' : '12px',
-                                                borderRadius: '16px',
-                                                fontSize: isMobile ? '0.75em' : '0.9em',
-                                                borderLeft: `4px solid ${studentColor}`,
-                                                wordBreak: 'break-word',
-                                                color: '#2c3e50', // Always dark text for pastel backgrounds
-                                                boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
-                                            }}
-                                        >
-                                            <div className="time" style={{ fontSize: isMobile ? '0.7em' : '0.8em', color: '#555', marginBottom: '2px', fontWeight: '500' }}>
-                                                {formatTime(ev.start)}
-                                            </div>
-                                            <div className="subject" style={{ fontWeight: 'bold', color: '#2c3e50', fontSize: isMobile ? '0.85em' : '1em', lineHeight: '1.2' }}>{ev.summary}</div>
-                                            {!isMobile && <div className="location" style={{ fontSize: '0.75em', color: '#666', marginTop: '4px' }}>{ev.location}</div>}
-                                        </div>
-                                    ))
-                                )}
-                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* 2. Main Scrollable Grid */}
+                <div style={{ flex: 1, overflowY: 'visible', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+
+                    {/* Expand Button */}
+                    <button
+                        onClick={() => setShowFullDay(!showFullDay)}
+                        style={{
+                            width: '100%', padding: '0.5rem', background: 'var(--bg-surface)', border: 'none', borderBottom: '1px solid var(--border-color)',
+                            color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem'
+                        }}
+                    >
+                        <Icon name={showFullDay ? "minimize" : "maximize"} size={14} />
+                        {showFullDay ? "Visa 08-16" : "Visa heldag"}
+                    </button>
+
+                    <div style={{ display: 'flex', position: 'relative', flexGrow: 1 }}>
+                        {/* Time Axis */}
+                        <div style={{
+                            width: timeColWidth,
+                            flexShrink: 0,
+                            borderRight: '1px solid var(--border-color)',
+                            background: 'var(--bg-surface)',
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 30
+                        }}>
+                            {Array.from({ length: END_HOUR - START_HOUR }).map((_, i) => {
+                                const hour = START_HOUR + i;
+                                return (
+                                    <div key={hour} style={{ height: `${HOUR_HEIGHT}px`, position: 'relative' }}>
+                                        <span style={{
+                                            position: 'absolute',
+                                            top: '-10px',
+                                            right: isMobile ? '4px' : '8px',
+                                            fontSize: isMobile ? '0.75rem' : '0.75rem',
+                                            color: 'var(--text-muted)',
+                                            fontFamily: 'monospace',
+                                            fontWeight: isMobile ? '600' : '400'
+                                        }}>
+                                            {isMobile ? hour.toString() : `${hour.toString().padStart(2, '0')}:00`}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
-                    );
-                })}
+
+                        {/* Grid Columns */}
+                        <div style={{ flex: 1, position: 'relative', display: 'flex' }}>
+
+                            {/* Background Grid Lines */}
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
+                                {Array.from({ length: END_HOUR - START_HOUR }).map((_, i) => (
+                                    <div key={i} style={{ height: `${HOUR_HEIGHT}px`, borderBottom: '1px solid var(--border-color)', borderImage: 'linear-gradient(to right, transparent 0%, var(--border-color) 100%) 1' }}></div>
+                                ))}
+                            </div>
+
+                            {/* Day Columns & Events */}
+                            {weekDays.map((d, index) => {
+                                const dateStr = d.toISOString().split('T')[0];
+                                const isToday = new Date().toISOString().split('T')[0] === dateStr;
+                                const dayEvents = displayedEvents.filter(e => e.start.startsWith(dateStr));
+
+                                return (
+                                    <div
+                                        key={d.toString()}
+                                        id={`schedule-col-${index}`} // ADDED ID for scrolling
+                                        style={{
+                                            ...columnStyle,
+                                            scrollSnapAlign: 'start',
+                                            borderRight: '1px solid var(--border-color)',
+                                            position: 'relative',
+                                            background: isToday ? 'rgba(76, 175, 80, 0.05)' : 'transparent',
+                                            height: `${TOTAL_HEIGHT}px`
+                                        }}>
+                                        {/* Current Time Line */}
+                                        {isToday && (() => {
+                                            const now = new Date();
+                                            const totalMinutes = now.getHours() * 60 + now.getMinutes();
+                                            const startViewMinutes = START_HOUR * 60;
+                                            if (totalMinutes >= startViewMinutes && totalMinutes < END_HOUR * 60) {
+                                                const topPx = (totalMinutes - startViewMinutes) * (HOUR_HEIGHT / 60);
+                                                return (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: `${topPx}px`,
+                                                        left: 0,
+                                                        right: 0,
+                                                        height: '2px',
+                                                        background: 'var(--accent)',
+                                                        zIndex: 20,
+                                                        pointerEvents: 'none',
+                                                        opacity: 0.8
+                                                    }}>
+                                                        <div style={{ position: 'absolute', left: '-4px', top: '-4px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent)' }}></div>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        })()}
+
+                                        {/* Events */}
+                                        {dayEvents.map((event) => {
+                                            const start = new Date(event.start);
+                                            const end = new Date(event.end);
+                                            const startOfDayMinutes = start.getHours() * 60 + start.getMinutes();
+                                            const startViewMinutes = START_HOUR * 60;
+                                            const topPx = (startOfDayMinutes - startViewMinutes) * (HOUR_HEIGHT / 60);
+                                            const durationMinutes = (end - start) / (1000 * 60);
+                                            const heightPx = Math.max(durationMinutes * (HOUR_HEIGHT / 60), 30); // Min height 30px
+
+                                            if (topPx + heightPx < 0 || topPx > TOTAL_HEIGHT) return null;
+
+                                            const bgColor = getSubjectColor(event.summary);
+
+                                            return (
+                                                <div
+                                                    key={event.uid}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: `${topPx}px`,
+                                                        left: '2px',
+                                                        right: '2px',
+                                                        height: `${heightPx}px`,
+                                                        padding: '6px',
+                                                        fontSize: '0.8rem',
+                                                        // Squared edges as requested
+                                                        borderRadius: '2px',
+                                                        zIndex: 10,
+                                                        background: bgColor,
+                                                        // Distinct "school" style - left border indicating student or just decoration
+                                                        borderLeft: `3px solid ${studentColor}`,
+                                                        border: '1px solid rgba(0,0,0,0.05)',
+                                                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                                        color: '#2c3e50', // Always dark text
+                                                        overflow: 'hidden',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        lineHeight: '1.2'
+                                                    }}
+                                                >
+                                                    <div style={{ fontWeight: '700', marginBottom: '2px' }}>
+                                                        {event.summary}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                                                        {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        {!isMobile && ` - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                                                    </div>
+                                                    {event.location && !isMobile && (
+                                                        <div style={{ fontSize: '0.75rem', marginTop: '2px', fontStyle: 'italic', opacity: 0.8 }}>
+                                                            {event.location}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
 };
 
 export default ScheduleViewer;
-
-
