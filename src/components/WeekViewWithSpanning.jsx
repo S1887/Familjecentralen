@@ -28,6 +28,31 @@ const WeekViewWithSpanning = ({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // Touch gestures for swipe navigation
+    const [touchStart, setTouchStart] = useState(0);
+    const [touchEnd, setTouchEnd] = useState(0);
+
+    const handleTouchStart = (e) => {
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchMove = (e) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchEnd = () => {
+        if (!onSwipe) return;
+
+        if (touchStart - touchEnd > 75) {
+            // Swipe left → Next week
+            onSwipe(1);
+        }
+        if (touchStart - touchEnd < -75) {
+            // Swipe right → Previous week
+            onSwipe(-1);
+        }
+    };
+
     const columnStyle = isMobile ? {
         flex: '1 0 auto',
         width: 'calc((100vw - 60px) / 3)',
@@ -208,6 +233,9 @@ const WeekViewWithSpanning = ({
         <div
             ref={scrollContainerRef}
             className="week-view-desktop"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             style={{
                 width: '100%',
                 height: 'auto',
@@ -541,9 +569,7 @@ const WeekViewWithSpanning = ({
                                                     lineHeight: '1.2'
                                                 }}
                                             >
-                                                <div style={{ fontSize: '0.65rem', opacity: 0.85, marginBottom: '0px', fontWeight: '400' }}>
-                                                    {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </div>
+
                                                 <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '700', fontSize: '0.75rem' }}>
                                                     {event.summary}
                                                 </div>

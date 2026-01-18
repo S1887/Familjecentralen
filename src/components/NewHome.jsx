@@ -26,7 +26,7 @@ const isAllDayEvent = (event) => {
     return startHour === 0 && startMin === 0 && ((endHour === 0 && endMin === 0) || (endHour === 23 && endMin === 59));
 };
 
-const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail, onOpenMatchModal, darkMode }) => {
+const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail, onOpenMatchModal, onDayClick, darkMode }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
@@ -46,7 +46,11 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
             const eventDate = new Date(e.start);
             return eventDate >= todayStart && eventDate < todayEnd;
         })
-        .sort((a, b) => new Date(a.start) - new Date(b.start));
+        .sort((a, b) => {
+            const startDiff = new Date(a.start) - new Date(b.start);
+            if (startDiff !== 0) return startDiff;
+            return new Date(a.end) - new Date(b.end);
+        });
 
     const upcomingEvents = events
         .filter(e => new Date(e.start) > now)
@@ -239,12 +243,53 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                             style={{ gridColumn: '1 / -1', minHeight: '120px', maxHeight: '300px', background: theme.nextEventBg, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
-                                <div style={{ fontSize: '0.9rem', color: theme.accent, fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                    Dagens händelser
+                                <div
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDayClick && onDayClick(new Date());
+                                    }}
+                                    style={{
+                                        fontSize: '0.9rem',
+                                        color: theme.accent,
+                                        fontWeight: '600',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '1px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        transition: 'opacity 0.2s'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                    title="Klicka för att se dagsvy"
+                                >
+                                    Dagens händelser <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>›</span>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <div style={{ background: darkMode ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)', padding: '0.3rem 0.8rem', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 'bold', color: theme.cardText }}>
-                                        {todaysEvents.length} {todaysEvents.length === 1 ? 'händelse' : 'händelser'}
+                                    <div
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveTab('create-event');
+                                        }}
+                                        style={{
+                                            background: theme.accent,
+                                            padding: '0.3rem 0.8rem',
+                                            borderRadius: '12px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 'bold',
+                                            color: theme.textColorInverse,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.4rem',
+                                            transition: 'transform 0.2s',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                        }}
+                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                    >
+                                        <span style={{ fontSize: '1rem', lineHeight: 1 }}>+</span> Ny
                                     </div>
                                     <div
                                         onClick={(e) => {

@@ -183,10 +183,35 @@ function getTargetCalendarId(assignees = []) {
 /**
  * Create a new event in Google Calendar
  */
+// Helper to get local ISO string (YYYY-MM-DDTHH:mm:ss) for Stockholm
+function getStockholmISOString(dateStr) {
+    const date = new Date(dateStr);
+    const options = {
+        timeZone: 'Europe/Stockholm',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    };
+    // sv-SE format is usually YYYY-MM-DD HH:mm:ss
+    const parts = new Intl.DateTimeFormat('sv-SE', options).formatToParts(date);
+    const getPart = (type) => parts.find(p => p.type === type).value;
+
+    return `${getPart('year')}-${getPart('month')}-${getPart('day')}T${getPart('hour')}:${getPart('minute')}:${getPart('second')}`;
+}
+
 async function createEvent(event) {
     const calendar = await initializeClient();
     if (!calendar) {
         console.log('[GoogleCalendar] Skipping create - API not initialized');
+        return null;
+    }
+
+    if (!isEnabled()) {
+        console.log('[GoogleCalendar] Not enabled, skipping create');
         return null;
     }
 
@@ -206,6 +231,11 @@ async function createEvent(event) {
             }
         };
 
+        // Add recurrence rule if present
+        if (event.recurrence) {
+            googleEvent.recurrence = [event.recurrence];
+        }
+
         // Handle all-day vs timed events
         if (event.allDay) {
             // All-day events use 'date' format (YYYY-MM-DD) instead of 'dateTime'
@@ -222,25 +252,44 @@ async function createEvent(event) {
             };
         } else {
             // Timed events use 'dateTime' format
-            googleEvent.start = {
-                dateTime: new Date(event.start).toISOString(),
-                timeZone: 'Europe/Stockholm'
-            };
-            googleEvent.end = {
-                dateTime: new Date(event.end).toISOString(),
-                timeZone: 'Europe/Stockholm'
-            };
+            if (event.recurrence) {
+                // For recurring events, DO NOT use 'Z' (UTC). Use local wall time.
+                googleEvent.start = {
+                    dateTime: getStockholmISOString(event.start),
+                    timeZone: 'Europe/Stockholm'
+                };
+                googleEvent.end = {
+                    dateTime: getStockholmISOString(event.end),
+                    timeZone: 'Europe/Stockholm'
+                };
+            } else {
+                googleEvent.start = {
+                    dateTime: new Date(event.start).toISOString(),
+                    timeZone: 'Europe/Stockholm'
+                };
+                googleEvent.end = {
+                    dateTime: new Date(event.end).toISOString(),
+                    timeZone: 'Europe/Stockholm'
+                };
+            }
         }
+
+        // try { fs.appendFileSync(path.join(__dirname, 'debug_log.txt'), `[GoogleCalendar] Payload: ${JSON.stringify(googleEvent)}\n`); } catch (e) { }
 
         const result = await calendar.events.insert({
             calendarId,
             resource: googleEvent
         });
 
-        console.log(`[GoogleCalendar] Created event: ${event.summary} -> ${calendarId}${event.allDay ? ' (all-day)' : ''}`);
+        const logMsg = `[GoogleCalendar] Created event: ${event.summary} -> ${calendarId}${event.allDay ? ' (all-day)' : ''}${event.recurrence ? ' (recurring: ' + event.recurrence + ')' : ''}`;
+        // try { fs.appendFileSync(path.join(__dirname, 'debug_log.txt'), logMsg + '\n'); } catch (e) { }
+        console.log(logMsg);
+
         return result.data;
     } catch (error) {
-        console.error('[GoogleCalendar] Create event failed:', error.message);
+        const errorMsg = `[GoogleCalendar] Create event failed: ${error.message}`;
+        // try { fs.appendFileSync(path.join(__dirname, 'debug_log.txt'), errorMsg + '\n'); } catch (e) { }
+        console.error(errorMsg);
         return null;
     }
 }

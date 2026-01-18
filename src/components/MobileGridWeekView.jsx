@@ -7,7 +7,8 @@ const MobileGridWeekView = ({
     isSameDay,
     getEventColorClass,
     openEditModal,
-    isAllDayEvent
+    isAllDayEvent,
+    onDayClick
 }) => {
 
     // Generate dates for the week (Monday -> Sunday)
@@ -58,7 +59,10 @@ const MobileGridWeekView = ({
                         key={day.toISOString()}
                         className={`mobile-day-card ${isToday ? 'is-today' : ''}`}
                     >
-                        <div className="mobile-day-header">
+                        <div className="mobile-day-header"
+                            onClick={() => onDayClick && onDayClick(day)}
+                            style={{ cursor: onDayClick ? 'pointer' : 'default' }}
+                        >
                             <span className="mobile-day-number">{formatDayNumber(day)}</span>
                             <span className="mobile-day-name">{formatDate(day)} / {formatMonthName(day)}</span>
                         </div>

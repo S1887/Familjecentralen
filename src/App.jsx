@@ -165,6 +165,7 @@ import InboxModal from './components/InboxModal';
 import NewHome from './components/NewHome';
 import EventDetailModal from './components/EventDetailModal';
 import TwoStepEditModal from './components/TwoStepEditModal';
+import DayViewModal from './components/DayViewModal';
 import MealPlanner from './components/MealPlanner';
 
 function App() {
@@ -175,6 +176,7 @@ function App() {
   const inboxCount = inboxData.length;
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('familyOpsDarkMode') !== 'false');
   const [selectedEventForDetail, setSelectedEventForDetail] = useState(null); // Event detail modal state
+  const [selectedDayView, setSelectedDayView] = useState(null); // Day view modal state
 
   const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -189,6 +191,40 @@ function App() {
     const endMin = end.getMinutes();
     // All-day: starts 00:00 and (ends 00:00 next day OR ends 23:59 same day)
     return startHour === 0 && startMin === 0 && ((endHour === 0 && endMin === 0) || (endHour === 23 && endMin === 59));
+  };
+
+  // Helper functions for recurrence dropdown
+  const getDayAbbreviation = (dateStr) => {
+    const days = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+    return days[new Date(dateStr).getDay()];
+  };
+
+  const getDayName = (dateStr) => {
+    const days = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag'];
+    return days[new Date(dateStr).getDay()];
+  };
+
+  const getMonthName = (dateStr) => {
+    const months = ['januari', 'februari', 'mars', 'april', 'maj', 'juni',
+      'juli', 'augusti', 'september', 'oktober', 'november', 'december'];
+    return months[new Date(dateStr).getMonth()];
+  };
+
+  const getWeekdayOccurrence = (dateStr) => {
+    const date = new Date(dateStr);
+    const dayAbbr = getDayAbbreviation(dateStr);
+    const dayOfMonth = date.getDate();
+    const occurrence = Math.ceil(dayOfMonth / 7);
+    return `${occurrence}${dayAbbr}`;
+  };
+
+  const getWeekdayOccurrenceText = (dateStr) => {
+    const date = new Date(dateStr);
+    const dayName = getDayName(dateStr);
+    const dayOfMonth = date.getDate();
+    const occurrence = Math.ceil(dayOfMonth / 7);
+    const ordinals = ['första', 'andra', 'tredje', 'fjärde', 'femte'];
+    return `${ordinals[occurrence - 1]} ${dayName}`;
   };
 
   // Helper to format event time, showing "Heldag" for all-day events
@@ -522,7 +558,8 @@ function App() {
     assignees: [], // Array for multiple selection
     coords: null,
     category: null,
-    isAllDay: false
+    isAllDay: false,
+    recurrence: null // RRULE string or null for no recurrence
   });
 
   // Task Input State
@@ -1399,10 +1436,9 @@ function App() {
       endDateTime = new Date(effectiveEndDate);
       endDateTime.setHours(0, 0, 0, 0);
 
-      // If single day, end at start of next day (standard all-day format)
-      if (newEvent.date === effectiveEndDate) {
-        endDateTime.setDate(endDateTime.getDate() + 1);
-      }
+      // Google Calendar end date is EXCLUSIVE.
+      // We must ALWAYS add 1 day to end date so the selected end date is included.
+      endDateTime.setDate(endDateTime.getDate() + 1);
     } else {
       // Timed event: Use specified times
       startDateTime = new Date(`${newEvent.date}T${newEvent.time}`);
@@ -1428,7 +1464,8 @@ function App() {
       isOptimistic: true,
       allDay: newEvent.isAllDay || false,
       todoList: [],
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      recurrence: newEvent.recurrence || null // Add recurrence RRULE
     };
 
     // Close modal and reset form immediately
@@ -1444,7 +1481,8 @@ function App() {
       time: '12:00',
       endTime: '13:00',
       endDate: '',
-      isAllDay: false
+      isAllDay: false,
+      recurrence: null // Reset recurrence
     });
 
     setEvents(prev => {
@@ -1472,6 +1510,7 @@ function App() {
           assignments: optimisticEvent.assignments, // Send assignments
           category: optimisticEvent.category,
           allDay: optimisticEvent.allDay || false,
+          recurrence: optimisticEvent.recurrence || null, // Send recurrence
           source: 'FamilyOps'
         })
       });
@@ -2434,6 +2473,7 @@ function App() {
               holidays={holidays}
               onOpenEventDetail={openEditModal}
               onOpenMatchModal={() => setShowMatchModal(true)}
+              onDayClick={(day) => setSelectedDayView(day)}
               darkMode={darkMode}
             />
           )
@@ -2444,7 +2484,7 @@ function App() {
           activeTab === 'create-event' && (
             <div className="create-event-view" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', paddingBottom: '80px', color: 'var(--card-text)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <h2>✨ Skapa ny händelse</h2>
+                <h2>Skapa ny händelse</h2>
                 {/* Close button that goes back to dashboard */}
                 <button
                   onClick={() => setActiveTab('timeline')}
@@ -2497,7 +2537,7 @@ function App() {
                     />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label>Slutdatum <span style={{ fontSize: '0.75rem', color: '#888' }}>(för flerdagarshändelser)</span></label>
+                    <label>Slutdatum</label>
                     <input
                       type="date"
                       value={newEvent.endDate || newEvent.date}
@@ -2508,18 +2548,72 @@ function App() {
                   </div>
                 </div>
 
-                {/* All-Day Toggle */}
-                <div style={{ marginTop: '0.5rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}>
-                    <input
-                      type="checkbox"
-                      checked={newEvent.isAllDay}
-                      onChange={e => setNewEvent({ ...newEvent, isAllDay: e.target.checked })}
-                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                    />
-                    <span style={{ fontWeight: '500' }}>🌅 Heldag (ingen specifik tid)</span>
-                  </label>
+                {/* All-Day and Recurrence Toggles - Side by side */}
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                  <div style={{ flex: '0 0 auto' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        checked={newEvent.isAllDay}
+                        onChange={e => setNewEvent({ ...newEvent, isAllDay: e.target.checked })}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                      <span style={{ fontWeight: '500' }}>Heldag</span>
+                    </label>
+                  </div>
+
+                  <div style={{ flex: '0 0 auto' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        checked={!!newEvent.recurrence}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            // Enable recurrence with default (daily)
+                            setNewEvent({ ...newEvent, recurrence: 'RRULE:FREQ=DAILY' });
+                          } else {
+                            // Disable recurrence
+                            setNewEvent({ ...newEvent, recurrence: null });
+                          }
+                        }}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                      <span style={{ fontWeight: '500' }}>Upprepas</span>
+                    </label>
+                  </div>
                 </div>
+
+                {/* Recurrence Dropdown - Only shown when recurrence is enabled */}
+                {newEvent.recurrence && (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <label>Upprepa</label>
+                    <select
+                      value={newEvent.recurrence}
+                      onChange={e => {
+                        const value = e.target.value;
+                        if (value === 'CUSTOM') {
+                          // TODO: Open custom recurrence modal
+                          console.log('Open custom recurrence modal');
+                        } else {
+                          setNewEvent({ ...newEvent, recurrence: value });
+                        }
+                      }}
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
+                    >
+                      <option value="RRULE:FREQ=DAILY">Dagligen</option>
+                      <option value={`RRULE:FREQ=WEEKLY;BYDAY=${getDayAbbreviation(newEvent.date)}`}>
+                        Varje vecka på {getDayName(newEvent.date)}
+                      </option>
+                      <option value={`RRULE:FREQ=MONTHLY;BYDAY=${getWeekdayOccurrence(newEvent.date)}`}>
+                        Varje månad den {getWeekdayOccurrenceText(newEvent.date)}
+                      </option>
+                      <option value={`RRULE:FREQ=YEARLY;BYMONTH=${new Date(newEvent.date).getMonth() + 1};BYMONTHDAY=${new Date(newEvent.date).getDate()}`}>
+                        Årligen {getMonthName(newEvent.date)} {new Date(newEvent.date).getDate()}
+                      </option>
+                      <option value="RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR">Varje vardag (måndag till fredag)</option>
+                    </select>
+                  </div>
+                )}
 
                 {!newEvent.isAllDay && (
                   <div style={{ display: 'flex', gap: '1rem' }}>
@@ -2577,6 +2671,20 @@ function App() {
                       const isSelected = name === 'Hela familjen'
                         ? newEvent.assignees.length === 0
                         : newEvent.assignees.includes(name);
+
+                      // Individual colors for each person
+                      const getPersonColor = (person) => {
+                        const colors = {
+                          'Svante': '#ff4757',      // Red
+                          'Sarah': '#f1c40f',       // Yellow
+                          'Algot': '#2e86de',       // Blue
+                          'Tuva': '#a29bfe',        // Purple
+                          'Leon': '#e67e22',        // Orange
+                          'Hela familjen': '#2ed573' // Green (family calendar color)
+                        };
+                        return colors[person] || '#4a90e2';
+                      };
+
                       return (
                         <button
                           key={name}
@@ -2604,7 +2712,7 @@ function App() {
                             padding: '0.4rem 0.8rem',
                             borderRadius: '20px',
                             border: '1px solid var(--border-color)',
-                            background: isSelected ? '#4a90e2' : 'var(--input-bg)',
+                            background: isSelected ? getPersonColor(name) : 'var(--input-bg)',
                             color: isSelected ? 'white' : 'var(--text-main)',
                             cursor: 'pointer',
                             fontSize: '0.9rem'
@@ -2619,7 +2727,7 @@ function App() {
 
                 {/* Category selection */}
                 <div>
-                  <label>📂 Kategori</label>
+                  <label>Kategori</label>
                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                     {['Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => {
                       const isSelected = newEvent.category === cat;
@@ -2664,6 +2772,7 @@ function App() {
                       <option value="">Välj...</option>
                       <option value="Svante">Svante</option>
                       <option value="Sarah">Sarah</option>
+                      <option value="Får skjuts">Får skjuts</option>
                     </select>
                   </div>
                   <div>
@@ -3565,6 +3674,7 @@ function App() {
                     getEventColorClass={getEventColorClass}
                     openEditModal={openEditModal}
                     isAllDayEvent={isAllDayEvent}
+                    onDayClick={(day) => setSelectedDayView(day)}
                   />
                 )}
 
@@ -4126,6 +4236,24 @@ function App() {
               deleteEvent={deleteEvent}
               setIsEditingEvent={setIsEditingEvent}
               getApiUrl={getApiUrl}
+            />
+          )
+        }
+
+        {/* Day View Modal */}
+        {
+          selectedDayView && (
+            <DayViewModal
+              selectedDate={selectedDayView}
+              events={events}
+              onClose={() => setSelectedDayView(null)}
+              onEventClick={(event) => {
+                setSelectedDayView(null);
+                openEditModal(event);
+              }}
+              onNavigate={(day) => setSelectedDayView(day)}
+              getEventColorClass={getEventColorClass}
+              isSameDay={isSameDay}
             />
           )
         }

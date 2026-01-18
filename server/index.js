@@ -2956,11 +2956,17 @@ app.get('/api/trash', async (req, res) => {
 });
 
 app.post('/api/create-event', async (req, res) => {
-    const { summary, location, coords, start, end, description, createdBy, assignee, assignees, category, assignments } = req.body;
+    const { summary, location, coords, start, end, description, createdBy, assignee, assignees, category, assignments, recurrence } = req.body;
 
     if (!summary || !start) {
         return res.status(400).json({ error: 'Titel och starttid krävs' });
     }
+
+    try {
+        fs.appendFileSync(path.join(__dirname, 'debug_log.txt'), `[CreateEvent] Received recurrence: ${recurrence}\n`);
+    } catch (e) { }
+
+    console.log('[CreateEvent] Received recurrence:', recurrence);
 
     try {
         const events = await readLocalEvents();
@@ -2982,7 +2988,8 @@ app.post('/api/create-event', async (req, res) => {
             // CRITICAL: Set source so it survives filter in GET /api/events
             source: 'Familjen',
             deleted: false,
-            cancelled: false
+            cancelled: false,
+            recurrence: recurrence || null // Save recurrence RRULE
         };
 
         // Save to MongoDB if connected
