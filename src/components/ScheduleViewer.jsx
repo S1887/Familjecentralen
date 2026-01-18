@@ -28,6 +28,7 @@ const ScheduleViewer = ({ events, initialStudent }) => {
         const subjectLower = (summary || '').toLowerCase();
 
         // Using slightly more saturated/standard colors to match app theme better
+        if (subjectLower.includes('fritids')) return '#DCEDC8'; // Light Green (lighter than NO)
         if (subjectLower.includes('svenska')) return '#FFF59D'; // Yellow
         if (subjectLower.includes('matematik') || subjectLower.includes('matte')) return '#90CAF9'; // Blue
         if (subjectLower.includes('engelska')) return '#EF9A9A'; // Red
@@ -91,9 +92,9 @@ const ScheduleViewer = ({ events, initialStudent }) => {
     const HOUR_HEIGHT = 100; // Increased from 60
     const [showFullDay, setShowFullDay] = useState(false);
 
-    // Default Fixed Range 08:00 - 16:00
-    let minHour = 8;
-    let maxHour = 16;
+    // Default Fixed Range 06:00 - 17:00 (Expanded for Fritids)
+    let minHour = 6;
+    let maxHour = 17;
 
     // Only expand if explicitly requested via showFullDay
     if (showFullDay) {
@@ -123,8 +124,93 @@ const ScheduleViewer = ({ events, initialStudent }) => {
     // Find displayed events for this week (for optimization/rendering)
     const displayedEvents = useMemo(() => {
         const weekDateStrings = weekDays.map(d => d.toISOString().split('T')[0]);
-        return scheduleEvents.filter(e => weekDateStrings.includes(e.start.split('T')[0]));
-    }, [scheduleEvents, weekDays]);
+        const visibleEvents = scheduleEvents.filter(e => weekDateStrings.includes(e.start.split('T')[0]));
+
+        // Generate Fritids events
+        const fritidsEvents = weekDays.flatMap(d => {
+            const dayNum = d.getDay(); // 1=Mon, ..., 5=Fri
+            const dateStr = d.toISOString().split('T')[0];
+
+            // Fritids end times
+            const endTimes = {
+                1: '15:45', // Mon
+                2: '16:40', // Tue
+                3: '15:45', // Wed
+                4: '16:40', // Thu
+                5: '13:10'  // Fri
+            };
+            const endTimeStr = endTimes[dayNum];
+
+            if (!endTimeStr) return [];
+
+            const toLocalISO = (date) => {
+                const pad = (n) => n.toString().padStart(2, '0');
+                return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
+            };
+
+            const dayBlocks = [];
+
+            // 1. Morning Block: 06:50 - 08:00
+            const morningStart = new Date(d);
+            morningStart.setHours(6, 50, 0);
+            const morningEnd = new Date(d);
+            morningEnd.setHours(8, 0, 0);
+
+            dayBlocks.push({
+                uid: `fritids-morning-${d.getTime()}`,
+                summary: 'Fritids',
+                start: toLocalISO(morningStart),
+                end: toLocalISO(morningEnd),
+                isLesson: true,
+                location: '',
+                student: selectedStudent
+            });
+
+            // 2. Afternoon Block: After last lesson - End Time
+            // Find all lessons for this day
+            const dailyLessons = visibleEvents.filter(e => e.start.startsWith(dateStr));
+
+            if (dailyLessons.length > 0) {
+                // Find the latest end time
+                let lastLessonEnd = new Date(0); // Epoch
+
+                dailyLessons.forEach(e => {
+                    const eEnd = new Date(e.end);
+                    if (eEnd > lastLessonEnd) {
+                        lastLessonEnd = eEnd;
+                    }
+                });
+
+                // Afternoon Fritids End
+                const afternoonEnd = new Date(d);
+                const [eh, em] = endTimeStr.split(':').map(Number);
+                afternoonEnd.setHours(eh, em, 0);
+
+                // Only add if afternoon fritids ends after the last lesson (and is valid)
+                if (afternoonEnd > lastLessonEnd) {
+                    dayBlocks.push({
+                        uid: `fritids-afternoon-${d.getTime()}`,
+                        summary: 'Fritids',
+                        start: toLocalISO(lastLessonEnd), // Start immediately after last lesson
+                        end: toLocalISO(afternoonEnd),
+                        isLesson: true,
+                        location: '',
+                        student: selectedStudent
+                    });
+                }
+            } else {
+                // Fallback if no lessons? (e.g. lov/holiday but fritids open?)
+                // For now, assume school day logic as requested: "direkt efter deras sista lektion"
+                // If no lessons, effectively no afternoon start point defined by logic. 
+                // We could default to 13:00 or similar if needed, but user didn't specify.
+                // Let's skip afternoon if no lessons to avoid guessing wrong.
+            }
+
+            return dayBlocks;
+        });
+
+        return [...visibleEvents, ...fritidsEvents];
+    }, [scheduleEvents, weekDays, selectedStudent]);
 
     useEffect(() => {
         if (scrollRef.current && isMobile) {
@@ -151,7 +237,12 @@ const ScheduleViewer = ({ events, initialStudent }) => {
     }, [weekOffset, isMobile, timeColWidth]);
 
     return (
-        <div className="schedule-viewer-container" style={{ background: 'var(--bg-surface)', padding: '1rem', borderRadius: '16px' }}>
+        <div className="schedule-viewer-container" style={{
+            background: 'var(--bg-surface)',
+            padding: isMobile ? '0' : '1rem',
+            borderRadius: isMobile ? '0' : '16px',
+            minHeight: isMobile ? '100vh' : 'auto'
+        }}>
             {/* Header */}
             <div className="schedule-header" style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: '500', margin: 0, color: 'var(--text-main)' }}>Skolschema</h3>
@@ -404,61 +495,126 @@ const ScheduleViewer = ({ events, initialStudent }) => {
                                             return null;
                                         })()}
 
-                                        {/* Events */}
-                                        {dayEvents.map((event) => {
-                                            const start = new Date(event.start);
-                                            const end = new Date(event.end);
-                                            const startOfDayMinutes = start.getHours() * 60 + start.getMinutes();
-                                            const startViewMinutes = START_HOUR * 60;
-                                            const topPx = (startOfDayMinutes - startViewMinutes) * (HOUR_HEIGHT / 60);
-                                            const durationMinutes = (end - start) / (1000 * 60);
-                                            const heightPx = Math.max(durationMinutes * (HOUR_HEIGHT / 60), 30); // Min height 30px
+                                        {/* Events with Layout Logic */}
+                                        {(() => {
+                                            // 1. Prepare events with positioning data
+                                            const preparedEvents = dayEvents.map(event => {
+                                                const start = new Date(event.start);
+                                                const end = new Date(event.end);
+                                                const startOfDayMinutes = start.getHours() * 60 + start.getMinutes();
+                                                const startViewMinutes = START_HOUR * 60;
+                                                const topPx = (startOfDayMinutes - startViewMinutes) * (HOUR_HEIGHT / 60);
+                                                const durationMinutes = (end - start) / (1000 * 60);
+                                                const heightPx = Math.max(durationMinutes * (HOUR_HEIGHT / 60), 30);
 
-                                            if (topPx + heightPx < 0 || topPx > TOTAL_HEIGHT) return null;
+                                                return {
+                                                    event,
+                                                    start,
+                                                    end,
+                                                    startMs: start.getTime(),
+                                                    endMs: end.getTime(),
+                                                    topPx,
+                                                    heightPx
+                                                };
+                                            }).filter(e => e.topPx + e.heightPx >= 0 && e.topPx <= TOTAL_HEIGHT)
+                                                .sort((a, b) => a.startMs - b.startMs || b.endMs - a.endMs); // Sort by start, then longest first
 
-                                            const bgColor = getSubjectColor(event.summary);
+                                            // 2. Group into visual clusters
+                                            const clusters = [];
+                                            let currentCluster = [];
+                                            let clusterEnd = 0;
 
-                                            return (
-                                                <div
-                                                    key={event.uid}
-                                                    style={{
-                                                        position: 'absolute',
-                                                        top: `${topPx}px`,
-                                                        left: '2px',
-                                                        right: '2px',
-                                                        height: `${heightPx}px`,
-                                                        padding: '6px',
-                                                        fontSize: '0.8rem',
-                                                        // Squared edges as requested
-                                                        borderRadius: '2px',
-                                                        zIndex: 10,
-                                                        background: bgColor,
-                                                        // Distinct "school" style - left border indicating student or just decoration
-                                                        borderLeft: `3px solid ${studentColor}`,
-                                                        border: '1px solid rgba(0,0,0,0.05)',
-                                                        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                                        color: '#2c3e50', // Always dark text
-                                                        overflow: 'hidden',
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        lineHeight: '1.2'
-                                                    }}
-                                                >
-                                                    <div style={{ fontWeight: '700', marginBottom: '2px' }}>
-                                                        {event.summary}
-                                                    </div>
-                                                    <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
-                                                        {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        {!isMobile && ` - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                                                    </div>
-                                                    {event.location && !isMobile && (
-                                                        <div style={{ fontSize: '0.75rem', marginTop: '2px', fontStyle: 'italic', opacity: 0.8 }}>
-                                                            {event.location}
+                                            preparedEvents.forEach(node => {
+                                                if (currentCluster.length === 0) {
+                                                    currentCluster.push(node);
+                                                    clusterEnd = node.endMs;
+                                                } else {
+                                                    // If this event starts after the entire current cluster finishes, start a new cluster
+                                                    if (node.startMs >= clusterEnd) {
+                                                        clusters.push(currentCluster);
+                                                        currentCluster = [node];
+                                                        clusterEnd = node.endMs;
+                                                    } else {
+                                                        currentCluster.push(node);
+                                                        clusterEnd = Math.max(clusterEnd, node.endMs);
+                                                    }
+                                                }
+                                            });
+                                            if (currentCluster.length > 0) clusters.push(currentCluster);
+
+                                            // 3. Render each cluster
+                                            return clusters.flatMap(cluster => {
+                                                // Pack events into columns within the cluster
+                                                const columns = []; // Array of arrays (each representing a column)
+
+                                                cluster.forEach(node => {
+                                                    let placed = false;
+                                                    for (let i = 0; i < columns.length; i++) {
+                                                        const lastInCol = columns[i][columns[i].length - 1];
+                                                        if (node.startMs >= lastInCol.endMs) {
+                                                            columns[i].push(node);
+                                                            node.colIndex = i;
+                                                            placed = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                    if (!placed) {
+                                                        columns.push([node]);
+                                                        node.colIndex = columns.length - 1;
+                                                    }
+                                                });
+
+                                                const numCols = columns.length;
+
+                                                return cluster.map(node => {
+                                                    const { event, start, end, topPx, heightPx, colIndex } = node;
+                                                    const bgColor = getSubjectColor(event.summary);
+
+                                                    // Calculate width and left position
+                                                    const widthPercent = 100 / numCols;
+                                                    const leftPercent = colIndex * widthPercent;
+
+                                                    return (
+                                                        <div
+                                                            key={event.uid}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                top: `${topPx}px`,
+                                                                left: `${leftPercent}%`,
+                                                                width: `${widthPercent}%`, // Use calculated width
+                                                                height: `${heightPx}px`,
+                                                                padding: '4px', // Reduced padding slightly for tighter fit
+                                                                fontSize: numCols > 2 ? '0.7rem' : '0.8rem', // Scale down text if crowded
+                                                                borderRadius: '2px',
+                                                                zIndex: 10 + colIndex, // Slight z-index for hover fix if needed, but safe layout shouldn't overlap
+                                                                background: bgColor,
+                                                                borderLeft: `3px solid ${studentColor}`,
+                                                                border: '1px solid rgba(0,0,0,0.05)',
+                                                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                                                color: '#2c3e50',
+                                                                overflow: 'hidden',
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                lineHeight: '1.2'
+                                                            }}
+                                                        >
+                                                            <div style={{ fontWeight: '700', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                {event.summary.replace(new RegExp(`^${selectedStudent}:?\\s*`, 'i'), '')}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.75rem', opacity: 0.9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                {start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                {!isMobile && numCols < 3 && ` - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                                                            </div>
+                                                            {event.location && !isMobile && numCols < 3 && (
+                                                                <div style={{ fontSize: '0.75rem', marginTop: '2px', fontStyle: 'italic', opacity: 0.8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                    {event.location}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
+                                                    );
+                                                });
+                                            });
+                                        })()}
                                     </div>
                                 );
                             })}

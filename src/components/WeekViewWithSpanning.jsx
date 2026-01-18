@@ -28,30 +28,7 @@ const WeekViewWithSpanning = ({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Touch gestures for swipe navigation
-    const [touchStart, setTouchStart] = useState(0);
-    const [touchEnd, setTouchEnd] = useState(0);
 
-    const handleTouchStart = (e) => {
-        setTouchStart(e.targetTouches[0].clientX);
-    };
-
-    const handleTouchMove = (e) => {
-        setTouchEnd(e.targetTouches[0].clientX);
-    };
-
-    const handleTouchEnd = () => {
-        if (!onSwipe) return;
-
-        if (touchStart - touchEnd > 75) {
-            // Swipe left → Next week
-            onSwipe(1);
-        }
-        if (touchStart - touchEnd < -75) {
-            // Swipe right → Previous week
-            onSwipe(-1);
-        }
-    };
 
     const columnStyle = isMobile ? {
         flex: '1 0 auto',
@@ -233,9 +210,7 @@ const WeekViewWithSpanning = ({
         <div
             ref={scrollContainerRef}
             className="week-view-desktop"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+
             style={{
                 width: '100%',
                 height: 'auto',
@@ -247,7 +222,8 @@ const WeekViewWithSpanning = ({
                 overflowY: 'visible',
                 border: '1px solid var(--border-color)',
                 scrollBehavior: 'smooth',
-                scrollSnapType: 'x mandatory'
+                scrollSnapType: 'x mandatory',
+                scrollPaddingLeft: '60px' // Fix for sticky time axis covering first column
             }}
         >
 

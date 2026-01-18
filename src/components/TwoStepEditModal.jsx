@@ -5,6 +5,18 @@
 import { useState } from 'react';
 import Icon from './Icon';
 
+// Name colors matching App.jsx
+const NAME_COLORS = {
+    'Svante': '#ff4757',
+    'Sarah': '#f1c40f',
+    'Algot': '#2e86de',
+    'Tuva': '#a29bfe',
+    'Leon': '#e67e22',
+    'Hela Familjen': '#2ed573'
+};
+
+const getPersonColor = (person) => NAME_COLORS[person] || '#4a90e2';
+
 const TwoStepEditModal = ({
     editEventData,
     setEditEventData,
@@ -260,8 +272,8 @@ const TwoStepEditModal = ({
                                             padding: '0.5rem 1rem',
                                             borderRadius: '20px',
                                             border: 'none',
-                                            background: (editEventData.assignees || []).includes(person) ? '#646cff' : '#ddd',
-                                            color: (editEventData.assignees || []).includes(person) ? 'white' : '#333',
+                                            background: (editEventData.assignees || []).includes(person) ? getPersonColor(person) : 'var(--input-bg)',
+                                            color: (editEventData.assignees || []).includes(person) ? 'white' : 'var(--text-main)',
                                             cursor: 'pointer',
                                             fontSize: '0.9rem'
                                         }}
@@ -285,8 +297,8 @@ const TwoStepEditModal = ({
                                             padding: '0.5rem 1rem',
                                             borderRadius: '20px',
                                             border: 'none',
-                                            background: editEventData.category === cat ? '#646cff' : '#ddd',
-                                            color: editEventData.category === cat ? 'white' : '#333',
+                                            background: editEventData.category === cat ? '#646cff' : 'var(--input-bg)',
+                                            color: editEventData.category === cat ? 'white' : 'var(--text-main)',
                                             cursor: 'pointer',
                                             fontSize: '0.9rem'
                                         }}
@@ -327,6 +339,7 @@ const TwoStepEditModal = ({
                                     <option value="">Välj...</option>
                                     <option value="Svante">Svante</option>
                                     <option value="Sarah">Sarah</option>
+                                    <option value="Får skjuts">Får skjuts</option>
                                 </select>
                             </div>
                             <div>

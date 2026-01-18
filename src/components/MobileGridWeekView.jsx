@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './MobileGridWeekView.css';
 
 const MobileGridWeekView = ({
@@ -8,8 +8,45 @@ const MobileGridWeekView = ({
     getEventColorClass,
     openEditModal,
     isAllDayEvent,
-    onDayClick
+    onDayClick,
+    onSwipe // New Prop
 }) => {
+
+    // Swipe State
+    const [touchStart, setTouchStart] = useState(0);
+    const [touchEnd, setTouchEnd] = useState(0);
+
+    const handleTouchStart = (e) => {
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchMove = (e) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchEnd = () => {
+        if (!onSwipe) return;
+
+        const distance = touchStart - touchEnd;
+        const minSwipeDistance = 75;
+
+        // Ensure touchEnd was actually set (meaning a move occurred)
+        if (touchEnd === 0) return;
+
+        if (distance > minSwipeDistance) {
+            // Swipe Left -> Next Week
+            onSwipe(1);
+        }
+
+        if (distance < -minSwipeDistance) {
+            // Swipe Right -> Previous Week
+            onSwipe(-1);
+        }
+
+        // Reset
+        setTouchStart(0);
+        setTouchEnd(0);
+    };
 
     // Generate dates for the week (Monday -> Sunday)
     const getDaysOfWeek = (date) => {
@@ -49,7 +86,12 @@ const MobileGridWeekView = ({
     };
 
     return (
-        <div className="mobile-grid-week-container">
+        <div
+            className="mobile-grid-week-container"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+        >
             {weekDays.map((day, index) => {
                 const isToday = isSameDay(day, today);
                 const dayEvents = getDayEvents(day);

@@ -12,6 +12,15 @@ const getHeroImageUrl = () => {
     }
     return '/api/hero-image';
 };
+
+const NAME_COLORS = {
+    'Svante': '#e67c73', // Red
+    'Sarah': '#f6bf26', // Yellow
+    'Algot': '#4285f4', // Blue
+    'Tuva': '#9c27b0', // Purple
+    'Leon': '#33b679'  // Green
+};
+
 const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
 // Helper to check if event is all-day (starts at 00:00 and ends at 00:00 or 23:59)
@@ -129,6 +138,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 justifyContent: 'space-between',
                 transition: 'transform 0.2s ease, background 0.2s',
                 color: theme.cardText, // Use cardText instead of textMain
+                overflow: 'hidden', // Enforce consistent size
                 ...style
             }}
             onMouseEnter={e => { if (onClick) e.currentTarget.style.transform = 'scale(1.02)'; }}
@@ -266,7 +276,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                 >
                                     Dagens händelser <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>›</span>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto', paddingLeft: '1rem' }}>
                                     <div
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -274,22 +284,25 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                         }}
                                         style={{
                                             background: theme.accent,
-                                            padding: '0.3rem 0.8rem',
-                                            borderRadius: '12px',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 'bold',
+                                            padding: '0.3rem 0.6rem',
+                                            borderRadius: '10px',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '600',
                                             color: theme.textColorInverse,
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '0.4rem',
+                                            justifyContent: 'center',
+                                            gap: '0.3rem',
                                             transition: 'transform 0.2s',
-                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                                            whiteSpace: 'nowrap',
+                                            minWidth: '55px'
                                         }}
                                         onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
                                         onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                                     >
-                                        <span style={{ fontSize: '1rem', lineHeight: 1 }}>+</span> Ny
+                                        <span style={{ fontSize: '1.1rem', lineHeight: 0.5, display: 'inline-block', position: 'relative', top: '-1px' }}>+</span> Ny
                                     </div>
                                     <div
                                         onClick={(e) => {
@@ -302,17 +315,21 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                             background: theme.accent,
                                             color: theme.textColorInverse,
                                             padding: '0.3rem 0.6rem',
-                                            borderRadius: '12px',
+                                            borderRadius: '10px',
                                             fontSize: '0.75rem',
                                             fontWeight: '600',
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
+                                            justifyContent: 'center',
                                             gap: '0.3rem',
-                                            transition: 'opacity 0.2s'
+                                            transition: 'transform 0.2s',
+                                            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                                            whiteSpace: 'nowrap',
+                                            minWidth: '55px'
                                         }}
-                                        onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
-                                        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                                         title="Visa alla kommande händelser"
                                     >
                                         Alla →
@@ -412,35 +429,48 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         {/* 2. Calendar Button */}
                         {/* 2. Calendar Button */}
                         <Card onClick={() => setActiveTab('timeline')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                            <div style={{ marginBottom: '0.8rem', color: '#a29bfe' }}>
+                            <div style={{ marginBottom: '0.8rem', color: '#4aa3df' }}>
                                 {/* Calendar Icon */}
                                 <Icon name="calendar" size={40} />
                             </div>
-                            <div style={{ fontSize: '1rem', fontWeight: '500' }}>Kalender</div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Kalender</div>
                         </Card>
 
                         {/* 3. Tasks Button */}
                         {/* 3. Tasks Button */}
-                        <Card onClick={() => setActiveTab('todos')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                            <div style={{ marginBottom: '0.8rem', color: theme.success }}>
-                                {/* Check/Todo Icon */}
-                                <Icon name="check" size={40} />
+                        <Card onClick={() => setActiveTab('todos')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, padding: '1rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                            <div style={{ marginBottom: '0.3rem', color: theme.success }}>
+                                <Icon name="check" size={32} />
                             </div>
-                            <div style={{ fontSize: '1rem', fontWeight: '500' }}>Att göra</div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: '500', marginBottom: '0.3rem' }}>Att göra</div>
+
                             {(() => {
                                 const pending = tasks.filter(t => !t.done);
-                                if (pending.length === 0) return null;
 
-                                const assignees = [...new Set(pending.map(t => t.assignee).filter(Boolean))].sort();
+                                if (pending.length === 0) {
+                                    return (
+                                        <div style={{ fontSize: '0.7rem', color: theme.textMuted, opacity: 0.7 }}>
+                                            Inga uppgifter
+                                        </div>
+                                    );
+                                }
+
+                                const visibleTasks = pending.slice(0, 2); // Show max 2 to keep it subtle
+                                const hasMore = pending.length > 2;
 
                                 return (
-                                    <div style={{ marginTop: '0.2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <div style={{ fontSize: '0.8rem', color: theme.textMuted }}>
-                                            {pending.length} uppgifter
-                                        </div>
-                                        {assignees.length > 0 && (
-                                            <div style={{ fontSize: '0.7rem', color: theme.textMuted, opacity: 0.8, marginTop: '0.2rem' }}>
-                                                {assignees.join(', ')}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center', width: '100%' }}>
+                                        {visibleTasks.map((t, i) => (
+                                            <div key={i} style={{ fontSize: '0.65rem', lineHeight: '1.2', color: theme.cardText, maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', opacity: 0.8 }}>
+                                                <span style={{ fontWeight: '600', color: NAME_COLORS[t.assignee] || theme.accent }}>
+                                                    {t.assignee ? `${t.assignee}: ` : ''}
+                                                </span>
+                                                {t.text}
+                                            </div>
+                                        ))}
+                                        {hasMore && (
+                                            <div style={{ fontSize: '0.65rem', color: theme.textMuted, marginTop: '0' }}>
+                                                + {pending.length - 2} till...
                                             </div>
                                         )}
                                     </div>
@@ -456,7 +486,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                     {/* School/Book Icon */}
                                     <Icon name="school" size={40} />
                                 </div>
-                                <div style={{ fontSize: '1rem', fontWeight: '500' }}>Skolschema</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Skolschema</div>
                             </Card>
                         )}
 
@@ -466,7 +496,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                 {/* Utensils Icon */}
                                 <Icon name="utensils" size={40} />
                             </div>
-                            <div style={{ fontSize: '1rem', fontWeight: '500' }}>Matsedel</div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Matsedel</div>
                         </Card>
 
 
@@ -494,19 +524,22 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                             return (
                                 <Card
                                     onClick={onOpenMatchModal}
-                                    style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: theme.cardBg }}
+                                    style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'flex-start', paddingTop: '1.1rem', textAlign: 'center', background: theme.cardBg }}
                                 >
-                                    <div style={{ marginBottom: '0.8rem', color: isArsenal ? '#ff4757' : '#2e86de' }}>
-                                        {/* Football Icon */}
-                                        <Icon name="football" size={40} />
+                                    <div style={{ marginBottom: '0.3rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {isArsenal ? (
+                                            <img src="https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" alt="Arsenal" style={{ height: '100%', objectFit: 'contain' }} />
+                                        ) : (
+                                            <img src="/assets/ois-logo.png" alt="ÖIS" style={{ height: '100%', objectFit: 'contain' }} />
+                                        )}
                                     </div>
-                                    <div style={{ fontSize: '1rem', fontWeight: '500', marginBottom: '0.2rem' }}>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: '500', marginBottom: '0.1rem' }}>
                                         Nästa match
                                     </div>
-                                    <div style={{ fontSize: '0.8rem', color: theme.cardText, fontWeight: '600', lineHeight: 1.2 }}>
+                                    <div style={{ fontSize: '0.65rem', color: theme.cardText, fontWeight: '600', lineHeight: 1.1, maxHeight: '3.3em', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
                                         {cleanSummary}
                                     </div>
-                                    <div style={{ fontSize: '0.75rem', color: theme.textMuted }}>
+                                    <div style={{ fontSize: '0.65rem', color: theme.textMuted, marginTop: 'auto', paddingBottom: '0.5rem' }}>
                                         {displayDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' })}
                                     </div>
                                 </Card>
@@ -517,14 +550,13 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
 
 
-                        {/* 6. Create New (Button) */}
-                        {/* 6. Create New (Button) */}
-                        <Card onClick={() => setActiveTab('create-event')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                            <div style={{ marginBottom: '0.5rem', color: theme.cardText }}>
-                                {/* Plus Icon */}
-                                <Icon name="plus" size={40} />
+                        {/* 6. Cypressvägen 8 (Link) */}
+                        <Card onClick={() => window.location.href = 'https://icdyb1l1q3laawhz67o2dpgt9uczhgfe.ui.nabu.casa/lovelace/Oversikt'} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'flex-start', paddingTop: '1.1rem', textAlign: 'center' }}>
+                            <div style={{ marginBottom: '0.3rem', color: '#9b59b6' }}>
+                                {/* House Icon */}
+                                <Icon name="home" size={36} />
                             </div>
-                            <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Ny händelse</div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Cypressvägen 8</div>
                         </Card>
 
                     </div>

@@ -126,57 +126,69 @@ const DayViewModal = ({
                 {/* Close Button - Matching EventDetailModal exactly */}
                 {/* Header with Sticky Position */}
                 <div style={{
-                    padding: '2rem',
+                    padding: '1.5rem',
                     borderBottom: '1px solid var(--border-color)',
                     position: 'sticky',
                     top: 0,
                     background: 'var(--modal-bg)',
                     zIndex: 20,
-                    borderRadius: '24px 24px 0 0'
+                    borderRadius: '24px 24px 0 0',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem'
                 }}>
-                    {/* Close Button - Matching event creation modal */}
-                    <button
-                        onClick={onClose}
-                        style={{
-                            position: 'absolute',
-                            top: '1rem',
-                            right: '1rem',
-                            background: 'transparent',
-                            border: 'none',
-                            padding: '0.25rem',
-                            cursor: 'pointer',
-                            color: '#ffffff',
-                            fontSize: '2rem',
-                            fontWeight: '300',
-                            lineHeight: '1',
-                            zIndex: 30,
-                            transition: 'opacity 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
-                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                    >
-                        ×
-                    </button>
+                    {/* Top Row: Spacer - Title - Close Button */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        {/* Spacer to balance Close Button for perfect centering */}
+                        <div style={{ width: '40px' }} />
 
-                    {/* Date Title - Centered without arrows */}
-                    <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                        <h1 style={{
-                            margin: 0,
-                            fontSize: '1.8rem',
-                            fontWeight: '700',
-                            color: 'var(--text-main)',
-                            lineHeight: 1.2
-                        }}>
-                            {formatDate(selectedDate)}
-                        </h1>
-                        <div style={{
-                            fontSize: '0.9rem',
-                            color: 'var(--text-muted)',
-                            marginTop: '0.25rem'
-                        }}>
-                            Vecka {getWeekNumber(selectedDate)}
-                            {isToday && <span style={{ color: 'var(--accent)', marginLeft: '0.5rem', fontWeight: 'bold' }}>• Idag</span>}
+                        {/* Date Title */}
+                        <div style={{ textAlign: 'center', flex: 1 }}>
+                            <h1 style={{
+                                margin: 0,
+                                fontSize: '1.6rem',
+                                fontWeight: '700',
+                                color: 'var(--text-main)',
+                                lineHeight: 1.2
+                            }}>
+                                {formatDate(selectedDate)}
+                            </h1>
+                            <div style={{
+                                fontSize: '0.9rem',
+                                color: 'var(--text-muted)',
+                                marginTop: '0.25rem'
+                            }}>
+                                Vecka {getWeekNumber(selectedDate)}
+                                {isToday && <span style={{ color: 'var(--accent)', marginLeft: '0.5rem', fontWeight: 'bold' }}>• Idag</span>}
+                            </div>
                         </div>
+
+                        {/* Close Button */}
+                        <button
+                            onClick={onClose}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                padding: '0',
+                                width: '40px',
+                                height: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: 'var(--text-muted)',
+                                fontSize: '2rem',
+                                fontWeight: '300',
+                                lineHeight: '1',
+                                transition: 'opacity 0.2s',
+                                marginTop: '-0.5rem', // Slight adjustment to align with title baseline visual
+                                marginRight: '-0.5rem' // Pull right slightly into padding
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                        >
+                            ×
+                        </button>
                     </div>
 
                     {/* Navigation row with arrows and count */}

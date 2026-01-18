@@ -1047,6 +1047,11 @@ function App() {
 
     // Otherwise, try to auto-detect from text
     const text = ((e.summary || '') + ' ' + (e.description || '')).toLowerCase();
+
+    // Specific Team Logic (Returns array to allow both Sport and Team filtering)
+    if (text.includes('arsenal') || (e.source && e.source.includes('Arsenal'))) return ['Fotboll', 'Arsenal'];
+    if (text.includes('öis') || text.includes('ois') || text.includes('örgryte') || (e.source && e.source.includes('Örgryte'))) return ['Fotboll', 'ÖIS'];
+
     if (text.includes('handboll')) return 'Handboll';
     if (text.includes('fotboll')) return 'Fotboll';
     if (text.includes('bandy')) return 'Bandy';
@@ -1079,6 +1084,14 @@ function App() {
     const assigneesArray = event.assignees || [];
     const source = event.source || '';
     const sourceLower = source.toLowerCase();
+
+    // Special handling for team filters (Arsenal / ÖIS)
+    if (effectiveFilter === 'Arsenal') {
+      return (source && source.includes('Arsenal')) || summary.toLowerCase().includes('arsenal');
+    }
+    if (effectiveFilter === 'ÖIS') {
+      return (source && source.includes('Örgryte')) || summary.toLowerCase().includes('öis') || summary.toLowerCase().includes('örgryte');
+    }
 
     const isAssigned = event.assignments && (event.assignments.driver === effectiveFilter || event.assignments.packer === effectiveFilter);
     // Check both singular assignee string AND plural assignees array
@@ -1947,7 +1960,13 @@ function App() {
                             <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--card-text-muted)' }}>
                               {matchDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' })} • {matchDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            <span style={{ fontSize: '1.2rem' }}>{isArsenal ? '🔴⚪' : '🔴🔵'}</span>
+                            <div style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {isArsenal ? (
+                                <img src="https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" alt="Arsenal" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                              ) : (
+                                <img src="/assets/ois-logo.png" alt="ÖIS" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                              )}
+                            </div>
                           </div>
 
                           <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{match.summary}</div>
@@ -2153,6 +2172,7 @@ function App() {
                       overflow: 'hidden',
                       color: 'var(--card-text)' // Ensure text inherits correct color
                     }}>
+
                       {currentUser?.role !== 'child' && (
                         <button
                           onClick={() => {
@@ -2243,6 +2263,29 @@ function App() {
                           <Icon name="trash" size={20} style={{ color: '#646cff' }} /> Papperskorg
                         </button>
                       )}
+
+                      {currentUser && (currentUser.name === 'Svante' || currentUser.name === 'Sarah') && (
+                        <button
+                          onClick={() => { setActiveTab('dashboard'); setShowMoreMenu(false); }}
+                          style={{
+                            width: '100%',
+                            padding: '0.8rem 1rem',
+                            background: 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid var(--border-color)',
+                            color: 'var(--card-text)',
+                            fontSize: '0.95rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            textAlign: 'left',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          <Icon name="barChart" size={20} style={{ color: '#646cff' }} /> Gamla Dashboarden
+                        </button>
+                      )}
                       <button
                         onClick={() => { setDarkMode(!darkMode); setShowMoreMenu(false); }}
                         style={{
@@ -2267,28 +2310,6 @@ function App() {
                           <><Icon name="moon" size={20} style={{ color: '#34495e' }} /> Mörkt läge</>
                         )}
                       </button>
-                      {currentUser && (currentUser.name === 'Svante' || currentUser.name === 'Sarah') && (
-                        <button
-                          onClick={() => { setActiveTab('dashboard'); setShowMoreMenu(false); }}
-                          style={{
-                            width: '100%',
-                            padding: '0.8rem 1rem',
-                            background: 'transparent',
-                            border: 'none',
-                            borderBottom: '1px solid var(--border-color)',
-                            color: 'var(--card-text)',
-                            fontSize: '0.95rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            textAlign: 'left',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          <Icon name="barChart" size={20} style={{ color: '#646cff' }} /> Gamla Dashboarden
-                        </button>
-                      )}
                       <button
                         onClick={() => { handleLogout(); setShowMoreMenu(false); }}
                         style={{
@@ -2385,7 +2406,7 @@ function App() {
                   disabled={isRefreshing}
                   title="Synka med Google Kalender"
                   style={{
-                    background: isRefreshing ? 'transparent' : 'var(--card-bg)',
+                    background: isRefreshing ? 'transparent' : 'var(--bg-main)',
                     border: '1px solid var(--border-color)',
                     borderRadius: '50%',
                     width: '40px',
@@ -2417,7 +2438,7 @@ function App() {
         {/* Schedule Tab Content - shown after header */}
         {
           activeTab === 'schedule' && (
-            <div className="tab-content" style={{ padding: '1rem' }}>
+            <div className="tab-content" style={{ padding: isMobile ? '0' : '1rem' }}>
               <ScheduleViewer events={scheduleEvents} initialStudent={currentUser?.name} />
             </div>
           )
@@ -3351,7 +3372,7 @@ function App() {
                 style={{
                   flex: 1,
                   padding: '0.4rem 0.5rem',
-                  background: 'var(--card-bg)', // Slight background for contrast
+                  background: 'var(--bg-main)', // Slight background for contrast
                   border: '1px solid var(--border-color)',
                   borderRadius: '8px',
                   color: 'var(--card-text)',
@@ -3375,7 +3396,7 @@ function App() {
                 style={{
                   flex: 1,
                   padding: '0.4rem 0.5rem',
-                  background: 'var(--card-bg)',
+                  background: 'var(--bg-main)',
                   border: '1px solid var(--border-color)',
                   borderRadius: '8px',
                   color: 'var(--card-text)',
@@ -3520,23 +3541,24 @@ function App() {
                     {/* Family Filter Section */}
                     <div style={{ flex: 1 }}>
                       <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}><Icon name="users" size={14} style={{ marginRight: '0.3rem' }} />Familj</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {children.map(child => (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                        {['Alla', 'Algot', 'Tuva', 'Leon', 'Sarah', 'Svante', 'Arsenal', 'ÖIS'].map(child => (
                           <button
                             key={child}
                             onClick={() => setFilterChild(child)}
                             style={{
-                              padding: '0.8rem',
+                              padding: '0.5rem 0.8rem',
                               background: filterChild === child ? '#2ed573' : 'transparent',
                               color: filterChild === child ? 'white' : 'var(--card-text)',
                               border: '1px solid var(--border-color)',
-                              borderRadius: '8px',
+                              borderRadius: '6px',
                               cursor: 'pointer',
                               textAlign: 'left',
+                              fontSize: '0.9rem',
                               fontWeight: filterChild === child ? 'bold' : 'normal'
                             }}
                           >
-                            {child === 'Alla' ? 'Hela Familjen' : child} {filterChild === child && '✓'}
+                            {child === 'Alla' ? 'Samtliga' : child} {filterChild === child && '✓'}
                           </button>
                         ))}
                       </div>
@@ -3545,19 +3567,20 @@ function App() {
                     {/* Category Filter Section */}
                     <div style={{ flex: 1 }}>
                       <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}>📂 Kategori</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                         {['Alla', 'Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => (
                           <button
                             key={cat}
                             onClick={() => setFilterCategory(cat)}
                             style={{
-                              padding: '0.8rem',
+                              padding: '0.5rem 0.8rem',
                               background: filterCategory === cat ? '#2ed573' : 'transparent',
                               color: filterCategory === cat ? 'white' : 'var(--card-text)',
                               border: '1px solid var(--border-color)',
-                              borderRadius: '8px',
+                              borderRadius: '6px',
                               cursor: 'pointer',
                               textAlign: 'left',
+                              fontSize: '0.9rem',
                               fontWeight: filterCategory === cat ? 'bold' : 'normal'
                             }}
                           >
@@ -3675,6 +3698,7 @@ function App() {
                     openEditModal={openEditModal}
                     isAllDayEvent={isAllDayEvent}
                     onDayClick={(day) => setSelectedDayView(day)}
+                    onSwipe={navigateView}
                   />
                 )}
 
