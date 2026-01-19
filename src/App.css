@@ -59,7 +59,8 @@
   --text-muted: #b3b3b3;
   --text-on-dark: #ffffff;
 
-  --card-bg: #1c1c1c;
+  --card-bg: rgba(28, 28, 28, 0.8);
+  /* 20% transparent */
   --card-bg-highlight: #333333;
   --card-text: #ffffff;
   --card-text-muted: #b3b3b3;
@@ -86,7 +87,7 @@
   --week-header-text: #ffffff;
   --weather-widget-bg: rgba(255, 255, 255, 0.08);
   --weather-widget-border: rgba(255, 255, 255, 0.1);
-  --next-event-bg: linear-gradient(135deg, #333333 0%, #282828 100%);
+  --next-event-bg: rgba(28, 28, 28, 0.8);
 }
 
 /* Event card color classes - applies border-left based on assignee/source */

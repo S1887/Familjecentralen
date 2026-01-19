@@ -93,7 +93,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
     const theme = darkMode ? {
         // Dark Mode - Spotify-style
         bgOverlay: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85))',
-        cardBg: '#1c1c1c', // Was #282828 - Made darker as requested
+        cardBg: 'rgba(28, 28, 28, 0.8)', // 20% transparency test
         cardBgHighlight: '#333333',
         accent: '#2ed573', // Flat Green
         textMain: '#ffffff',
@@ -103,7 +103,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
         warning: '#ffa502', // Flat Orange
         weatherWidgetBg: 'rgba(255,255,255,0.08)',
         weatherWidgetBorder: 'rgba(255,255,255,0.1)',
-        nextEventBg: '#1c1c1c', // linear-gradient(135deg, #333333 0%, #282828 100%)', // Made flat dark to match other cards
+        nextEventBg: 'rgba(28, 28, 28, 0.8)', // Made flat dark to match other cards
         textColorInverse: '#000'
     } : {
         // Light Mode - Clean

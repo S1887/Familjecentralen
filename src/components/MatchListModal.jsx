@@ -6,7 +6,7 @@ const MatchListModal = ({ isOpen, onClose, events, darkMode }) => {
 
     const theme = darkMode ? {
         modalBg: '#121212', // Very dark background
-        cardBg: '#1c1c1c', // Slightly lighter cards
+        cardBg: 'rgba(28, 28, 28, 0.8)', // 20% transparency test
         textMain: '#ffffff',
         textMuted: '#b3b3b3',
         accent: '#e74c3c', // Red for pin

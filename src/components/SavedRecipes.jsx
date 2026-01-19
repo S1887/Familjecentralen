@@ -26,7 +26,7 @@ const SavedRecipes = ({ darkMode, getApiUrl, onBack }) => {
 
     const theme = {
         bg: darkMode ? '#121212' : '#f8f9fa',
-        cardBg: darkMode ? '#1c1c1c' : 'rgba(0,0,0,0.03)',
+        cardBg: darkMode ? 'rgba(28, 28, 28, 0.8)' : 'rgba(0,0,0,0.03)', // 20% transparency test
         text: darkMode ? '#fff' : '#2d3436',
         textMuted: darkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)',
         accent: '#ff7675',
