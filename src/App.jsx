@@ -163,6 +163,7 @@ const MapUpdater = ({ route, center }) => {
 
 import InboxModal from './components/InboxModal';
 import NewHome from './components/NewHome';
+import MatchListModal from './components/MatchListModal';
 import EventDetailModal from './components/EventDetailModal';
 import TwoStepEditModal from './components/TwoStepEditModal';
 import DayViewModal from './components/DayViewModal';
@@ -177,6 +178,7 @@ function App() {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('familyOpsDarkMode') !== 'false');
   const [selectedEventForDetail, setSelectedEventForDetail] = useState(null); // Event detail modal state
   const [selectedDayView, setSelectedDayView] = useState(null); // Day view modal state
+  const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
 
   const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -2493,7 +2495,7 @@ function App() {
               setViewMode={setViewMode}
               holidays={holidays}
               onOpenEventDetail={openEditModal}
-              onOpenMatchModal={() => setShowMatchModal(true)}
+              onOpenMatchModal={() => setIsMatchModalOpen(true)}
               onDayClick={(day) => setSelectedDayView(day)}
               darkMode={darkMode}
             />
@@ -4281,6 +4283,13 @@ function App() {
             />
           )
         }
+
+        <MatchListModal
+          isOpen={isMatchModalOpen}
+          onClose={() => setIsMatchModalOpen(false)}
+          events={events}
+          darkMode={darkMode}
+        />
 
       </div >
     </div >

@@ -93,7 +93,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
     const theme = darkMode ? {
         // Dark Mode - Spotify-style
         bgOverlay: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85))',
-        cardBg: '#282828',
+        cardBg: '#1c1c1c', // Was #282828 - Made darker as requested
         cardBgHighlight: '#333333',
         accent: '#2ed573', // Flat Green
         textMain: '#ffffff',
@@ -103,7 +103,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
         warning: '#ffa502', // Flat Orange
         weatherWidgetBg: 'rgba(255,255,255,0.08)',
         weatherWidgetBorder: 'rgba(255,255,255,0.1)',
-        nextEventBg: 'linear-gradient(135deg, #333333 0%, #282828 100%)',
+        nextEventBg: '#1c1c1c', // linear-gradient(135deg, #333333 0%, #282828 100%)', // Made flat dark to match other cards
         textColorInverse: '#000'
     } : {
         // Light Mode - Clean
@@ -139,6 +139,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                 transition: 'transform 0.2s ease, background 0.2s',
                 color: theme.cardText, // Use cardText instead of textMain
                 overflow: 'hidden', // Enforce consistent size
+                position: 'relative', // For absolute positioning of sub-content
                 ...style
             }}
             onMouseEnter={e => { if (onClick) e.currentTarget.style.transform = 'scale(1.02)'; }}
@@ -428,8 +429,10 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                         {/* 2. Calendar Button */}
                         {/* 2. Calendar Button */}
-                        <Card onClick={() => setActiveTab('timeline')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                            <div style={{ marginBottom: '0.8rem', color: '#4aa3df' }}>
+                        {/* 2. Calendar Button */}
+                        {/* 2. Calendar Button */}
+                        <Card onClick={() => setActiveTab('timeline')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
+                            <div style={{ marginBottom: '0.5rem', color: '#4aa3df' }}>
                                 {/* Calendar Icon */}
                                 <Icon name="calendar" size={40} />
                             </div>
@@ -438,18 +441,18 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                         {/* 3. Tasks Button */}
                         {/* 3. Tasks Button */}
-                        <Card onClick={() => setActiveTab('todos')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, padding: '1rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-                            <div style={{ marginBottom: '0.3rem', color: theme.success }}>
-                                <Icon name="check" size={32} />
+                        <Card onClick={() => setActiveTab('todos')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
+                            <div style={{ marginBottom: '0.5rem', color: theme.success }}>
+                                <Icon name="check" size={40} />
                             </div>
-                            <div style={{ fontSize: '0.9rem', fontWeight: '500', marginBottom: '0.3rem' }}>Att göra</div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Att göra</div>
 
                             {(() => {
                                 const pending = tasks.filter(t => !t.done);
 
                                 if (pending.length === 0) {
                                     return (
-                                        <div style={{ fontSize: '0.7rem', color: theme.textMuted, opacity: 0.7 }}>
+                                        <div style={{ position: 'absolute', top: 'calc(50% + 40px)', left: 0, width: '100%', textAlign: 'center', fontSize: '0.65rem', color: theme.textMuted, opacity: 0.7 }}>
                                             Inga uppgifter
                                         </div>
                                     );
@@ -459,17 +462,30 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                 const hasMore = pending.length > 2;
 
                                 return (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center', width: '100%' }}>
-                                        {visibleTasks.map((t, i) => (
-                                            <div key={i} style={{ fontSize: '0.65rem', lineHeight: '1.2', color: theme.cardText, maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', opacity: 0.8 }}>
-                                                <span style={{ fontWeight: '600', color: NAME_COLORS[t.assignee] || theme.accent }}>
-                                                    {t.assignee ? `${t.assignee}: ` : ''}
-                                                </span>
-                                                {t.text}
-                                            </div>
-                                        ))}
+                                    <div style={{ position: 'absolute', top: 'calc(50% + 40px)', left: 0, width: '100%', padding: '0 0.5rem', display: 'flex', flexDirection: 'column', gap: '1px', alignItems: 'center' }}>
+                                        {visibleTasks.map((t, i) => {
+                                            const assigneeColor = NAME_COLORS[t.assignee];
+                                            return (
+                                                <div key={i} style={{
+                                                    fontSize: '0.6rem',
+                                                    lineHeight: '1.2',
+                                                    color: assigneeColor || theme.cardText,
+                                                    maxWidth: '100%',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    opacity: 0.9,
+                                                    fontWeight: assigneeColor ? '500' : '400'
+                                                }}>
+                                                    <span style={{ fontWeight: '600', marginRight: '3px' }}>
+                                                        {t.assignee ? `${t.assignee}:` : ''}
+                                                    </span>
+                                                    {t.text}
+                                                </div>
+                                            );
+                                        })}
                                         {hasMore && (
-                                            <div style={{ fontSize: '0.65rem', color: theme.textMuted, marginTop: '0' }}>
+                                            <div style={{ fontSize: '0.6rem', color: theme.textMuted, lineHeight: '1' }}>
                                                 + {pending.length - 2} till...
                                             </div>
                                         )}
@@ -480,9 +496,11 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                         {/* 4. School Schedule Button */}
                         {/* 4. School Schedule Button - Hide for Leon */}
+                        {/* 4. School Schedule Button */}
+                        {/* 4. School Schedule Button */}
                         {user.name !== 'Leon' && (
-                            <Card onClick={() => setActiveTab('schedule')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                                <div style={{ marginBottom: '0.8rem', color: '#ff9f43' }}>
+                            <Card onClick={() => setActiveTab('schedule')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
+                                <div style={{ marginBottom: '0.5rem', color: '#ff9f43' }}>
                                     {/* School/Book Icon */}
                                     <Icon name="school" size={40} />
                                 </div>
@@ -491,8 +509,9 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         )}
 
                         {/* 4.5. Meal Plan Card */}
-                        <Card onClick={() => setActiveTab('matsedel')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                            <div style={{ marginBottom: '0.8rem', color: '#ff7675' }}>
+                        {/* 4.5. Meal Plan Card */}
+                        <Card onClick={() => setActiveTab('matsedel')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
+                            <div style={{ marginBottom: '0.5rem', color: '#ff7675' }}>
                                 {/* Utensils Icon */}
                                 <Icon name="utensils" size={40} />
                             </div>
@@ -501,46 +520,58 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
 
                         {/* 5.5. Next Match Card */}
+                        {/* 5.5. Next Match Card */}
+                        {/* 5.5. Next Match Card */}
                         {(() => {
                             const now = new Date();
                             const upcomingMatches = events
                                 .filter(e => {
                                     const summary = (e.summary || '').toLowerCase();
-                                    const isArsenal = e.source === 'Arsenal FC' || summary.includes('arsenal');
-                                    const isOis = e.source === 'Örgryte IS' || summary.includes('örgryte') || summary.includes('orgryte');
+                                    const source = e.source || '';
+                                    const isArsenal = source.includes('Arsenal') || summary.includes('arsenal');
+                                    const isOis = source.includes('Örgryte') || summary.includes('örgryte') || summary.includes('orgryte') || summary.includes('öis') || summary.includes('ois');
                                     return (isArsenal || isOis) && new Date(e.start) > now;
                                 })
                                 .sort((a, b) => new Date(a.start) - new Date(b.start));
 
                             const nextMatch = upcomingMatches[0];
 
-                            if (!nextMatch) return null; // Don't show card if no match
+                            // Always show card, determine team for logo
+                            let isArsenal = false;
+                            let cleanSummary = nextMatch ? nextMatch.summary.replace(/^[^:]+:\s*/, '') : 'Ingen kommande match';
+                            let displayDate = nextMatch ? new Date(nextMatch.start) : null;
 
-                            const isArsenal = nextMatch.source === 'Arsenal FC' || (nextMatch.summary || '').toLowerCase().includes('arsenal');
-                            const displayDate = new Date(nextMatch.start);
-                            // Remove "Svante:" or any assignee prefix from summary
-                            const cleanSummary = nextMatch.summary.replace(/^[^:]+:\s*/, '');
+                            if (nextMatch) {
+                                const source = (nextMatch.source || '').toLowerCase();
+                                const summary = (nextMatch.summary || '').toLowerCase();
+                                isArsenal = source.includes('arsenal') || summary.includes('arsenal');
+                            }
 
                             return (
                                 <Card
                                     onClick={onOpenMatchModal}
-                                    style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'flex-start', paddingTop: '1.1rem', textAlign: 'center', background: theme.cardBg }}
+                                    style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem', background: theme.cardBg }}
                                 >
-                                    <div style={{ marginBottom: '0.3rem', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <div style={{ marginBottom: '0.5rem', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {isArsenal ? (
                                             <img src="https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" alt="Arsenal" style={{ height: '100%', objectFit: 'contain' }} />
                                         ) : (
                                             <img src="/assets/ois-logo.png" alt="ÖIS" style={{ height: '100%', objectFit: 'contain' }} />
                                         )}
                                     </div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: '500', marginBottom: '0.1rem' }}>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>
                                         Nästa match
                                     </div>
-                                    <div style={{ fontSize: '0.65rem', color: theme.cardText, fontWeight: '600', lineHeight: 1.1, maxHeight: '3.3em', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
-                                        {cleanSummary}
-                                    </div>
-                                    <div style={{ fontSize: '0.65rem', color: theme.textMuted, marginTop: 'auto', paddingBottom: '0.5rem' }}>
-                                        {displayDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' })}
+
+                                    <div style={{ position: 'absolute', top: 'calc(50% + 40px)', left: 0, width: '100%', padding: '0 0.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.65rem', color: theme.textMuted, lineHeight: 1.2, maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {cleanSummary}
+                                        </div>
+                                        {displayDate && (
+                                            <div style={{ fontSize: '0.6rem', color: theme.textMuted, marginTop: '1px' }}>
+                                                {displayDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' }).replace('.', '')}
+                                            </div>
+                                        )}
                                     </div>
                                 </Card>
                             );
@@ -551,10 +582,11 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
 
                         {/* 6. Cypressvägen 8 (Link) */}
-                        <Card onClick={() => window.location.href = 'https://icdyb1l1q3laawhz67o2dpgt9uczhgfe.ui.nabu.casa/lovelace/Oversikt'} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, alignItems: 'center', justifyContent: 'flex-start', paddingTop: '1.1rem', textAlign: 'center' }}>
-                            <div style={{ marginBottom: '0.3rem', color: '#9b59b6' }}>
+                        {/* 6. Cypressvägen 8 (Link) */}
+                        <Card onClick={() => window.location.href = 'https://icdyb1l1q3laawhz67o2dpgt9uczhgfe.ui.nabu.casa/lovelace/Oversikt'} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
+                            <div style={{ marginBottom: '0.5rem', color: '#9b59b6' }}>
                                 {/* House Icon */}
-                                <Icon name="home" size={36} />
+                                <Icon name="home" size={40} />
                             </div>
                             <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Cypressvägen 8</div>
                         </Card>

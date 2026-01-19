@@ -10,7 +10,7 @@
 }
 
 .mobile-day-card {
-    background-color: var(--bg-surface, #1e1e1e);
+    background-color: var(--card-bg, #1c1c1c);
     border-radius: 6px;
     padding: 2px 2px 6px 2px;
     min-height: 90px;

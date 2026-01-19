@@ -181,15 +181,25 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
         }
     };
 
+    // Mobile detection
+    const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 600);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 600);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     // Theme (unchanged)
     const theme = {
         bg: darkMode ? '#121212' : '#f8f9fa',
-        cardBg: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.03)',
+        cardBg: darkMode ? '#1c1c1c' : 'rgba(0,0,0,0.03)',
         text: darkMode ? '#fff' : '#2d3436',
         textMuted: darkMode ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)',
         accent: '#ff7675',
         inputBg: darkMode ? 'rgba(255,255,255,0.1)' : '#fff',
         border: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+        borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', // Explicit border color
     };
 
     // Fetch meals for current week
@@ -287,7 +297,6 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
     };
 
     // AI suggest meals (Updated)
-    // AI suggest meals (Updated)
     const suggestMeals = async (targetDateStr = null, types = ['dinner']) => {
         if (targetDateStr) {
             setRegeneratingDay(targetDateStr);
@@ -343,17 +352,12 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
             }
 
             const data = await response.json();
-            console.log('[MealPlanner] API Response:', JSON.stringify(data, null, 2));
-            console.log('[MealPlanner] targetDateStr:', targetDateStr, 'types:', types);
 
             if (data.suggestions) {
                 const newMeals = { ...meals };
 
                 if (targetDateStr) {
                     // Single day update - ensure proper deep clone
-                    console.log('[MealPlanner] Single day update for:', targetDateStr);
-                    console.log('[MealPlanner] Suggestions:', data.suggestions);
-
                     newMeals[targetDateStr] = {
                         ...newMeals[targetDateStr],
                         times: { ...newMeals[targetDateStr]?.times },
@@ -421,6 +425,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
         return (
             <SavedRecipes
                 darkMode={darkMode}
+                // isMobile={isMobile} // Pass down if needed
                 getApiUrl={getApiUrl}
                 onBack={() => setShowSavedRecipes(false)}
             />
@@ -428,7 +433,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
     }
 
     return (
-        <div style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ padding: isMobile ? '0.5rem' : '1rem', maxWidth: '800px', margin: '0 auto' }}>
             {/* Saved Recipes Button */}
             <button
                 onClick={() => setShowSavedRecipes(true)}
@@ -452,13 +457,13 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                 <Icon name="book" size={16} style={{ marginRight: '0.3rem' }} />Sparade recept
             </button>
 
-            {/* Header (unchanged) */}
+            {/* Header - Responsive */}
             <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 marginBottom: '1.5rem',
-                gap: '1rem'
+                gap: isMobile ? '0.5rem' : '1rem'
             }}>
                 <button
                     onClick={() => goToWeek(-1)}
@@ -466,22 +471,22 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                         background: theme.cardBg,
                         border: 'none',
                         borderRadius: '12px',
-                        padding: '0.75rem 1rem',
-                        fontSize: '1.5rem',
+                        padding: isMobile ? '0.6rem 0.8rem' : '0.75rem 1rem',
+                        fontSize: isMobile ? '1.2rem' : '1.5rem',
                         cursor: 'pointer',
                         color: theme.text
                     }}
                 >
-                    ‹ Föregående
+                    ‹
                 </button>
 
-                <div style={{ textAlign: 'center' }}>
-                    <h2 style={{ margin: 0, color: theme.text }}>
+                <div style={{ textAlign: 'center', flex: 1 }}>
+                    <h2 style={{ margin: 0, color: theme.text, fontSize: isMobile ? '1.3rem' : '1.5rem' }}>
                         Matsedel
                     </h2>
-                    <div style={{ color: theme.textMuted, fontSize: '0.9rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <span>Vecka {currentWeek.week}, {currentWeek.year}</span>
-                        <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+                    <div style={{ color: theme.textMuted, fontSize: isMobile ? '0.8rem' : '0.9rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <span>Vecka {currentWeek.week}</span>
+                        <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
                             {weekDates[0].getDate()} {weekDates[0].toLocaleDateString('sv-SE', { month: 'short' }).replace('.', '')} - {weekDates[6].getDate()} {weekDates[6].toLocaleDateString('sv-SE', { month: 'short' }).replace('.', '')}
                         </span>
                         {saving && <span style={{ color: theme.accent, fontSize: '0.8rem' }}>Sparar...</span>}
@@ -494,22 +499,21 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                         background: theme.cardBg,
                         border: 'none',
                         borderRadius: '12px',
-                        padding: '0.75rem 1rem',
-                        fontSize: '1.5rem',
+                        padding: isMobile ? '0.6rem 0.8rem' : '0.75rem 1rem',
+                        fontSize: isMobile ? '1.2rem' : '1.5rem',
                         cursor: 'pointer',
                         color: theme.text
                     }}
                 >
-                    Nästa ›
+                    ›
                 </button>
             </div>
 
             {/* AI Controls */}
-            {/* AI Chef Section - Only visible for admins */}
             {isAdmin && (
                 <div style={{
                     background: theme.cardBg,
-                    padding: '1rem',
+                    padding: isMobile ? '0.75rem' : '1rem',
                     borderRadius: '12px',
                     marginBottom: '1.5rem',
                     border: `1px solid ${theme.border}`
@@ -523,9 +527,9 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                             type="text"
                             value={aiInstructions}
                             onChange={(e) => setAiInstructions(e.target.value)}
-                            placeholder="T.ex. 'Vi har mycket kyckling', 'Vegetariskt hela veckan'..."
+                            placeholder={isMobile ? "Instruktioner till AI..." : "T.ex. 'Vi har mycket kyckling', 'Vegetariskt hela veckan'..."}
                             style={{
-                                flex: '1 1 200px', // Allow grow/shrink, min-basis 200px
+                                flex: '1 1 200px',
                                 background: theme.inputBg,
                                 border: `1px solid ${theme.border}`,
                                 borderRadius: '8px',
@@ -538,6 +542,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                             onClick={() => suggestMeals(null)}
                             disabled={suggesting}
                             style={{
+                                flex: isMobile ? '1 1 auto' : '0 0 auto',
                                 background: suggesting ? theme.cardBg : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                                 border: 'none',
                                 borderRadius: '8px',
@@ -546,17 +551,15 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                 cursor: suggesting ? 'wait' : 'pointer',
                                 fontSize: '0.9rem',
                                 fontWeight: '600',
-                                whiteSpace: 'nowrap'
+                                whiteSpace: 'nowrap',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center'
                             }}
                         >
                             {suggesting ? '...Tänker' : <><Icon name="search" size={14} style={{ marginRight: '0.3rem' }} />Förslag</>}
                         </button>
                     </div>
-                    {aiInstructions && (
-                        <div style={{ fontSize: '0.75rem', color: theme.textMuted, marginTop: '0.4rem', fontStyle: 'italic' }}>
-                            Din instruktion tas med när du trycker på "Förslag" eller regenererar en dag.
-                        </div>
-                    )}
                 </div>
             )}
 
@@ -581,9 +584,8 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                 style={{
                                     background: theme.cardBg,
                                     borderRadius: '16px',
-                                    borderRadius: '16px',
-                                    padding: '0.75rem',
-                                    border: isToday ? `2px solid ${theme.accent}` : `1px solid ${theme.border}`,
+                                    padding: isMobile ? '0.75rem 0.5rem' : '0.75rem', // Less padding on mobile
+                                    border: isToday ? `2px solid ${theme.accent}` : `1px solid ${theme.borderColor}`,
                                 }}
                             >
                                 {/* Day header */}
@@ -599,7 +601,7 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                         <span style={{
                                             fontWeight: 'bold',
                                             color: isRedDay(date) ? theme.accent : theme.text,
-                                            fontSize: '1.1rem'
+                                            fontSize: isMobile ? '1rem' : '1.1rem'
                                         }}>
                                             {dayNames[index]} {date.getDate()}/{date.getMonth() + 1}
                                         </span>
@@ -607,45 +609,44 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                             <span style={{
                                                 marginLeft: '0.5rem',
                                                 color: theme.accent,
-                                                fontSize: '0.85rem'
+                                                fontSize: '0.75rem',
+                                                maxWidth: '120px',
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis'
                                             }}>
                                                 {holidayName}
                                             </span>
                                         )}
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto' }}>
                                         {/* Events Indicator */}
                                         {(() => {
-                                            // Sort events by time
                                             const dayEvents = events
                                                 .filter(e => e.start.startsWith(dateStr))
                                                 .sort((a, b) => a.start.localeCompare(b.start));
 
                                             if (dayEvents.length === 0) {
-                                                return (
-                                                    <div style={{ fontSize: '0.7rem', color: theme.textMuted, opacity: 0.5, fontStyle: 'italic' }}>
-                                                        Inga händelser
-                                                    </div>
-                                                );
+                                                return null; // Hide completely if no events to save space
                                             }
 
                                             return (
                                                 <div
                                                     onClick={(e) => { e.stopPropagation(); onNavigateToCalendar && onNavigateToCalendar(dateStr); }}
-                                                    style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginRight: '0.5rem', cursor: 'pointer', flex: '1 1 100px', minWidth: 0, maxWidth: '250px' }}
-                                                    title="Klicka för att se i kalendern"
+                                                    style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        gap: '2px',
+                                                        marginRight: '0.5rem',
+                                                        cursor: 'pointer',
+                                                        maxWidth: isMobile ? '80px' : '200px' // Constrain width on mobile
+                                                    }}
                                                 >
-                                                    {dayEvents.map((ev, i) => {
-                                                        const startTime = ev.start.split('T')[1]?.substring(0, 5);
-                                                        const endTime = ev.end ? ev.end.split('T')[1]?.substring(0, 5) : null;
-                                                        const timeStr = endTime ? `${startTime}-${endTime}` : startTime;
-
-                                                        return (
-                                                            <div key={i} style={{ fontSize: '0.7rem', color: theme.textMuted, lineHeight: '1.2' }}>
-                                                                <span style={{ fontWeight: 500, opacity: 0.8 }}>{timeStr}</span> <span style={{ opacity: 1 }}>{ev.summary}</span>
-                                                            </div>
-                                                        );
-                                                    })}
+                                                    {dayEvents.length > 0 && (
+                                                        <div style={{ fontSize: '0.7rem', color: theme.textMuted, textAlign: 'right' }}>
+                                                            {dayEvents.length} händelse{dayEvents.length !== 1 ? 'r' : ''}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })()}
@@ -655,61 +656,47 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                                 background: theme.accent,
                                                 color: '#fff',
                                                 borderRadius: '6px',
-                                                fontSize: '0.75rem',
-                                                whiteSpace: 'nowrap',
+                                                fontSize: '0.7rem',
+                                                padding: '2px 6px',
                                                 fontWeight: 'bold'
                                             }}>
                                                 IDAG
                                             </span>
                                         )}
-                                        {/* Regenerate button - Only for admins */}
                                         {isAdmin && (
                                             <button
                                                 onClick={() => openRegenModal(dateStr)}
                                                 disabled={isRegeneratingThis || suggesting}
-                                                title="Generera nytt förslag för denna dag"
                                                 style={{
                                                     background: theme.cardBg,
                                                     border: `1px solid ${theme.border}`,
                                                     borderRadius: '6px',
                                                     cursor: isRegeneratingThis ? 'wait' : 'pointer',
-                                                    fontSize: '0.8rem',
-                                                    padding: '0.2rem 0.5rem',
-                                                    marginLeft: 'auto',
-                                                    color: theme.textMuted,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.3rem'
+                                                    padding: '0.2rem 0.5rem'
                                                 }}
                                             >
                                                 <span style={{ fontSize: '1rem' }}>{isRegeneratingThis ? '⏳' : '✨'}</span>
-                                                <span>Ändra</span>
                                             </button>
                                         )}
-                                        <style>{`
-                                            @keyframes spin { 100% { transform: rotate(360deg); } }
-                                        `}</style>
                                     </div>
                                 </div>
 
                                 {/* Meal inputs */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                     {/* Lunch */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', width: '80px', minHeight: '38px', alignItems: 'flex-start' }}>
-                                            <span style={{ color: theme.textMuted, fontSize: '0.9rem' }}>
+                                    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '0.25rem' : '0.75rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', width: isMobile ? '100%' : '80px', justifyContent: 'space-between' }}>
+                                            <span style={{ color: theme.textMuted, fontSize: '0.85rem' }}>
                                                 Lunch
                                                 {dayMeals.authors?.lunch && (
-                                                    <span style={{ marginLeft: '0.3rem', fontSize: '0.7rem' }} title={dayMeals.authors.lunch}>
-                                                        {dayMeals.authors.lunch === 'AI' ? <Icon name="bot" size={12} /> : dayMeals.authors.lunch === 'Svante' ? <Icon name="user" size={12} /> : dayMeals.authors.lunch === 'Sarah' ? <Icon name="user" size={12} /> : <Icon name="edit" size={12} />}
+                                                    <span style={{ marginLeft: '0.3rem', fontSize: '0.7rem' }}>
+                                                        {dayMeals.authors.lunch === 'AI' ? <Icon name="bot" size={12} /> : <Icon name="user" size={12} />}
                                                     </span>
                                                 )}
                                             </span>
-                                            <span style={{ color: theme.text, fontSize: '0.7rem', fontWeight: 'bold', minHeight: '1rem' }}>
-                                                {dayMeals.times?.lunch ? <><Icon name="clock" size={10} style={{ marginRight: '0.2rem' }} />{dayMeals.times.lunch}</> : ''}
-                                            </span>
+                                            {dayMeals.times?.lunch && <span style={{ color: theme.text, fontSize: '0.7rem', fontWeight: 'bold' }}><Icon name="clock" size={10} style={{ marginRight: '0.2rem' }} />{dayMeals.times.lunch}</span>}
                                         </div>
-                                        <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <div style={{ display: 'flex', flex: 1, width: '100%', gap: '0.5rem' }}>
                                             <input
                                                 type="text"
                                                 value={dayMeals.lunch || ''}
@@ -718,32 +705,17 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                                 disabled={!isAdmin}
                                                 style={{
                                                     flex: 1,
-                                                    minWidth: 0,
                                                     background: theme.inputBg,
                                                     border: `1px solid ${theme.border}`,
                                                     borderRadius: '8px',
                                                     padding: '0.6rem 0.8rem',
                                                     color: dayMeals.lunch ? theme.text : theme.textMuted,
-                                                    fontSize: '0.95rem',
-                                                    textOverflow: 'ellipsis',
-                                                    overflow: 'hidden',
-                                                    whiteSpace: 'nowrap',
-                                                    opacity: isAdmin ? 1 : 0.7,
-                                                    cursor: isAdmin ? 'text' : 'not-allowed'
+                                                    fontSize: '0.95rem'
                                                 }}
                                             />
                                             <button
                                                 onClick={() => dayMeals.lunch && openMealDetail(dateStr, 'lunch', dayMeals.lunch, dayMeals.times?.lunch, dayMeals.authors?.lunch)}
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    fontSize: '1.2rem',
-                                                    cursor: dayMeals.lunch ? 'pointer' : 'default',
-                                                    padding: '0.3rem',
-                                                    opacity: dayMeals.lunch ? 0.7 : 0,
-                                                    width: '1.8rem'
-                                                }}
-                                                title={dayMeals.lunch ? "Visa recept" : ""}
+                                                style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: dayMeals.lunch ? 'pointer' : 'default', padding: '0.3rem', opacity: dayMeals.lunch ? 0.7 : 0 }}
                                                 disabled={!dayMeals.lunch}
                                             >
                                                 📖
@@ -752,21 +724,19 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                     </div>
 
                                     {/* Dinner */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                                        <div style={{ display: 'flex', flexDirection: 'column', width: '80px', minHeight: '38px', alignItems: 'flex-start' }}>
-                                            <span style={{ color: theme.textMuted, fontSize: '0.9rem' }}>
+                                    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '0.25rem' : '0.75rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', width: isMobile ? '100%' : '80px', justifyContent: 'space-between' }}>
+                                            <span style={{ color: theme.textMuted, fontSize: '0.85rem' }}>
                                                 Middag
                                                 {dayMeals.authors?.dinner && (
-                                                    <span style={{ marginLeft: '0.3rem', fontSize: '0.7rem' }} title={dayMeals.authors.dinner}>
-                                                        {dayMeals.authors.dinner === 'AI' ? <Icon name="bot" size={12} /> : dayMeals.authors.dinner === 'Svante' ? <Icon name="user" size={12} /> : dayMeals.authors.dinner === 'Sarah' ? <Icon name="user" size={12} /> : <Icon name="edit" size={12} />}
+                                                    <span style={{ marginLeft: '0.3rem', fontSize: '0.7rem' }}>
+                                                        {dayMeals.authors.dinner === 'AI' ? <Icon name="bot" size={12} /> : <Icon name="user" size={12} />}
                                                     </span>
                                                 )}
                                             </span>
-                                            <span style={{ color: theme.text, fontSize: '0.7rem', fontWeight: 'bold', minHeight: '1rem' }}>
-                                                {dayMeals.times?.dinner ? <><Icon name="clock" size={10} style={{ marginRight: '0.2rem' }} />{dayMeals.times.dinner}</> : ''}
-                                            </span>
+                                            {dayMeals.times?.dinner && <span style={{ color: theme.text, fontSize: '0.7rem', fontWeight: 'bold' }}><Icon name="clock" size={10} style={{ marginRight: '0.2rem' }} />{dayMeals.times.dinner}</span>}
                                         </div>
-                                        <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <div style={{ display: 'flex', flex: 1, width: '100%', gap: '0.5rem' }}>
                                             <input
                                                 type="text"
                                                 value={dayMeals.dinner || ''}
@@ -775,32 +745,17 @@ const MealPlanner = ({ holidays = [], darkMode, events = [], onNavigateToCalenda
                                                 disabled={!isAdmin}
                                                 style={{
                                                     flex: 1,
-                                                    minWidth: 0,
                                                     background: theme.inputBg,
                                                     border: `1px solid ${theme.border}`,
                                                     borderRadius: '8px',
                                                     padding: '0.6rem 0.8rem',
                                                     color: theme.text,
-                                                    fontSize: '0.95rem',
-                                                    opacity: isAdmin ? 1 : 0.7,
-                                                    cursor: isAdmin ? 'text' : 'not-allowed',
-                                                    textOverflow: 'ellipsis',
-                                                    overflow: 'hidden',
-                                                    whiteSpace: 'nowrap'
+                                                    fontSize: '0.95rem'
                                                 }}
                                             />
                                             <button
                                                 onClick={() => dayMeals.dinner && openMealDetail(dateStr, 'dinner', dayMeals.dinner, dayMeals.times?.dinner, dayMeals.authors?.dinner)}
-                                                style={{
-                                                    background: 'transparent',
-                                                    border: 'none',
-                                                    fontSize: '1.2rem',
-                                                    cursor: dayMeals.dinner ? 'pointer' : 'default',
-                                                    padding: '0.3rem',
-                                                    opacity: dayMeals.dinner ? 0.7 : 0,
-                                                    width: '1.8rem'
-                                                }}
-                                                title={dayMeals.dinner ? "Visa recept" : ""}
+                                                style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: dayMeals.dinner ? 'pointer' : 'default', padding: '0.3rem', opacity: dayMeals.dinner ? 0.7 : 0 }}
                                                 disabled={!dayMeals.dinner}
                                             >
                                                 📖
