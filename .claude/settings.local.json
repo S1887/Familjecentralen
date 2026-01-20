@@ -15,7 +15,13 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nv3.5.27: Fix ''Ej aktuell'' calendar bug and improve trash labels\n\n- Fix: Events marked as ''Ej aktuell'' now properly deleted from Google Calendar\n- Fix: Show ''EJ AKTUELL'' instead of ''INSTÄLLD'' for trashed subscription events\n- Fix: Trash labels now show correct type \\(Borttagen/Ej aktuell/Ignorerad\\)\n- Convert legacy ''cancelled'' flag to ''isTrashed'' for subscription events\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(gh run list:*)",
       "Bash(python3:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git for-each-ref:*)",
+      "Bash(while read ref)",
+      "Bash(do git update-ref -d \"$ref\")",
+      "Bash(done)",
+      "Bash(git reflog:*)",
+      "Bash(git gc:*)"
     ]
   }
 }

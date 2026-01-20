@@ -39,7 +39,7 @@ const MatchListModal = ({ isOpen, onClose, events, darkMode }) => {
         if (isArsenal) {
             return "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg";
         } else {
-            return "/assets/ois-logo.png";
+            return "./assets/ois-logo.png";
         }
     };
 

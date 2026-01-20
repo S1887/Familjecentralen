@@ -556,7 +556,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                         {isArsenal ? (
                                             <img src="https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" alt="Arsenal" style={{ height: '100%', objectFit: 'contain' }} />
                                         ) : (
-                                            <img src="/assets/ois-logo.png" alt="ÖIS" style={{ height: '100%', objectFit: 'contain' }} />
+                                            <img src="./assets/ois-logo.png" alt="ÖIS" style={{ height: '100%', objectFit: 'contain' }} />
                                         )}
                                     </div>
                                     <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>
