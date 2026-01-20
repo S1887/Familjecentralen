@@ -9,9 +9,9 @@ const MobileGridWeekView = ({
     openEditModal,
     isAllDayEvent,
     onDayClick,
-    onSwipe // New Prop
+    onSwipe,
+    newEventUids // V6.0 Prop
 }) => {
-
     // Swipe State
     const [touchStart, setTouchStart] = useState(0);
     const [touchEnd, setTouchEnd] = useState(0);
@@ -113,14 +113,19 @@ const MobileGridWeekView = ({
                                 const isAllDay = isAllDayEvent ? isAllDayEvent(event) : false;
                                 const timeStr = isAllDay ? null : new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
                                 const colorClass = getEventColorClass ? getEventColorClass(event) : '';
+                                const isNew = newEventUids && newEventUids.has(event.uid);
 
                                 return (
                                     <div
                                         key={event.uid}
                                         className={`mobile-event-compact ${colorClass}`}
                                         onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
+                                        style={{ border: isNew ? '1px solid #ff4757' : 'none' }}
                                     >
-                                        {timeStr && <span className="event-time-compact">{timeStr}</span>}
+                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                            {isNew && <span style={{ color: '#ff4757', marginRight: '2px', fontWeight: 'bold', fontSize: '0.7em' }}>●</span>}
+                                            {timeStr && <span className="event-time-compact">{timeStr}</span>}
+                                        </div>
                                         <span className="event-summary-compact">{event.summary}</span>
                                     </div>
                                 );

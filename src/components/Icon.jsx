@@ -243,6 +243,16 @@ const Icon = ({ name, size = 16, className = '', ...props }) => {
         <path d="M3 22v-6h6" />
         <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
       </svg>
+    ),
+    chevronDown: (
+      <svg {...iconProps}>
+        <polyline points="6 9 12 15 18 9" />
+      </svg>
+    ),
+    chevronUp: (
+      <svg {...iconProps}>
+        <polyline points="18 15 12 9 6 15" />
+      </svg>
     )
 
   };

@@ -175,6 +175,8 @@ function App() {
   const [showInbox, setShowInbox] = useState(false);
   const [inboxData, setInboxData] = useState([]); // Store actual items to track UIDs
   const inboxCount = inboxData.length;
+  // V6.0: Track new events
+  const [newEventUids, setNewEventUids] = useState(new Set());
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('familyOpsDarkMode') !== 'false');
   const [selectedEventForDetail, setSelectedEventForDetail] = useState(null); // Event detail modal state
   const [selectedDayView, setSelectedDayView] = useState(null); // Day view modal state
@@ -593,7 +595,7 @@ function App() {
   useEffect(() => {
     const refreshData = () => {
       fetchEvents();
-      fetchInbox(); // Inbox is lightweight, always fetch
+      fetchNewEvents(); // Replaced fetchInbox
       // Tasks/Schedule/Holidays change less often, maybe skip them for lightweight polling
       // But for consistency let's fetch essential volatile data
       fetchTasks();
@@ -614,7 +616,10 @@ function App() {
     const handleFocus = () => {
       if (document.visibilityState === 'visible') {
         console.log('App focused/visible, checking updates...');
-        refreshData();
+        fetchEvents();
+        fetchNewEvents(); // Replaced fetchInbox
+        // Don't fetch schedule every time, it's heavy? Maybe yes.
+        // fetchSchedule();
       }
     };
 
@@ -626,7 +631,7 @@ function App() {
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleFocus);
     };
-  }, []);
+  }, [currentUser]); // Added currentUser to dependency array for fetchNewEvents
 
   // Force refresh from Google (bypasses cache)
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -645,11 +650,11 @@ function App() {
     }
   };
 
-  // Poll for inbox updates - Re-run if user changes to ensure correct "seen" filter
+  // Poll for new events - Re-run if user changes to ensure correct "seen" filter
   useEffect(() => {
-    fetchInbox();
-    const inboxTimer = setInterval(fetchInbox, 60000);
-    return () => clearInterval(inboxTimer);
+    fetchNewEvents();
+    const newEventsTimer = setInterval(fetchNewEvents, 60000);
+    return () => clearInterval(newEventsTimer);
   }, [currentUser]); // Re-subscribe when user changes
 
   const getSeenInboxIds = () => {
@@ -673,20 +678,6 @@ function App() {
     setInboxData([]); // Clear badge immediately
   };
 
-  const fetchInbox = () => {
-    fetch(getApiUrl('api/inbox'))
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          const seenIds = new Set(getSeenInboxIds());
-          // Filter out seen items for the BADGE (they still show in modal)
-          const unseen = data.filter(item => !seenIds.has(item.uid));
-          setInboxData(unseen);
-        }
-      })
-      .catch(err => console.error("Error fetching inbox count:", err));
-  };
-
   const fetchSchedule = () => {
     fetch(getApiUrl('api/schedule'))
       .then(res => res.json())
@@ -706,7 +697,7 @@ function App() {
           return; // Don't wipe state, just abort
         }
         // 1. GLOBAL CLEANUP & ENRICHMENT
-        // Remove prefixes like "Svante:", tag Football matches, handle cancellation
+        // Remove prefixes like "Name:", tag Football matches, handle cancellation
         const cleanedData = data.map(ev => {
           let newEv = { ...ev };
           const summary = (ev.summary || '');
@@ -822,6 +813,49 @@ function App() {
         setHolidays(holidayEvents);
       })
       .catch(err => console.error("Error fetching holidays:", err));
+  };
+
+  // V6.0: Fetch new events (replaces inbox)
+  const fetchNewEvents = () => {
+    if (!currentUser) return;
+    const query = `?username=${encodeURIComponent(currentUser.name)}&role=${encodeURIComponent(currentUser.role)}`;
+    fetch(getApiUrl(`api/new-events${query}`))
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setInboxData(data);
+          setNewEventUids(new Set(data.map(e => e.uid)));
+        }
+      })
+      .catch(err => console.error("Error fetching new events:", err));
+  };
+
+  // V6.0: Mark single event as seen
+  const markEventAsSeen = (uid) => {
+    if (!currentUser) return;
+    fetch(getApiUrl('api/mark-seen'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: currentUser.name, uid, role: currentUser.role })
+    })
+      .then(res => {
+        if (res.ok) fetchNewEvents();
+      })
+      .catch(err => console.error("Error marking event as seen:", err));
+  };
+
+  // V6.0: Mark all as seen
+  const markAllEventsAsSeen = () => {
+    if (!currentUser) return;
+    fetch(getApiUrl('api/mark-all-seen'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: currentUser.name, role: currentUser.role })
+    })
+      .then(res => {
+        if (res.ok) fetchNewEvents();
+      })
+      .catch(err => console.error("Error marking all as seen:", err));
   };
 
   const fetchTasks = () => {
@@ -1304,6 +1338,11 @@ function App() {
   };
 
   const openEditModal = (event) => {
+    // V6.0: Mark as seen when opening
+    if (newEventUids.has(event.uid)) {
+      markEventAsSeen(event.uid);
+    }
+
     // Show banner only for TRUE external sources (subscriptions)
     // Family Calendar events should be editable natively
     const isExternalSource = event.source &&
@@ -2202,7 +2241,7 @@ function App() {
                           }}
                         >
                           <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Icon name="mail" size={20} style={{ color: '#646cff' }} /> Inkorg
+                            <Icon name="bell" size={20} style={{ color: '#646cff' }} /> Nya händelser
                           </span>
                           {inboxCount > 0 && (
                             <span style={{
@@ -3669,6 +3708,7 @@ function App() {
                     holidays={holidays}
                     changeDay={changeDay}
                     onSwipe={navigateView}
+                    newEventUids={newEventUids}
                   />
                 )}
 
@@ -3687,6 +3727,7 @@ function App() {
                     setActiveTab={setActiveTab}
                     newEvent={newEvent}
                     onSwipe={navigateView}
+                    newEventUids={newEventUids}
                   />
                 )}
 
@@ -3701,6 +3742,7 @@ function App() {
                     isAllDayEvent={isAllDayEvent}
                     onDayClick={(day) => setSelectedDayView(day)}
                     onSwipe={navigateView}
+                    newEventUids={newEventUids}
                   />
                 )}
 
@@ -4187,17 +4229,17 @@ function App() {
             </div>
           </div>
         </div>
-        {/* Inbox Modal */}
+        {/* Inbox Modal (V6.0: "Nya händelser") */}
         <InboxModal
           isOpen={showInbox}
+          currentUser={currentUser}
           onClose={() => {
             setShowInbox(false);
-            fetchInbox(); // Refresh to ensure sync (e.g. if new items arrived while open)
+            fetchNewEvents(); // Refresh badge
           }}
-          onImport={(item) => {
-            // We rely on polling or close to update badge, but since badge is usually 0 when open, this is fine
-          }}
+          onMarkAllSeen={markAllEventsAsSeen}
           getGoogleLink={getGoogleCalendarLink}
+          onEdit={openEditModal}
         />
 
         {/* Event Detail Modal */}

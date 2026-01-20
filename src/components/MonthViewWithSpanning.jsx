@@ -17,7 +17,8 @@ const MonthViewWithSpanning = ({
     newEvent,
     holidays = [],
     changeDay,
-    onSwipe
+    onSwipe,
+    newEventUids // Prop för V6.0 nya händelser
 }) => {
     // Swipe Logic
     const touchStart = React.useRef(null);
@@ -204,6 +205,7 @@ const MonthViewWithSpanning = ({
                             const colorClass = getEventColorClass(ev);
                             const slotIndex = eventsByRow[ev.row].indexOf(ev);
 
+                            const isNew = newEventUids && newEventUids.has(ev.uid);
                             return (
                                 <div
                                     key={ev.uid + '-' + ev.cellStart}
@@ -219,7 +221,7 @@ const MonthViewWithSpanning = ({
                                         fontWeight: '600',
                                         borderRadius: ev.isStart && ev.isEnd ? '6px' : ev.isStart ? '6px 0 0 6px' : ev.isEnd ? '0 6px 6px 0' : '0',
                                         background: 'var(--card-bg)',
-                                        border: '1px solid var(--border-color)',
+                                        border: isNew ? '2px solid #ff4757' : '1px solid var(--border-color)', // Highlight new
                                         cursor: 'pointer',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
@@ -229,8 +231,9 @@ const MonthViewWithSpanning = ({
                                         textDecoration: ev.isTrashed || ev.cancelled ? 'line-through' : 'none'
                                     }}
                                     onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
-                                    title={`${ev.summary}${ev.location && ev.location !== 'Okänd plats' ? `\n📍 ${ev.location}` : ''}${ev.assignments && (ev.assignments.driver || ev.assignments.packer) ? `\n${ev.assignments.driver ? `Bil: ${ev.assignments.driver}` : ''}${ev.assignments.driver && ev.assignments.packer ? ' • ' : ''}${ev.assignments.packer ? `Ryggsäck: ${ev.assignments.packer}` : ''}` : ''}`}
+                                    title={`${isNew ? 'NY!!! ' : ''}${ev.summary}${ev.location && ev.location !== 'Okänd plats' ? `\n📍 ${ev.location}` : ''}${ev.assignments && (ev.assignments.driver || ev.assignments.packer) ? `\n${ev.assignments.driver ? `Bil: ${ev.assignments.driver}` : ''}${ev.assignments.driver && ev.assignments.packer ? ' • ' : ''}${ev.assignments.packer ? `Ryggsäck: ${ev.assignments.packer}` : ''}` : ''}`}
                                 >
+                                    {isNew && <span style={{ color: '#ff4757', fontWeight: 'bold' }}>● </span>}
                                     {ev.isTrashed && <span style={{ color: '#9b59b6', marginRight: '0.2rem' }}>EJ</span>}
                                     {ev.cancelled ? '🚫 ' : ''}{ev.summary}
                                 </div>
@@ -240,17 +243,20 @@ const MonthViewWithSpanning = ({
                         {/* Single-day events */}
                         {dayEvents.slice(0, 3 - Math.min(slotsInRow, 2)).map(ev => {
                             const colorClass = getEventColorClass(ev);
+                            const isNew = newEventUids && newEventUids.has(ev.uid);
                             return (
                                 <div
                                     key={ev.uid}
                                     className={`calendar-event ${colorClass}`}
                                     style={{
                                         textDecoration: ev.cancelled || ev.isTrashed ? 'line-through' : 'none',
-                                        opacity: ev.cancelled || ev.isTrashed ? 0.6 : 1
+                                        opacity: ev.cancelled || ev.isTrashed ? 0.6 : 1,
+                                        border: isNew ? '1px solid #ff4757' : 'none'
                                     }}
-                                    title={`${ev.summary}${ev.location && ev.location !== 'Okänd plats' ? `\n📍 ${ev.location}` : ''}${ev.assignments && (ev.assignments.driver || ev.assignments.packer) ? `\n${ev.assignments.driver ? `Bil: ${ev.assignments.driver}` : ''}${ev.assignments.driver && ev.assignments.packer ? ' • ' : ''}${ev.assignments.packer ? `Ryggsäck: ${ev.assignments.packer}` : ''}` : ''}`}
+                                    title={`${isNew ? 'NY!!! ' : ''}${ev.summary}${ev.location && ev.location !== 'Okänd plats' ? `\n📍 ${ev.location}` : ''}${ev.assignments && (ev.assignments.driver || ev.assignments.packer) ? `\n${ev.assignments.driver ? `Bil: ${ev.assignments.driver}` : ''}${ev.assignments.driver && ev.assignments.packer ? ' • ' : ''}${ev.assignments.packer ? `Ryggsäck: ${ev.assignments.packer}` : ''}` : ''}`}
                                     onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                                 >
+                                    {isNew && <span style={{ color: '#ff4757', fontWeight: 'bold', fontSize: '10px', marginRight: '2px' }}>NY</span>}
                                     {ev.isTrashed && <span style={{ color: '#9b59b6', marginRight: '0.2rem' }}>EJ</span>}
                                     {ev.cancelled ? '🚫 ' : ''}
                                     {!isAllDayEvent(ev) && (

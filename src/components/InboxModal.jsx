@@ -1,86 +1,116 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getApiUrl } from '../utils/api';
 import Icon from './Icon';
 
-
-export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink }) {
+// V6.0: "Inkorg" is now "Nya händelser" list.
+// Shows events that the user hasn't seen yet.
+export default function InboxModal({ isOpen, onClose, currentUser, onMarkAllSeen, getGoogleLink, onEdit }) {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [importedUids, setImportedUids] = useState(new Set());
+    const [expandedGroups, setExpandedGroups] = useState(new Set());
 
     useEffect(() => {
-        if (isOpen) {
-            fetchInbox();
+        if (isOpen && currentUser) {
+            fetchNewEvents();
         }
-    }, [isOpen]);
+    }, [isOpen, currentUser]);
 
-    const fetchInbox = async () => {
+    const fetchNewEvents = async () => {
+        if (!currentUser) return;
         setLoading(true);
         try {
-            const res = await fetch(getApiUrl('/api/inbox'));
+            const url = getApiUrl(`api/new-events?username=${encodeURIComponent(currentUser.name)}&role=${encodeURIComponent(currentUser.role)}`);
+            const res = await fetch(url);
             const data = await res.json();
-            // Sort by date (ascending)
-            data.sort((a, b) => new Date(a.start) - new Date(b.start));
-            setItems(data);
+
+            // Backend V6.0 returns array directly, but check for old structure too
+            const events = Array.isArray(data) ? data : (data.events || []);
+
+            if (events.length > 0) {
+                // Sort by date (ascending)
+                const sorted = events.sort((a, b) => new Date(a.start) - new Date(b.start));
+                setItems(sorted);
+            } else {
+                setItems([]);
+            }
         } catch (err) {
-            console.error("Failed to fetch inbox", err);
-            setError('Kunde inte hämta händelser.');
+            console.error("Failed to fetch new events", err);
+            setError('Kunde inte hämta nya händelser.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleIgnore = async (uid, e) => {
+    const handleMarkAllSeen = async () => {
+        if (onMarkAllSeen) {
+            await onMarkAllSeen();
+            setItems([]); // Clear list immediately
+            onClose(); // Close modal
+        }
+    };
+
+    const handleTrash = async (item, e) => {
         e.stopPropagation();
+        if (!window.confirm(`Vill du flytta "${item.summary}" till papperskorgen?`)) return;
+
         try {
-            await fetch(getApiUrl('/api/ignore-event'), {
+            await fetch(getApiUrl('api/trash'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ uid })
+                body: JSON.stringify({
+                    uid: item.uid,
+                    summary: item.summary,
+                    start: item.start,
+                    source: item.source
+                })
             });
-            setItems(items.filter(i => i.uid !== uid));
+            // Remove from list locally
+            setItems(items.filter(i => i.uid !== item.uid));
         } catch (err) {
-            console.error("Failed to ignore event", err);
+            console.error("Failed to trash event", err);
+            alert("Kunde inte ta bort händelsen.");
         }
     };
 
-    const handleImport = (item) => {
-        setImportedUids(prev => new Set([...prev, item.uid]));
-        onImport(item);
-    };
+    const handleMarkGroupSeen = async (groupEvents, e) => {
+        e.stopPropagation();
+        if (!window.confirm(`Markera alla ${groupEvents.length} som lästa?`)) return;
 
-    const handleSaveToGoogle = (item, e) => {
-        if (getGoogleLink) {
-            const url = getGoogleLink(item, true); // forceSave = true
-            // Mobile-friendly link opening (works in HA app iframe)
-            const link = document.createElement('a');
-            link.href = url;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.click();
-        }
-        // Auto-ignore (hide) from inbox since we handled it
-        handleIgnore(item.uid, e);
-    };
+        const groupUids = groupEvents.map(ev => ev.uid);
+        // Optimistic UI update
+        setItems(prev => prev.filter(item => !groupUids.includes(item.uid)));
 
-    const handleReturnToInbox = async (uid) => {
+        // Fire requests
         try {
-            await fetch('http://localhost:3001/api/return-to-inbox', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ uid })
-            });
-            setImportedUids(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(uid);
-                return newSet;
-            });
-            // Refresh inbox to show it again
-            fetchInbox();
-        } catch (err) {
-            console.error("Failed to return to inbox", err);
-        }
+            await Promise.all(groupUids.map(uid =>
+                fetch(getApiUrl('api/mark-seen'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: currentUser.name, uid, role: currentUser.role })
+                })
+            ));
+            // Refresh in background to be sure
+            fetchNewEvents();
+        } catch (err) { console.error(err); }
+    };
+
+    // Group items
+    const groupedItems = useMemo(() => {
+        const groups = {};
+        items.forEach(item => {
+            const key = `${item.summary}|${item.source}`;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(item);
+        });
+        return Object.values(groups)
+            .sort((a, b) => new Date(a[0].start) - new Date(b[0].start));
+    }, [items]);
+
+    const toggleGroup = (groupId) => {
+        const next = new Set(expandedGroups);
+        if (next.has(groupId)) next.delete(groupId); else next.add(groupId);
+        setExpandedGroups(next);
     };
 
     if (!isOpen) return null;
@@ -99,163 +129,186 @@ export default function InboxModal({ isOpen, onClose, onImport, getGoogleLink })
                 maxWidth: '700px',
                 maxHeight: '80vh',
                 overflowY: 'auto',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+                boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                position: 'relative'
             }} onClick={e => e.stopPropagation()}>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h2><Icon name="mail" size={20} style={{ marginRight: '0.5rem' }} />Inkorg Händelser</h2>
-                    <button onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}><Icon name="x" size={20} /></button>
-                </div>
+                <button
+                    onClick={onClose}
+                    style={{
+                        position: 'absolute', top: '1rem', right: '1rem',
+                        background: 'transparent', border: 'none',
+                        fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)'
+                    }}
+                >×</button>
 
-                {loading && <p>Laddar...</p>}
-                {error && <p style={{ color: 'red' }}>{error}</p>}
+                <h2 style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Icon name="bell" size={24} style={{ color: '#646cff' }} />
+                    Nya händelser
+                </h2>
 
-                {!loading && items.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.7 }}>
-                        <p>Inga nya händelser i inkorgen.</p>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                    Här är händelser som tillkommit eller ändrats sedan du senast tittade.
+                </p>
+
+                {error && <p style={{ color: '#ff4757' }}>{error}</p>}
+
+                {loading ? (
+                    <p>Laddar...</p>
+                ) : !error && items.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                        <Icon name="check" size={48} style={{ color: '#2ed573', marginBottom: '1rem', display: 'block', margin: '0 auto 1rem auto' }} />
+                        <p>Du har inga nya händelser!</p>
                     </div>
-                )}
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {groupedItems.map(group => {
+                            const isSingle = group.length === 1;
+                            const firstItem = group[0];
+                            const groupId = `${firstItem.summary}|${firstItem.source}`;
+                            const isExpanded = expandedGroups.has(groupId);
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {items.map(item => {
-                        const isPast = new Date(item.start) < new Date();
-                        const isImported = importedUids.has(item.uid);
-                        return (
-                            <div key={item.uid} style={{
-                                border: '1px solid var(--border-color, #eee)',
-                                padding: '1rem',
-                                borderRadius: '8px',
-                                background: isImported ? '#e8f5e9' : (isPast ? '#f9f9f9' : 'var(--card-bg, #fff)'),
-                                opacity: (isPast || isImported) ? 0.8 : 1,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '0.5rem',
-                                position: 'relative'
-                            }}>
-                                {isPast && !isImported && (
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '0.5rem',
-                                        right: '0.5rem',
-                                        background: '#95a5a6',
-                                        color: 'white',
-                                        fontSize: '0.7rem',
-                                        padding: '0.2rem 0.5rem',
-                                        borderRadius: '4px',
-                                        fontWeight: 'bold'
-                                    }}>
-                                        PASSERAD
-                                    </div>
-                                )}
-                                {isImported && (
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '0.5rem',
-                                        right: '0.5rem',
-                                        background: '#4caf50',
-                                        color: 'white',
-                                        fontSize: '0.7rem',
-                                        padding: '0.2rem 0.5rem',
-                                        borderRadius: '4px',
-                                        fontWeight: 'bold'
-                                    }}>
-                                        <Icon name="check" size={12} style={{ marginRight: '4px' }} /> TILLAGD
-                                    </div>
-                                )}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div>
-                                        <h3 style={{ margin: '0 0 0.2rem 0', fontSize: '1.1rem', textDecoration: (isPast || isImported) ? 'line-through' : 'none', color: (isPast || isImported) ? '#7f8c8d' : 'inherit' }}>
-                                            {item.summary}
-                                        </h3>
-                                        <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-                                            {new Date(item.start).toLocaleString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-                                        </div>
-                                        <div style={{ fontSize: '0.8rem', fontStyle: 'italic', marginTop: '0.2rem' }}>
-                                            Källa: {item.source}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                                    {/* Aktuell - marks event for feed.ics inclusion */}
-                                    {!isImported && !isPast && (
-                                        <button
-                                            onClick={async (e) => {
-                                                e.stopPropagation();
-                                                try {
-                                                    // Mark as approved and save event for feed.ics
-                                                    await fetch(getApiUrl('/api/approve-inbox'), {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ uid: item.uid, event: item })
-                                                    });
-                                                    setImportedUids(prev => new Set([...prev, item.uid]));
-                                                    // Remove from list after short delay
-                                                    setTimeout(() => {
-                                                        setItems(items.filter(i => i.uid !== item.uid));
-                                                    }, 1000);
-                                                } catch (err) {
-                                                    console.error("Failed to approve event", err);
-                                                }
-                                            }}
-                                            style={{
-                                                flex: 1,
-                                                padding: '0.6rem',
-                                                background: '#2ed573',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                                cursor: 'pointer',
-                                                fontWeight: 600,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '0.5rem',
-                                                minWidth: '120px'
-                                            }}
-                                        >
-                                            <Icon name="check" size={16} /> Aktuell
-                                        </button>
-                                    )}
-
-                                    {/* Ej aktuell - moves to trash */}
-                                    <button
-                                        onClick={async (e) => {
-                                            e.stopPropagation();
-                                            try {
-                                                await fetch(getApiUrl('/api/ignore-inbox'), {
-                                                    method: 'POST',
-                                                    headers: { 'Content-Type': 'application/json' },
-                                                    body: JSON.stringify({
-                                                        uid: item.uid,
-                                                        summary: item.summary,
-                                                        start: item.start,
-                                                        source: item.source
-                                                    })
-                                                });
-                                                setItems(items.filter(i => i.uid !== item.uid));
-                                            } catch (err) {
-                                                console.error("Failed to trash event", err);
+                            if (isSingle) {
+                                return (
+                                    <div key={firstItem.uid}
+                                        onClick={() => {
+                                            if (onEdit) {
+                                                onEdit(firstItem);
+                                                onClose();
                                             }
                                         }}
                                         style={{
-                                            padding: '0.6rem 1rem',
-                                            background: 'transparent',
-                                            border: '1px solid #ffa502',
-                                            color: '#ffa502',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            fontWeight: 600
-                                        }}
-                                    >
-                                        <Icon name="ban" size={16} style={{ marginRight: '0.3rem' }} /> Ej aktuell
-                                    </button>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                                            padding: '1rem',
+                                            border: '1px solid var(--border-color)',
+                                            borderRadius: '8px',
+                                            background: 'var(--card-bg)',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            gap: '1rem',
+                                            cursor: onEdit ? 'pointer' : 'default'
+                                        }}>
+                                        <div>
+                                            <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{firstItem.summary}</div>
+                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                                {new Date(firstItem.start).toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                                {firstItem.time ? ` kl ${firstItem.time}` : ''}
+                                            </div>
+                                            <div style={{ fontSize: '0.8rem', opacity: 0.8, marginTop: '0.2rem' }}>
+                                                {firstItem.source}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <button
+                                                onClick={(e) => handleTrash(firstItem, e)}
+                                                title="Ta bort (ej aktuell)"
+                                                style={{
+                                                    background: '#ffeaa7',
+                                                    border: 'none',
+                                                    borderRadius: '50%',
+                                                    width: '36px', height: '36px',
+                                                    cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: '#d63031'
+                                                }}
+                                            >
+                                                <Icon name="trash" size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            }
 
+                            // Render Group (Multiple items)
+                            return (
+                                <div key={groupId} style={{ border: '2px solid var(--border-color)', borderRadius: '12px', background: 'var(--card-bg)', overflow: 'hidden' }}>
+                                    {/* Group Header */}
+                                    <div
+                                        onClick={() => toggleGroup(groupId)}
+                                        style={{ padding: '1rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.03)' }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                                            <div style={{
+                                                background: '#646cff', color: 'white', borderRadius: '50%',
+                                                width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.9rem'
+                                            }}>
+                                                {group.length}
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{firstItem.summary}</div>
+                                                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                                    {group.length} händelser från {firstItem.source}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                            <button onClick={(e) => handleMarkGroupSeen(group, e)}
+                                                style={{
+                                                    border: '1px solid #646cff', borderRadius: '20px', padding: '0.4rem 0.8rem',
+                                                    background: 'transparent', color: '#646cff', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem'
+                                                }}
+                                            >
+                                                Markera alla lästa
+                                            </button>
+                                            <Icon name={isExpanded ? 'chevronUp' : 'chevronDown'} size={20} style={{ opacity: 0.5 }} />
+                                        </div>
+                                    </div>
+
+                                    {/* Group Content (Expanded) */}
+                                    {isExpanded && (
+                                        <div style={{ borderTop: '1px solid var(--border-color)' }}>
+                                            {group.map(item => (
+                                                <div key={item.uid}
+                                                    onClick={() => { if (onEdit) { onEdit(item); onClose(); } }}
+                                                    style={{
+                                                        padding: '0.8rem 1rem',
+                                                        borderBottom: '1px solid var(--border-color)',
+                                                        cursor: 'pointer',
+                                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                        background: 'white'
+                                                    }}>
+                                                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                                        <span style={{ fontWeight: '500' }}>{new Date(item.start).toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                                                        <span style={{ color: 'var(--text-muted)' }}>{item.time || new Date(item.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={(e) => handleTrash(item, e)}
+                                                        title="Ta bort"
+                                                        style={{
+                                                            background: 'transparent', border: 'none', cursor: 'pointer', color: '#d63031', opacity: 0.6
+                                                        }}
+                                                    >
+                                                        <Icon name="trash" size={16} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+
+                        <button
+                            onClick={handleMarkAllSeen}
+                            style={{
+                                marginTop: '1rem',
+                                padding: '0.8rem',
+                                background: '#646cff',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontSize: '1rem',
+                                cursor: 'pointer',
+                                fontWeight: 'bold',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
+                            }}
+                        >
+                            <Icon name="check" size={18} />
+                            Markera alla som lästa
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

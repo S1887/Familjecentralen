@@ -13,7 +13,8 @@ const WeekViewWithSpanning = ({
     setNewEvent,
     setActiveTab,
     newEvent,
-    onSwipe
+    onSwipe,
+    newEventUids // V6.0 prop
 }) => {
     // Scroll to Today on Mount/Update
 
@@ -288,6 +289,7 @@ const WeekViewWithSpanning = ({
                             const colorClass = getEventColorClass(event);
                             const widthPercent = (event.span / 7) * 100;
                             const leftPercent = ((event.gridStart - 1) / 7) * 100;
+                            const isNew = newEventUids && newEventUids.has(event.uid);
 
                             return (
                                 <div key={event.uid} className={`card ${colorClass}`}
@@ -309,9 +311,10 @@ const WeekViewWithSpanning = ({
                                         overflow: 'hidden',
                                         whiteSpace: 'nowrap',
                                         zIndex: 10,
-                                        border: 'none' // Rely on background color
+                                        border: isNew ? '2px solid #ff4757' : 'none' // Rely on background color
                                     }}
                                 >
+                                    {isNew && <span style={{ color: '#ff4757', fontWeight: 'bold', marginRight: '4px' }}>● </span>}
                                     <span style={{ fontWeight: '600', marginRight: '4px' }}>{event.summary}</span>
                                 </div>
                             );
@@ -520,6 +523,7 @@ const WeekViewWithSpanning = ({
                                         if (topPx + heightPx < 0 || topPx > TOTAL_HEIGHT) return null;
 
                                         const colorClass = getEventColorClass(event);
+                                        const isNew = newEventUids && newEventUids.has(event.uid);
 
                                         return (
                                             <div
@@ -542,11 +546,13 @@ const WeekViewWithSpanning = ({
                                                     overflow: 'hidden',
                                                     display: 'flex',
                                                     flexDirection: 'column',
-                                                    lineHeight: '1.2'
+                                                    lineHeight: '1.2',
+                                                    border: isNew ? '2px solid #ff4757' : 'none'
                                                 }}
                                             >
 
                                                 <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '700', fontSize: '0.75rem' }}>
+                                                    {isNew && <span style={{ color: '#ff4757', marginRight: '2px' }}>● </span>}
                                                     {event.summary}
                                                 </div>
                                             </div>

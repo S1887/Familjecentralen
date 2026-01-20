@@ -2849,6 +2849,110 @@ app.post('/api/ignore-inbox', async (req, res) => {
 });
 
 
+
+// V6.0: Seen Events Logic
+const SEEN_EVENTS_FILE = path.join(DATA_DIR, 'seen_events.json');
+
+const readSeenEventsSync = (username) => {
+    if (!fs.existsSync(SEEN_EVENTS_FILE)) return [];
+    try {
+        const data = JSON.parse(fs.readFileSync(SEEN_EVENTS_FILE, 'utf8'));
+        return data[username] || []; // Returns array of UIDs
+    } catch (e) { return []; }
+};
+
+const addSeenEventSync = (username, uid) => {
+    let data = {};
+    if (fs.existsSync(SEEN_EVENTS_FILE)) {
+        try { data = JSON.parse(fs.readFileSync(SEEN_EVENTS_FILE, 'utf8')); } catch (e) { }
+    }
+    if (!data[username]) data[username] = [];
+    if (!data[username].includes(uid)) {
+        data[username].push(uid);
+        fs.writeFileSync(SEEN_EVENTS_FILE, JSON.stringify(data, null, 2));
+    }
+};
+
+const markAllSeenSync = (username, uids) => {
+    let data = {};
+    if (fs.existsSync(SEEN_EVENTS_FILE)) {
+        try { data = JSON.parse(fs.readFileSync(SEEN_EVENTS_FILE, 'utf8')); } catch (e) { }
+    }
+    // Merge new UIDs
+    const existing = new Set(data[username] || []);
+    uids.forEach(uid => existing.add(uid));
+    data[username] = Array.from(existing);
+    fs.writeFileSync(SEEN_EVENTS_FILE, JSON.stringify(data, null, 2));
+};
+
+// V6.0: New Events API
+
+// Sources/Keywords to exclude from notifications (Spam filter)
+const IGNORED_NOTIFICATION_SOURCES = ['Arsenal', 'ÖIS', 'Örgryte', 'Superettan'];
+
+app.get('/api/new-events', async (req, res) => {
+    try {
+        const { username } = req.query;
+        if (!username) return res.status(400).json({ error: 'Username required' });
+
+        const allEvents = await fetchAndCacheCalendars(); // Get fresh/cached data
+        const seenIds = new Set(readSeenEventsSync(username));
+
+        // V6.0 MIGRATION LOGIC:
+        // If user has NO seen history (first run after update), assume everything is seen.
+        // This prevents showing 1000+ old events as "new".
+        if (seenIds.size === 0) {
+            console.log(`[Migration] First run for user '${username}'. Marking all ${allEvents.length} events as seen.`);
+            const allUids = allEvents.map(e => e.uid);
+            markAllSeenSync(username, allUids);
+            return res.json([]); // Start fresh
+        }
+
+        // Filter helper
+        const shouldNotify = (e) => {
+            // Basic checks
+            if (seenIds.has(e.uid)) return false;
+            if (e.deleted || e.cancelled) return false;
+
+            // Source/Keyword check
+            const textToCheck = ((e.source || '') + (e.summary || '')).toLowerCase();
+            if (IGNORED_NOTIFICATION_SOURCES.some(s => textToCheck.includes(s.toLowerCase()))) return false;
+
+            return true;
+        };
+
+        const newEvents = allEvents.filter(shouldNotify);
+
+        res.json(newEvents);
+    } catch (e) {
+        console.error("Error fetching new events:", e);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.post('/api/mark-seen', (req, res) => {
+    const { username, uid } = req.body;
+    if (!username || !uid) return res.status(400).json({ error: 'Missing fields' });
+    addSeenEventSync(username, uid);
+    res.json({ success: true });
+});
+
+app.post('/api/mark-all-seen', async (req, res) => {
+    const { username } = req.body;
+    if (!username) return res.status(400).json({ error: 'Missing fields' });
+
+    try {
+        // We mark ALL CURRENTLY VISIBLE events as seen
+        const allEvents = await fetchAndCacheCalendars();
+        const uids = allEvents.map(e => e.uid);
+        markAllSeenSync(username, uids);
+        res.json({ success: true });
+    } catch (e) {
+        console.error("Mark all seen error:", e);
+        res.status(500).json({ error: 'Failed' });
+    }
+});
+
 app.get('/api/schedule', async (req, res) => {
     try {
         // Fetch fresh/cached calendars
