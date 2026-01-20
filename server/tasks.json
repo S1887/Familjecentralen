@@ -1,0 +1,25 @@
+[
+  {
+    "id": "1765643113974",
+    "text": "Tillaga fläskfile",
+    "assignee": "Svante",
+    "week": 50,
+    "days": [
+      "Lör"
+    ],
+    "isRecurring": false,
+    "done": true,
+    "createdAt": "2025-12-13T16:25:13.974Z"
+  },
+  {
+    "id": "1765869028082",
+    "text": "PERSISTENCE_TEST_CLI",
+    "assignee": "TestBot",
+    "week": null,
+    "days": [],
+    "isRecurring": false,
+    "done": false,
+    "completedWeeks": [],
+    "createdAt": "2025-12-16T07:10:28.082Z"
+  }
+]

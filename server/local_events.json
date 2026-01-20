@@ -1,0 +1,1952 @@
+[
+  {
+    "_id": "6941894551b5f1d36d4054b7",
+    "uid": "k6ssv3i4a9d0egvp5jum71lvk1anr7pc8ei9ll08l3vpj0oare4dcs8oo6@google.com",
+    "summary": "Algot bandyträning",
+    "location": "Sparbanken Lidköping Arena, O 2578",
+    "start": "2025-12-15T15:20:00.000Z",
+    "end": "2025-12-15T16:20:00.000Z",
+    "description": "Arenan",
+    "todoList": [
+      {
+        "id": 1765657972745,
+        "text": "Slipa skridskorna",
+        "done": true
+      }
+    ],
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-13T13:23:06.441Z",
+    "coords": {
+      "lat": 58.494426,
+      "lon": 13.1427987
+    },
+    "assignees": [],
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054bc",
+    "uid": "4hiqcv5njnpto33qnq7njn2cgj@google.com",
+    "summary": "test 3",
+    "start": "2025-12-14T19:00:00.000Z",
+    "end": "2025-12-14T20:00:00.000Z",
+    "source": "Svante (Privat)",
+    "deleted": true,
+    "deletedAt": "2025-12-13T19:03:26.180Z",
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054be",
+    "uid": "in3l6o1at5eb8o1m15ig1iu28rdl91kk36mg3s7hhaou10kv2lsnoeq2lk@google.com",
+    "summary": "Algot bandyträning?",
+    "start": "2025-12-17T17:00:00.000Z",
+    "end": "2025-12-17T18:00:00.000Z",
+    "source": "Sarah (Privat)",
+    "deleted": true,
+    "deletedAt": "2025-12-13T20:30:57.694Z",
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054bf",
+    "uid": "3c3b1888-026d-4666-8bd8-21ccdcee9088",
+    "summary": "Leon: TEst55",
+    "location": "",
+    "coords": null,
+    "start": "2025-12-16T14:00:00.000Z",
+    "end": "2025-12-16T15:00:00.000Z",
+    "description": "Hur syns dett?",
+    "assignee": "Leon",
+    "todoList": [],
+    "createdBy": "Admin",
+    "createdAt": "2025-12-15T09:33:27.828Z",
+    "deleted": true,
+    "cancelled": false,
+    "assignees": [
+      "Leon"
+    ],
+    "deletedAt": "2025-12-16T07:07:45.342Z",
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054b8",
+    "uid": "goj2vmg0vkn94130hasvpcbmurmk1fi5lk7s4hbo0fpqagn53es98k9chb@google.com",
+    "summary": "Tuva handbollsskola",
+    "location": "De la Gardiegymnasiet",
+    "coords": {
+      "lat": 58.5047424,
+      "lon": 13.1496512
+    },
+    "start": "2025-12-13T09:00:00.000Z",
+    "end": "2025-12-13T10:00:00.000Z",
+    "description": "",
+    "todoList": [],
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-13T13:47:51.510Z",
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054bb",
+    "uid": "7a28cb9e-a290-4e44-bca6-4a220e9f58ce",
+    "summary": "test 3",
+    "start": "2025-12-14T19:00:00.000Z",
+    "end": "2025-12-14T20:00:00.000Z",
+    "assignee": "Svante",
+    "createdBy": "Svante",
+    "createdAt": "2025-12-13T16:50:36.686Z",
+    "cancelled": true,
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054bd",
+    "uid": "3d81t3n8nvqjobj765ifn0223n@google.com",
+    "summary": "Mariestad 2HKL 2",
+    "location": "Stöpenhallen, Hästskovägen 4, 549 70 Skövde, Sverige",
+    "coords": null,
+    "start": "2025-12-20T11:50:00.000Z",
+    "end": "2025-12-20T12:50:00.000Z",
+    "description": "<table> <colgroup><col /> <col /> </colgroup><tbody><tr>  <td>3</td>  <td>4</td>  <td>Stöpenhallen, Skövde</td> </tr></tbody></table>",
+    "todoList": [],
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-13T20:16:49.843Z",
+    "cancelled": false,
+    "deleted": false,
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054c0",
+    "uid": "hcogcfgo8ilgc7cc9ht3cd40hdud3kf1psf9hv9i737t1mtguqk5secne5@google.com",
+    "summary": "Semester",
+    "location": "Okänd plats",
+    "coords": null,
+    "start": "2025-12-16T23:00:00.000Z",
+    "end": "2025-12-16T23:00:00.000Z",
+    "description": "",
+    "todoList": [],
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-15T09:38:21.615Z",
+    "cancelled": false,
+    "deleted": false,
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054c1",
+    "uid": "2hc9ng36kasjurfq6i9c0sne3si0lqd3mvqui5g6jed0f32uhsg0q2dgo3@google.com",
+    "summary": "Algot: Algot handbollsträning",
+    "location": "Rörstrand",
+    "coords": null,
+    "start": "2025-12-16T17:00:00.000Z",
+    "end": "2025-12-16T18:30:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": null,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-15T09:58:06.237Z",
+    "cancelled": false,
+    "deleted": true,
+    "deletedAt": "2025-12-15T20:29:14.309Z",
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054c2",
+    "uid": "1cc1jclc0hsn227f9l6qks7jmo@google.com",
+    "summary": "Algot & Leon: Klippning",
+    "location": "Okänd plats",
+    "coords": null,
+    "start": "2025-12-18T15:30:00.000Z",
+    "end": "2025-12-18T17:00:00.000Z",
+    "description": "\n\nTilldelad: Svante, Algot, Leon",
+    "todoList": [],
+    "assignee": "Algot, Leon",
+    "assignees": [
+      "Algot",
+      "Leon"
+    ],
+    "category": "Annat",
+    "source": "Svante (Privat) (Redigerad)",
+    "createdAt": "2025-12-15T20:30:27.456Z",
+    "cancelled": false,
+    "deleted": false,
+    "migratedAt": "2025-12-16T16:31:01.664Z",
+    "updatedAt": "2025-12-17T19:29:54.654Z"
+  },
+  {
+    "_id": "6941c445e3f5ddd5c2360a59",
+    "uid": "7g9i5qdd6uvnj3bpcutk4qs3fo@google.com",
+    "summary": "Svante: test 2",
+    "location": "",
+    "coords": null,
+    "start": "2025-12-16T20:22:00.000Z",
+    "end": "2025-12-16T21:22:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "",
+    "assignees": [],
+    "category": null,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-16T20:42:45.338Z",
+    "cancelled": true,
+    "deleted": false
+  },
+  {
+    "_id": "6941d44d378b20f1ed2de4a0",
+    "uid": "24ce72d1-68b1-44f0-b27e-e162ab74ac43",
+    "summary": "Test i fam op",
+    "location": null,
+    "coords": null,
+    "start": "2025-12-17T19:00:00.000Z",
+    "end": "2025-12-17T20:00:00.000Z",
+    "description": null,
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": null,
+    "createdBy": "Admin",
+    "createdAt": "2025-12-16T21:51:09.888Z",
+    "deleted": false,
+    "cancelled": false,
+    "source": null,
+    "updatedAt": "2025-12-16T21:58:39.158Z",
+    "deletedAt": null
+  },
+  {
+    "_id": "6942953e8c14ed919f10fa99",
+    "uid": "dil5qov608hg7rutl8smmfjg4dt2ns33dfgetv73e7mpum863i3epkptdi@google.com",
+    "summary": "Jul i Filsbäck",
+    "location": "Okänd plats",
+    "coords": null,
+    "start": "2025-12-24T11:30:00.000Z",
+    "end": "2025-12-24T12:30:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "",
+    "assignees": [],
+    "category": "Annat",
+    "source": "Sarah (Privat) (Redigerad)",
+    "createdAt": "2025-12-17T11:34:22.237Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "_id": "6942a3f55eabfa181ab66e26",
+    "uid": "4b8671f1-3ffe-4ebf-bfe8-62d479ba939e",
+    "summary": "Twst",
+    "location": "",
+    "coords": null,
+    "start": "2025-12-18T12:36:00.000Z",
+    "end": "2025-12-18T18:15:00.000Z",
+    "description": "Hsbd",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": "Annat",
+    "todoList": [],
+    "createdBy": "Admin",
+    "createdAt": "2025-12-17T12:37:09.748Z",
+    "deleted": false,
+    "cancelled": false
+  },
+  {
+    "_id": "69432f49f368aa25264c30d3",
+    "uid": "liqbkd3d61po84udf8p638prf52hab4kgu8fh8lsjjk41t35pj3sso7lpc@google.com",
+    "summary": "Sarah & Tuva: Tuva klipptid",
+    "location": "Valves.",
+    "coords": null,
+    "start": "2025-12-27T10:00:00.000Z",
+    "end": "2025-12-27T10:30:00.000Z",
+    "description": "Stephanie",
+    "todoList": [],
+    "assignee": "Sarah, Tuva",
+    "assignees": [
+      "Sarah",
+      "Tuva"
+    ],
+    "category": null,
+    "source": "Sarah (Redigerad)",
+    "createdAt": "2025-12-17T22:31:37.556Z",
+    "cancelled": false,
+    "deleted": false,
+    "updatedAt": "2025-12-19T16:46:07.927Z"
+  },
+  {
+    "_id": "69432ffef368aa25264c30d4",
+    "uid": "300hiamjqipdoo9pv07h7f836e@google.com",
+    "summary": "Påminnelse: Träningskläder",
+    "location": "Okänd plats",
+    "coords": null,
+    "start": "2025-12-18T05:55:00.000Z",
+    "end": "2025-12-18T05:55:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": "Annat",
+    "source": "Svante (Privat) (Redigerad)",
+    "createdAt": "2025-12-17T22:34:38.221Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "_id": "6943f2071e07c5a572b72fd6",
+    "uid": "7n8jkda2hf9ukoqfms50enehm5@google.com",
+    "summary": "TEst 15:59",
+    "location": "",
+    "coords": null,
+    "start": "2025-12-17T19:00:00.000Z",
+    "end": "2025-12-17T20:00:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "",
+    "assignees": [],
+    "category": null,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-18T12:22:31.618Z",
+    "cancelled": true,
+    "deleted": false
+  },
+  {
+    "_id": "694539390a821ba60e4f67a8",
+    "uid": "19pbuv4s25kvk2oqbtd837okv7rlvfoqaloqq3s0q77qconm5fjfoqke8b@google.com",
+    "summary": "Tuva: Tuva handbollsskola",
+    "location": "De la Gardiegymnasiet",
+    "coords": null,
+    "start": "2025-12-06T09:00:00.000Z",
+    "end": "2025-12-06T10:00:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "Tuva",
+    "assignees": [
+      "Tuva"
+    ],
+    "category": null,
+    "source": "Sarah (Privat) (Redigerad)",
+    "createdAt": "2025-12-19T11:38:33.602Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "_id": "6956c6b2a1b65cfc81a5ce68",
+    "uid": "6ek8ku7lnhirqhgspooff6ubq1@google.com",
+    "summary": "Match: Poolspel - Villa-Lidköping Bandyklubb",
+    "location": "Arena Vänersborg",
+    "start": "2026-01-10T10:30:00.000Z",
+    "end": "2026-01-10T14:30:00.000Z",
+    "description": "Samling: 09:30, Lidköping Sparbanken Arena\nVänersborg bjuder in till poolspel.",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Bandy",
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-01T19:10:42.071Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "_id": "6956c9c7a1b65cfc81a5ce69",
+    "uid": "468l8pjq20621emva9v2ejqs0m@google.com",
+    "summary": "Algot: Match: Poolspel - Villa-Lidköping Bandyklubb",
+    "location": "Slättbergshallen Trollhättan",
+    "coords": null,
+    "start": "2026-01-25T12:15:00.000Z",
+    "end": "2026-01-25T16:30:00.000Z",
+    "description": "Samling: 11:15\nGripen bjuder in till poolspel i Slättbergshallen i Trollhättan.",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": null,
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-01T19:23:51.262Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "_id": "6956c9d1a1b65cfc81a5ce6a",
+    "uid": "35eap7clkm5fd68t9vui7ip1vj@google.com",
+    "summary": "Algot: Match: Poolspel - Villa-Lidköping Bandyklubb",
+    "location": "Tingvalla isstation Karlstad",
+    "coords": null,
+    "start": "2026-02-14T11:00:00.000Z",
+    "end": "2026-02-14T15:00:00.000Z",
+    "description": "Samling: 08:30\nBoltic bjuder in till poolspel på Tingvalla isstadion i Karlstad.",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": null,
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-01T19:24:01.266Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "_id": "6956c9d9a1b65cfc81a5ce6b",
+    "uid": "2os6ttjtm2iibmqkv08u0114i0@google.com",
+    "summary": "Algot: Match: Poolspel - Villa-Lidköping Bandyklubb",
+    "location": "Lidköping Isstadion",
+    "start": "2026-02-22T09:00:00.000Z",
+    "end": "2026-02-22T13:00:00.000Z",
+    "description": "Samling: 09:00\nLAIK bjuder in till poolspel på Isstadion i Lidköping.",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Bandy",
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-01T19:24:09.170Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "uid": "bgn6r2pitil61lrttu1389klieg7ktbs5nhalc42lfblafaqi75734gbrv@google.com",
+    "summary": "Algot: Algot handbollsmatch",
+    "location": "De la Gardiegymnasiet",
+    "coords": null,
+    "start": "2026-01-10T11:50:00.000Z",
+    "end": "2026-01-10T12:50:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Bandy",
+    "source": "Sarah (Redigerad)",
+    "createdAt": "2026-01-02T12:57:14.328Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "uid": "15s104d2bru8386h1s8im1121o@google.com",
+    "summary": "Algot: Hallbybollen",
+    "location": "Okänd plats",
+    "coords": null,
+    "start": "2026-01-04T09:00:00.000Z",
+    "end": "2026-01-04T14:00:00.000Z",
+    "description": "\n\n(Skapad via Family-Ops)",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Handboll",
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-02T13:24:49.637Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "uid": "hne3htc3rua8b76tqfg2grnft8@google.com",
+    "summary": "Tuva: Handbolls festival (Matcher)",
+    "location": "Skövde  (Rydshallen)",
+    "coords": null,
+    "start": "2026-01-24T11:30:00.000Z",
+    "end": "2026-01-24T13:30:00.000Z",
+    "description": "Samlingsinfo\nSamling I Rydshallen Skövde\nSamlingstid\n2026-01-24 12:30\nÖvrig info\nMatch 1 kl 13:20\nMatch 2 kl 13:40\nMatch 3 kl: 14:20",
+    "todoList": [],
+    "assignee": "Tuva",
+    "assignees": [
+      "Tuva"
+    ],
+    "category": null,
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-12T12:28:17.625Z",
+    "cancelled": false,
+    "deleted": false,
+    "inboxOnly": false
+  },
+  {
+    "uid": "acimklv7b96koqfl8vs4bb6nr8",
+    "cancelled": true
+  },
+  {
+    "uid": "422550c2-847f-421b-b00a-e60dc25116e8",
+    "summary": "Svante: test1",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-13T11:00:00.000Z",
+    "end": "2026-01-13T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-13T10:44:49.987Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:25:53.236Z"
+  },
+  {
+    "uid": "c1bc694c-dfc5-4860-8588-0b558ffad082",
+    "summary": "Svante: test4",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-13T11:00:00.000Z",
+    "end": "2026-01-13T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-13T10:49:01.647Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-13T10:58:38.998Z"
+  },
+  {
+    "uid": "l133od4tt4fh7nl4l013d2kt4g",
+    "deleted": true,
+    "summary": " API-Test från Familjecentralen",
+    "start": "2026-01-12T12:27:47.000Z",
+    "source": "Svante"
+  },
+  {
+    "uid": "2vpsmosupomdmvasett2i51q5c",
+    "cancelled": true,
+    "summary": "Träning - HK Lidköping P11/P10",
+    "location": "Idrottens hus (A-hallen)",
+    "start": "2026-01-21T16:30:00.000Z",
+    "end": "2026-01-21T18:00:00.000Z",
+    "description": "[[[]]]",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Handboll",
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "deleted": true
+  },
+  {
+    "uid": "5c71tf5028fggsm01ar34dvr8g",
+    "deleted": true,
+    "summary": "Träning - HK Lidköping P11/P10",
+    "start": "2026-01-14T16:30:00.000Z",
+    "source": "Örtendahls familjekalender"
+  },
+  {
+    "uid": "ina6u4osfcr134cuil36vuhq9k",
+    "cancelled": true,
+    "summary": "Träning - HK Lidköping P11/P10",
+    "location": "Idrottens hus (A-hallen)",
+    "start": "2026-01-14T16:30:00.000Z",
+    "end": "2026-01-14T18:00:00.000Z",
+    "description": "[[[]]]",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Handboll",
+    "source": "HK Lidköping P11/P10 (Redigerad)"
+  },
+  {
+    "uid": "ievde8c1720ua9pmbs7krspra0",
+    "cancelled": true,
+    "summary": "Träning - HK Lidköping P11/P10",
+    "location": "Idrottens hus (A-hallen)",
+    "start": "2026-01-21T16:30:00.000Z",
+    "end": "2026-01-21T18:00:00.000Z",
+    "description": "[[[]]]",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Handboll",
+    "source": "HK Lidköping P11/P10 (Redigerad)"
+  },
+  {
+    "uid": "8866nf004tbrgljq0qoamh4df0",
+    "cancelled": false,
+    "summary": "Träning - P-2015 (U11)",
+    "location": "Lidköping Isstadion",
+    "start": "2026-02-04T17:00:00.000Z",
+    "end": "2026-02-04T18:00:00.000Z",
+    "description": "Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Fotboll",
+    "source": "Villa Lidköping (Algot) (Redigerad)",
+    "deleted": true
+  },
+  {
+    "uid": "v257hmguk2e6tpqi68b36r8s70",
+    "cancelled": true,
+    "cancelledEventData": {
+      "summary": "Träning - HK Lidköping P11/P10",
+      "start": "2026-02-04T16:30:00.000Z",
+      "end": "2026-02-04T18:00:00.000Z",
+      "location": "Idrottens hus (A-hallen)",
+      "description": "[[[]]]",
+      "assignees": [
+        "Algot"
+      ],
+      "source": "HK Lidköping P11/P10"
+    },
+    "summary": "Träning - HK Lidköping P11/P10",
+    "location": "Idrottens hus (A-hallen)",
+    "start": "2026-02-04T16:30:00.000Z",
+    "end": "2026-02-04T18:00:00.000Z",
+    "description": "[[[]]]",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Handboll",
+    "source": "HK Lidköping P11/P10 (Redigerad)"
+  },
+  {
+    "uid": "mi77gsvg7q72mtthvttgadb3j0",
+    "cancelled": true,
+    "cancelledEventData": {
+      "summary": "Träning - P-2015 (U11)",
+      "start": "2026-02-04T17:00:00.000Z",
+      "end": "2026-02-04T18:00:00.000Z",
+      "location": "Lidköping Isstadion",
+      "description": "Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.",
+      "assignees": [],
+      "source": "Villa Lidköping (Algot)"
+    },
+    "summary": "Träning - P-2015 (U11)",
+    "location": "Lidköping Isstadion",
+    "start": "2026-02-04T17:00:00.000Z",
+    "end": "2026-02-04T18:00:00.000Z",
+    "description": "Samling: 18:00\nUteträningarna på isstadion drar igång från vecka 48. Vi byter om i hockeyhallen. Håll koll på väder och temperatur och klä barnen därefter. Fingervantar och någon varmare tröja kan vara bra vid minusgrader.",
+    "todoList": [],
+    "assignees": [],
+    "category": "Family",
+    "source": "Villa Lidköping (Algot) (Redigerad)",
+    "deleted": true
+  },
+  {
+    "uid": "nh26r7i1236l1o3l0ddv75ktbk",
+    "cancelled": false,
+    "summary": "Träning - HK Lidköping P11/P10",
+    "location": "Rörstrandshallen (Rörstrandshallen)",
+    "start": "2026-02-03T17:00:00.000Z",
+    "end": "2026-02-03T18:30:00.000Z",
+    "description": "\nÖvrig info\nViktigt att komma i tid då dörrarna är låsta",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Handboll",
+    "source": "HK Lidköping P11/P10 (Redigerad)",
+    "deleted": true,
+    "deletedAt": "2026-01-14T11:24:54.878Z"
+  },
+  {
+    "uid": "81uakkhb9tf1uavrjfkb7ihvgg",
+    "cancelled": true,
+    "cancelledEventData": {
+      "summary": "Träning - HK Lidköping P11/P10",
+      "start": "2026-02-03T17:00:00.000Z",
+      "end": "2026-02-03T18:30:00.000Z",
+      "location": "Rörstrandshallen (Rörstrandshallen)",
+      "description": "\nÖvrig info\nViktigt att komma i tid då dörrarna är låsta",
+      "assignees": [],
+      "source": "HK Lidköping P11/P10"
+    },
+    "summary": "Träning - HK Lidköping P11/P10",
+    "location": "Rörstrandshallen (Rörstrandshallen)",
+    "start": "2026-02-03T17:00:00.000Z",
+    "end": "2026-02-03T18:30:00.000Z",
+    "description": "\nÖvrig info\nViktigt att komma i tid då dörrarna är låsta",
+    "todoList": [],
+    "assignees": [],
+    "category": "Family",
+    "source": "HK Lidköping P11/P10 (Redigerad)"
+  },
+  {
+    "uid": "qhmdam0burovkvbfm8udm9jvps",
+    "cancelled": true,
+    "cancelledEventData": {
+      "summary": "Träning - HK Lidköping Handbollsskola 2018",
+      "start": "2026-02-07T09:00:00.000Z",
+      "end": "2026-02-07T10:00:00.000Z",
+      "location": "De la Gardie",
+      "description": "[[[]]]",
+      "assignees": [
+        "Tuva"
+      ],
+      "source": "HK Lidköping Handbollsskola"
+    },
+    "summary": "Träning - HK Lidköping Handbollsskola 2018",
+    "location": "De la Gardie",
+    "start": "2026-02-07T09:00:00.000Z",
+    "end": "2026-02-07T10:00:00.000Z",
+    "description": "[[[]]]",
+    "todoList": [],
+    "assignee": "Tuva",
+    "assignees": [
+      "Tuva"
+    ],
+    "category": "Handboll",
+    "source": "HK Lidköping Handbollsskola (Redigerad)"
+  },
+  {
+    "uid": "2esp2563asjuejpjgn9p2jv9ng",
+    "cancelled": true,
+    "cancelledEventData": {
+      "summary": "Träning - P-2015 (U11)",
+      "start": "2026-02-02T15:20:00.000Z",
+      "end": "2026-02-02T16:20:00.000Z",
+      "location": "Sparbanken Lidköping Arena",
+      "description": "Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.",
+      "assignees": [
+        "Algot"
+      ],
+      "source": "Villa Lidköping (Algot)"
+    },
+    "summary": "Träning - P-2015 (U11)",
+    "location": "Sparbanken Lidköping Arena",
+    "start": "2026-02-02T15:20:00.000Z",
+    "end": "2026-02-02T16:20:00.000Z",
+    "description": "Samling: 16:20\nMåndagsträning i arenan precis som förra året fast en timma senare. Vi delar is med Villa U12 hela säsongen men får också sällskap på isen av F14 fram tills dess att uteisen står klar.\n\nVi hoppas att så många som möjligt tar möjligheten att byta om på plats och även stanna och duscha efter träningen. Detta så killarna får träffas och bygga lite laganda i omklädningsrummet.\n\nVi blir glada om ni svarar på kallelsen i god tid så vi enklare kan planera upplägget kring träningarna.",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Fotboll",
+    "source": "Villa Lidköping (Algot) (Redigerad)"
+  },
+  {
+    "uid": "99d26123-4fc6-41ec-b347-74285cdcd2dc",
+    "summary": "Test h�ndelse",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-20T10:00:00.000Z",
+    "end": "2026-01-20T11:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdBy": "Svante",
+    "createdAt": "2026-01-14T20:11:41.833Z",
+    "deleted": false,
+    "cancelled": false
+  },
+  {
+    "uid": "4db7c531-0a5b-446c-a72a-2e6e60c07510",
+    "summary": "Tuva test",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-21T14:00:00.000Z",
+    "end": "2026-01-21T15:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [
+      "Tuva"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdBy": "Svante",
+    "createdAt": "2026-01-14T20:15:31.365Z",
+    "deleted": false,
+    "cancelled": false
+  },
+  {
+    "uid": "9c565ff4-ad0c-4da2-9ffe-6b4bfd1aac67",
+    "summary": "Sarah mote test",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-22T09:00:00.000Z",
+    "end": "2026-01-22T10:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [
+      "Sarah"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdBy": "Svante",
+    "createdAt": "2026-01-14T20:15:47.154Z",
+    "deleted": false,
+    "cancelled": false
+  },
+  {
+    "uid": "kk0dne6ab78iafkjdf00fuec9k",
+    "summary": "Träning - HK Lidköping P11/P10",
+    "location": "Rörstrandshallen (Rörstrandshallen)",
+    "start": "2026-01-13T17:00:00.000Z",
+    "end": "2026-01-13T18:30:00.000Z",
+    "description": "\nÖvrig info\nViktigt att komma i tid då dörrarna är låsta",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": null,
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-15T16:10:17.347Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "uid": "300hiamjqipdoo9pv07h7f836e_20260115T055500Z",
+    "summary": "Påminnelse: Träningskläder",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-15T05:55:00.000Z",
+    "end": "2026-01-15T05:55:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "source": "Svante (Redigerad)",
+    "createdAt": "2026-01-15T17:28:23.277Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "uid": "9dba62fe-255b-4698-9548-c763e3a4081d",
+    "summary": "test7",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-15T18:00:00.000Z",
+    "end": "2026-01-15T19:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T17:45:13.062Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:25:57.757Z"
+  },
+  {
+    "uid": "jomiluni9pp7i8rlejvjpnp58k",
+    "summary": "test7",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-15T18:00:00.000Z",
+    "end": "2026-01-15T19:00:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignments": {},
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": null,
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-15T17:46:16.371Z",
+    "cancelled": false,
+    "deleted": true
+  },
+  {
+    "uid": "fd8b8764-84da-4464-8037-c82c9b353cb9",
+    "summary": "test 8",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-15T19:00:00.000Z",
+    "end": "2026-01-15T20:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T19:01:44.209Z",
+    "deleted": true,
+    "cancelled": false
+  },
+  {
+    "uid": "c31cc123-202e-43f7-9539-cccfd0c86e37",
+    "summary": "test 9",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-15T20:00:00.000Z",
+    "end": "2026-01-15T21:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T19:04:08.081Z",
+    "deleted": true,
+    "cancelled": false
+  },
+  {
+    "uid": "69hhp0ogbibj32p5vinjn1a8k5",
+    "deleted": true,
+    "summary": "test 10",
+    "start": "2026-01-15T22:00:00.000Z",
+    "source": "Örtendahls familjekalender"
+  },
+  {
+    "uid": "4ljsn3h7ppkarsdq17j4ga0m59",
+    "deleted": true,
+    "summary": "test12",
+    "start": "2026-01-16T08:00:00.000Z",
+    "source": "Svante"
+  },
+  {
+    "uid": "4c9e1ea2-b018-4c26-a810-e324693a3d5a",
+    "summary": "Svante: test14",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T10:00:00.000Z",
+    "end": "2026-01-16T11:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T19:31:05.492Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:17:09.078Z"
+  },
+  {
+    "uid": "0pjrblth6k3h19uk5kcpgd6ut9",
+    "deleted": true,
+    "summary": "test13",
+    "start": "2026-01-16T09:00:00.000Z",
+    "source": "Svante"
+  },
+  {
+    "uid": "ibcp8chatceglgfd7nu8j9gi8k",
+    "deleted": true,
+    "summary": "test14",
+    "start": "2026-01-16T10:00:00.000Z",
+    "source": "Svante"
+  },
+  {
+    "uid": "558f5fca-0862-4f9a-ac0d-415076cb7815",
+    "summary": "Svante: test14",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T19:36:10.825Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:17:04.827Z"
+  },
+  {
+    "uid": "3c3172b0-3faf-403c-b0c1-6400ddc04e67",
+    "summary": "Svante: test15",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T12:00:00.000Z",
+    "end": "2026-01-16T13:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T19:39:03.276Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:15:56.442Z"
+  },
+  {
+    "uid": "tulh1uklep8sukumu2k4jh672g",
+    "deleted": true,
+    "summary": "test15",
+    "start": "2026-01-16T12:00:00.000Z",
+    "source": "Svante"
+  },
+  {
+    "uid": "120343da-7259-4242-ad1e-777770da432b",
+    "summary": "Sarah: test17",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T12:00:00.000Z",
+    "end": "2026-01-16T13:00:00.000Z",
+    "description": "",
+    "assignee": "Sarah",
+    "assignees": [
+      "Sarah"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T19:42:34.538Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:16:01.328Z"
+  },
+  {
+    "uid": "79f6fgg8emq2fbuv6r4ebodua4",
+    "deleted": true,
+    "summary": "Test16",
+    "start": "2026-01-16T13:00:00.000Z",
+    "source": "Örtendahls familjekalender"
+  },
+  {
+    "uid": "1csjcreh3cb74q8ehv8dgnn8lo",
+    "deleted": true,
+    "summary": "test17",
+    "start": "2026-01-16T12:00:00.000Z",
+    "source": "Sarah"
+  },
+  {
+    "uid": "b9f420fc-d608-435b-9ed5-ce5c02cb0646",
+    "summary": "test 18",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T13:00:00.000Z",
+    "end": "2026-01-16T14:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T19:48:44.807Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:16:39.303Z"
+  },
+  {
+    "uid": "ev1f0kb5p7njkkcn434v1o8jqg",
+    "deleted": true,
+    "summary": "test 18",
+    "start": "2026-01-16T13:00:00.000Z",
+    "source": "Örtendahls familjekalender"
+  },
+  {
+    "uid": "0e65ba81-4c0a-4227-9fcf-a8a1c3c9922e",
+    "summary": "Svante: test19",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T19:50:36.759Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:16:56.247Z"
+  },
+  {
+    "uid": "2d3e4091-6b29-40a6-828f-e2217120547a",
+    "summary": "Svante: test20",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T19:52:21.448Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:16:43.555Z"
+  },
+  {
+    "uid": "naaolpmp0mo4h0eu6n9qhlormo",
+    "deleted": true,
+    "summary": "test20",
+    "start": "2026-01-16T11:00:00.000Z",
+    "source": "Svante"
+  },
+  {
+    "uid": "62268c87-80d1-478e-96a0-7a939f671d46",
+    "summary": "test21",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T19:53:28.378Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:16:35.186Z"
+  },
+  {
+    "uid": "6nipdcc6bd8c4jvnlpj8sssc8s",
+    "deleted": true,
+    "summary": "test21",
+    "start": "2026-01-16T11:00:00.000Z",
+    "source": "Örtendahls familjekalender"
+  },
+  {
+    "uid": "0dc64f04-1e3b-4a97-95b0-8b2a951e6c99",
+    "summary": "test22",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T20:01:13.199Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:15:52.024Z"
+  },
+  {
+    "uid": "iqtqfjksjjj024eh10m2fj0h20",
+    "deleted": true,
+    "summary": "test22",
+    "start": "2026-01-16T11:00:00.000Z",
+    "source": "Örtendahls familjekalender"
+  },
+  {
+    "uid": "9c7080a7-925e-49a8-bd8f-62d1797bef81",
+    "summary": "Svante: test24",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T14:00:00.000Z",
+    "end": "2026-01-16T15:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T20:04:27.225Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:16:30.903Z"
+  },
+  {
+    "uid": "v9071d09hceit3vdgnnf20srj0",
+    "deleted": true,
+    "summary": "test24",
+    "start": "2026-01-16T14:00:00.000Z",
+    "source": "Svante"
+  },
+  {
+    "uid": "ba5d5cdc-c9f4-422f-9d04-4755eb07e729",
+    "summary": "Svante: test25",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T20:08:36.309Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:16:48.129Z"
+  },
+  {
+    "uid": "9073e62d-9c54-4ef8-aab6-6579d9392701",
+    "summary": "test26",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T15:00:00.000Z",
+    "end": "2026-01-16T16:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T20:12:00.344Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:17:00.847Z"
+  },
+  {
+    "uid": "0mvftonlirhnua5o7q6e9livrg",
+    "deleted": true,
+    "deletedAt": "2026-01-15T20:15:47.568Z",
+    "summary": "test25",
+    "start": "2026-01-16T11:00:00.000Z"
+  },
+  {
+    "uid": "jop4vjnd665cdnscm83j1bflic",
+    "deleted": true,
+    "deletedAt": "2026-01-15T20:16:52.126Z",
+    "summary": "test26",
+    "start": "2026-01-16T15:00:00.000Z"
+  },
+  {
+    "uid": "6b9cfd81-81f7-4bbe-8862-d93683df3334",
+    "summary": "Svante: test30",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T20:17:29.633Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:17:55.319Z"
+  },
+  {
+    "uid": "f8b89863-60cb-44f9-8f37-f8fcf1b0e280",
+    "summary": "Svante: test31",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T20:18:15.058Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:32:18.101Z"
+  },
+  {
+    "uid": "3088c604-6d12-4bb2-b20b-892f486b1496",
+    "summary": "Svante: test33",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T20:32:26.474Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:35:19.418Z"
+  },
+  {
+    "uid": "3d4d6588-6fa3-4e7b-a7a4-42c49ec731f9",
+    "summary": "Svante: test35",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T20:35:30.371Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:52:37.920Z"
+  },
+  {
+    "uid": "8f40a33b-dc95-43dd-87a9-407ee1048956",
+    "summary": "Svante: test36",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T20:41:58.557Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:52:12.893Z"
+  },
+  {
+    "uid": "mjjtubgb5e7qoa1r4g7q8i1ovg",
+    "deleted": true,
+    "deletedAt": "2026-01-15T20:52:42.174Z",
+    "summary": "test35",
+    "start": "2026-01-16T11:00:00.000Z",
+    "source": "Familjen"
+  },
+  {
+    "uid": "er6n04kgelvr2l7mdq8ihls87g",
+    "deleted": true,
+    "deletedAt": "2026-01-15T20:52:46.157Z",
+    "summary": "test36",
+    "start": "2026-01-16T11:00:00.000Z",
+    "source": "Familjen"
+  },
+  {
+    "uid": "80035302-af3e-4aa6-8086-e540d6973c23",
+    "summary": "Svante: test38",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T20:53:04.171Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:59:46.951Z"
+  },
+  {
+    "uid": "ebc97492-7159-4826-8e74-b3d20d9f273b",
+    "summary": "test 39",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T20:53:44.015Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T20:59:58.559Z"
+  },
+  {
+    "uid": "0msri89iglgb1uh92a7o93q978",
+    "deleted": true,
+    "deletedAt": "2026-01-15T20:59:32.819Z",
+    "summary": "test 39",
+    "start": "2026-01-16T11:00:00.000Z",
+    "source": "Familjen"
+  },
+  {
+    "uid": "4uaotrmvr5udv6dl8t1r4aifd8",
+    "deleted": true,
+    "deletedAt": "2026-01-15T20:59:40.469Z",
+    "summary": "test38",
+    "start": "2026-01-16T11:00:00.000Z",
+    "source": "Familjen"
+  },
+  {
+    "uid": "48d24511-ad8a-429e-b77c-f9eee6fecbcf",
+    "summary": "Svante: test40",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T11:00:00.000Z",
+    "end": "2026-01-16T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-15T21:01:07.115Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-15T21:01:42.824Z"
+  },
+  {
+    "uid": "bace249e-dc72-4aad-bb2f-5c86a3b9cb59",
+    "summary": "Svante: test50",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T08:00:00.000Z",
+    "end": "2026-01-16T09:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-16T07:19:04.669Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-16T07:35:03.258Z"
+  },
+  {
+    "uid": "07727d86-c18d-4cd5-8c8a-23ad7e62e300",
+    "summary": "Svante: test 51",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T08:00:00.000Z",
+    "end": "2026-01-16T09:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-16T07:22:26.236Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-16T07:35:07.420Z"
+  },
+  {
+    "uid": "3kubupg19ee09a2497vaoqkec0",
+    "deleted": true,
+    "deletedAt": "2026-01-16T07:34:52.370Z",
+    "summary": "test 51",
+    "start": "2026-01-16T08:00:00.000Z",
+    "source": "Familjen"
+  },
+  {
+    "uid": "4c93nuqgthg1tscj6ur5g0dtd8",
+    "deleted": true,
+    "deletedAt": "2026-01-16T07:34:58.982Z",
+    "summary": "test50",
+    "start": "2026-01-16T08:00:00.000Z",
+    "source": "Familjen"
+  },
+  {
+    "uid": "31413047-78d7-4b90-8dfc-a14af4fd5d1b",
+    "summary": "Test 56",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T14:00:00.000Z",
+    "end": "2026-01-16T15:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-16T07:35:48.248Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-16T07:45:40.070Z"
+  },
+  {
+    "uid": "29b507da-450b-4ad5-b03c-3e4257a3e84e",
+    "summary": "test 57",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T08:00:00.000Z",
+    "end": "2026-01-16T09:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-16T07:48:43.840Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-16T07:49:16.022Z"
+  },
+  {
+    "uid": "5o1s1p5j3cbhjm8laovtgi8btb",
+    "deleted": true,
+    "deletedAt": "2026-01-16T08:08:49.398Z",
+    "summary": "Test 58",
+    "start": "2026-01-16T09:00:00.000Z",
+    "source": "Svante"
+  },
+  {
+    "uid": "18045db4-8e99-4281-a5d2-5d577b435bb0",
+    "summary": "Svante: Test 59",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T08:00:00.000Z",
+    "end": "2026-01-16T09:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-16T08:13:02.154Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-16T08:22:33.058Z"
+  },
+  {
+    "uid": "04sle4bn1gff6bsknk39u679rf",
+    "deleted": true,
+    "deletedAt": "2026-01-16T08:22:17.137Z",
+    "summary": "Test 60",
+    "start": "2026-01-16T09:00:00.000Z",
+    "source": "Örtendahls familjekalender"
+  },
+  {
+    "uid": "t06l5uquu0kvu2p63bk756319g",
+    "deleted": true,
+    "deletedAt": "2026-01-16T08:22:52.151Z",
+    "summary": "Test 59",
+    "start": "2026-01-16T08:00:00.000Z",
+    "source": "Familjen"
+  },
+  {
+    "uid": "17c1robf8hg57gal322gc1olpo",
+    "deleted": false,
+    "summary": "Träning - HK Lidköping Handbollsskola 2018",
+    "start": "2026-01-17T09:00:00.000Z",
+    "source": "Familjen",
+    "cancelled": false,
+    "createdBy": "manual_fix"
+  },
+  {
+    "uid": "fcb8f7df-f0e8-4c6b-9402-f670b909a1c0",
+    "deleted": false,
+    "summary": "Hemma matcher gr 2,3",
+    "start": "2026-01-18T09:30:00.000Z",
+    "source": "Örtendahls familjekalender",
+    "cancelled": false,
+    "originalSource": "Örtendahls familjekalender",
+    "createdBy": "restored",
+    "description": "Återställd från: Hemma matcher gr 2,3\nKälla: Örtendahls familjekalender",
+    "created": "2026-01-16T10:51:08.299Z",
+    "lastUpdated": "2026-01-16T10:51:08.299Z"
+  },
+  {
+    "eventId": "s1k1o3rfofqba5dd1mjnnr3kmc",
+    "summary": "Hemma matcher gr 2,3",
+    "start": "2026-01-18T09:30:00.000Z",
+    "source": "Örtendahls familjekalender",
+    "trashType": "deleted",
+    "trashedAt": "2026-01-16T10:50:56.733Z",
+    "uid": "d43cf7a3-0a9c-4531-a450-6828090bbc32",
+    "end": "2026-01-18T10:30:00.000Z",
+    "deleted": false,
+    "cancelled": false,
+    "originalSource": "Örtendahls familjekalender",
+    "createdBy": "restored",
+    "description": "Återställd från: Hemma matcher gr 2,3\nKälla: Örtendahls familjekalender",
+    "created": "2026-01-16T11:48:12.081Z",
+    "lastUpdated": "2026-01-16T11:48:12.081Z"
+  },
+  {
+    "uid": "ceab1285-1e27-4152-b512-66a30a5f6cf9",
+    "summary": "test 61",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T15:00:00.000Z",
+    "end": "2026-01-16T16:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "assignments": {
+      "driver": null,
+      "packer": null
+    },
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-16T14:01:49.648Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-16T14:02:03.484Z"
+  },
+  {
+    "uid": "85cb39ee-7cc2-4d4c-bf83-b4102ffa31af",
+    "summary": "test63",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-16T15:00:00.000Z",
+    "end": "2026-01-16T16:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "assignments": {
+      "driver": null,
+      "packer": null
+    },
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-16T14:06:59.177Z",
+    "source": "Familjen",
+    "deleted": false,
+    "cancelled": false
+  },
+  {
+    "uid": "880e2f11-9c27-4975-9c94-5f104d1004c4",
+    "summary": "Test86",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-17T05:00:00.000Z",
+    "end": "2026-01-17T06:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "assignments": {
+      "driver": null,
+      "packer": null
+    },
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-16T21:51:46.250Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-16T21:52:16.120Z"
+  },
+  {
+    "uid": "4e1e4533-a5ef-40ab-9fd4-f9eb192d531a",
+    "summary": "test90",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-17T23:00:00.000Z",
+    "end": "2026-01-18T23:00:00.000Z",
+    "description": "",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "assignments": {
+      "driver": "",
+      "packer": ""
+    },
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-17T07:35:44.830Z",
+    "source": "Familjen",
+    "deleted": false,
+    "cancelled": false
+  },
+  {
+    "uid": "cr544hr7gkqm7nve8s5j859gss65asg378ol7mpdoh3ra639n00497hkkv",
+    "summary": "Tuva dansskola",
+    "location": "",
+    "start": "2026-01-18T16:15:00.000Z",
+    "end": "2026-01-18T17:00:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignments": {
+      "driver": "Sarah",
+      "packer": "Tuva"
+    },
+    "assignee": "Sarah, Tuva",
+    "assignees": [
+      "Sarah",
+      "Tuva"
+    ],
+    "category": null,
+    "source": "Sarah (Redigerad)",
+    "createdAt": "2026-01-18T09:12:48.518Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "uid": "6ee6lia1ak5doen7sf6m8vgai8_20260121T110000Z",
+    "deleted": true,
+    "deletedAt": "2026-01-18T10:33:01.292Z",
+    "summary": "Test Recurrence Script 3001",
+    "start": "2026-01-21T11:00:00.000Z",
+    "source": "Svante"
+  },
+  {
+    "uid": "399eaf30-12ea-4745-a944-54879dd4359b",
+    "summary": "testupprepning4",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-19T11:00:00.000Z",
+    "end": "2026-01-19T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "assignments": {
+      "driver": "",
+      "packer": ""
+    },
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-18T10:33:41.246Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "recurrence": "RRULE:FREQ=WEEKLY;BYDAY=MO",
+    "deletedAt": "2026-01-18T10:36:36.667Z"
+  },
+  {
+    "uid": "04d88cce-8e4e-42c8-bcf1-5d4c3e6532d1",
+    "summary": "Testupprepning5",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-19T13:00:00.000Z",
+    "end": "2026-01-19T14:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "assignments": {
+      "driver": null,
+      "packer": null
+    },
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-18T10:37:13.568Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "recurrence": "RRULE:FREQ=WEEKLY;BYDAY=MO",
+    "deletedAt": "2026-01-18T15:40:06.281Z"
+  },
+  {
+    "uid": "adc239f0-2d81-47e9-96e5-1105246783b0",
+    "summary": "Test99",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-19T07:00:00.000Z",
+    "end": "2026-01-19T08:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "assignments": {
+      "driver": "",
+      "packer": ""
+    },
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-18T10:38:05.581Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "recurrence": null,
+    "deletedAt": "2026-01-18T15:39:59.167Z"
+  },
+  {
+    "uid": "d845dfb9-e20b-448b-86de-7b63b6cbd50a",
+    "summary": "test1",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-18T19:00:00.000Z",
+    "end": "2026-01-18T20:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "assignments": {
+      "driver": null,
+      "packer": null
+    },
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-18T15:40:23.555Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "recurrence": null,
+    "deletedAt": "2026-01-18T15:40:46.174Z"
+  },
+  {
+    "uid": "25c9a9d8-d1cf-4c75-a271-fd09c8b1ed99",
+    "summary": "teståterkommande6",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-18T21:00:00.000Z",
+    "end": "2026-01-18T22:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "assignments": {
+      "driver": "",
+      "packer": ""
+    },
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-18T15:41:13.260Z",
+    "source": "Familjen",
+    "deleted": true,
+    "cancelled": false,
+    "recurrence": "RRULE:FREQ=WEEKLY;BYDAY=SU",
+    "deletedAt": "2026-01-18T15:41:33.727Z"
+  },
+  {
+    "uid": "296ca58e-6894-48fc-9aa5-7b6417cd4942",
+    "summary": "Testmatch HKLP11/P10 (lokalt test)",
+    "location": "Lidköping Arena",
+    "coords": null,
+    "start": "2026-01-20T13:01:13.350Z",
+    "end": "2026-01-20T14:01:13.351Z",
+    "description": "Detta är ett test-event för Algot för att verifiera 'Nya händelser' funktionen.",
+    "assignee": "Hela familjen",
+    "assignees": [
+      "Algot"
+    ],
+    "assignments": {},
+    "category": "Idrott",
+    "todoList": [],
+    "createdAt": "2026-01-20T13:01:13.482Z",
+    "source": "Familjen",
+    "deleted": false,
+    "cancelled": false,
+    "recurrence": null
+  },
+  {
+    "uid": "6f4294a3-3c59-4c89-a08c-1da6a449d3f7",
+    "summary": "Handbollsträning P10",
+    "location": "Idrottens Hus",
+    "coords": null,
+    "start": "2026-01-20T17:00:00.000Z",
+    "end": "2026-01-20T18:30:00.000Z",
+    "description": "Veckoträning",
+    "assignee": "Hela familjen",
+    "assignees": [
+      "Algot"
+    ],
+    "assignments": {},
+    "category": "Idrott",
+    "todoList": [],
+    "createdAt": "2026-01-20T13:28:16.539Z",
+    "source": "Familjen",
+    "deleted": false,
+    "cancelled": false,
+    "recurrence": null
+  },
+  {
+    "uid": "fe51d830-9017-4b9c-92a2-b6ef451b0a28",
+    "summary": "Handbollsträning P10",
+    "location": "Idrottens Hus",
+    "coords": null,
+    "start": "2026-01-27T17:00:00.000Z",
+    "end": "2026-01-27T18:30:00.000Z",
+    "description": "Veckoträning",
+    "assignee": "Hela familjen",
+    "assignees": [
+      "Algot"
+    ],
+    "assignments": {},
+    "category": "Idrott",
+    "todoList": [],
+    "createdAt": "2026-01-20T13:28:17.928Z",
+    "source": "Familjen",
+    "deleted": false,
+    "cancelled": false,
+    "recurrence": null
+  },
+  {
+    "uid": "66c92c8d-91e4-42d3-8056-82bd0fd293a4",
+    "summary": "Handbollsträning P10",
+    "location": "Idrottens Hus",
+    "coords": null,
+    "start": "2026-02-03T17:00:00.000Z",
+    "end": "2026-02-03T18:30:00.000Z",
+    "description": "Veckoträning",
+    "assignee": "Hela familjen",
+    "assignees": [
+      "Algot"
+    ],
+    "assignments": {},
+    "category": "Idrott",
+    "todoList": [],
+    "createdAt": "2026-01-20T13:28:18.921Z",
+    "source": "Familjen",
+    "deleted": false,
+    "cancelled": false,
+    "recurrence": null
+  },
+  {
+    "uid": "13b1f267-ba3c-4f92-b589-76468185b648",
+    "summary": "Handbollsträning P10",
+    "location": "Idrottens Hus",
+    "coords": null,
+    "start": "2026-02-10T17:00:00.000Z",
+    "end": "2026-02-10T18:30:00.000Z",
+    "description": "Veckoträning",
+    "assignee": "Hela familjen",
+    "assignees": [
+      "Algot"
+    ],
+    "assignments": {},
+    "category": "Idrott",
+    "todoList": [],
+    "createdAt": "2026-01-20T13:28:19.838Z",
+    "source": "Familjen",
+    "deleted": false,
+    "cancelled": false,
+    "recurrence": null
+  },
+  {
+    "uid": "89211938-c18a-4c24-a420-5279ec6d17fd",
+    "summary": "Handbollsträning P10",
+    "location": "Idrottens Hus",
+    "coords": null,
+    "start": "2026-02-17T17:00:00.000Z",
+    "end": "2026-02-17T18:30:00.000Z",
+    "description": "Veckoträning",
+    "assignee": "Hela familjen",
+    "assignees": [
+      "Algot"
+    ],
+    "assignments": {},
+    "category": "Idrott",
+    "todoList": [],
+    "createdAt": "2026-01-20T13:28:20.610Z",
+    "source": "Familjen",
+    "deleted": false,
+    "cancelled": false,
+    "recurrence": null
+  }
+]

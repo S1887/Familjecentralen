@@ -199,21 +199,7 @@ export default function InboxModal({ isOpen, onClose, currentUser, onMarkAllSeen
                                             </div>
                                         </div>
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                            <button
-                                                onClick={(e) => handleTrash(firstItem, e)}
-                                                title="Ta bort (ej aktuell)"
-                                                style={{
-                                                    background: '#ffeaa7',
-                                                    border: 'none',
-                                                    borderRadius: '50%',
-                                                    width: '36px', height: '36px',
-                                                    cursor: 'pointer',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    color: '#d63031'
-                                                }}
-                                            >
-                                                <Icon name="trash" size={18} />
-                                            </button>
+                                            {/* Trash button removed per user request */}
                                         </div>
                                     </div>
                                 );
@@ -225,7 +211,14 @@ export default function InboxModal({ isOpen, onClose, currentUser, onMarkAllSeen
                                     {/* Group Header */}
                                     <div
                                         onClick={() => toggleGroup(groupId)}
-                                        style={{ padding: '1rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.03)' }}
+                                        style={{
+                                            padding: '1rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            background: 'var(--bg-secondary, rgba(0,0,0,0.03))'
+                                        }}
                                     >
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                                             <div style={{
@@ -258,31 +251,30 @@ export default function InboxModal({ isOpen, onClose, currentUser, onMarkAllSeen
                                     {/* Group Content (Expanded) */}
                                     {isExpanded && (
                                         <div style={{ borderTop: '1px solid var(--border-color)' }}>
-                                            {group.map(item => (
-                                                <div key={item.uid}
-                                                    onClick={() => { if (onEdit) { onEdit(item); onClose(); } }}
-                                                    style={{
-                                                        padding: '0.8rem 1rem',
-                                                        borderBottom: '1px solid var(--border-color)',
-                                                        cursor: 'pointer',
-                                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                        background: 'white'
-                                                    }}>
-                                                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                                        <span style={{ fontWeight: '500' }}>{new Date(item.start).toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-                                                        <span style={{ color: 'var(--text-muted)' }}>{item.time || new Date(item.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                    </div>
-                                                    <button
-                                                        onClick={(e) => handleTrash(item, e)}
-                                                        title="Ta bort"
+                                            {group.map(item => {
+                                                const dateObj = new Date(item.start);
+                                                const dateStr = dateObj.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' });
+                                                const timeStr = item.time || dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                                                return (
+                                                    <div key={item.uid}
+                                                        onClick={() => { if (onEdit) { onEdit(item); onClose(); } }}
                                                         style={{
-                                                            background: 'transparent', border: 'none', cursor: 'pointer', color: '#d63031', opacity: 0.6
-                                                        }}
-                                                    >
-                                                        <Icon name="trash" size={16} />
-                                                    </button>
-                                                </div>
-                                            ))}
+                                                            padding: '0.8rem 1rem',
+                                                            borderBottom: '1px solid var(--border-color)',
+                                                            cursor: 'pointer',
+                                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                            background: 'var(--card-bg)', // Fix dark mode
+                                                            color: 'var(--text-main)' // Fix dark mode
+                                                        }}>
+                                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                                            <span style={{ fontWeight: '500', minWidth: '100px', textTransform: 'capitalize' }}>{dateStr}</span>
+                                                            <span style={{ color: 'var(--text-muted)' }}>{timeStr}</span>
+                                                        </div>
+                                                        {/* Trash button removed per user request */}
+                                                    </div>
+                                                )
+                                            })}
                                         </div>
                                     )}
                                 </div>

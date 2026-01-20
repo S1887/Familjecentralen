@@ -1,0 +1,681 @@
+[
+  {
+    "_id": "6941894551b5f1d36d4054b7",
+    "uid": "k6ssv3i4a9d0egvp5jum71lvk1anr7pc8ei9ll08l3vpj0oare4dcs8oo6@google.com",
+    "summary": "Algot bandyträning",
+    "location": "Sparbanken Lidköping Arena, O 2578",
+    "start": "2025-12-15T15:20:00.000Z",
+    "end": "2025-12-15T16:20:00.000Z",
+    "description": "Arenan",
+    "todoList": [
+      {
+        "id": 1765657972745,
+        "text": "Slipa skridskorna",
+        "done": true
+      }
+    ],
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-13T13:23:06.441Z",
+    "coords": {
+      "lat": 58.494426,
+      "lon": 13.1427987
+    },
+    "assignees": [],
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054bc",
+    "uid": "4hiqcv5njnpto33qnq7njn2cgj@google.com",
+    "summary": "test 3",
+    "start": "2025-12-14T19:00:00.000Z",
+    "end": "2025-12-14T20:00:00.000Z",
+    "source": "Svante (Privat)",
+    "deleted": true,
+    "deletedAt": "2025-12-13T19:03:26.180Z",
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054be",
+    "uid": "in3l6o1at5eb8o1m15ig1iu28rdl91kk36mg3s7hhaou10kv2lsnoeq2lk@google.com",
+    "summary": "Algot bandyträning?",
+    "start": "2025-12-17T17:00:00.000Z",
+    "end": "2025-12-17T18:00:00.000Z",
+    "source": "Sarah (Privat)",
+    "deleted": true,
+    "deletedAt": "2025-12-13T20:30:57.694Z",
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054bf",
+    "uid": "3c3b1888-026d-4666-8bd8-21ccdcee9088",
+    "summary": "Leon: TEst55",
+    "location": "",
+    "coords": null,
+    "start": "2025-12-16T14:00:00.000Z",
+    "end": "2025-12-16T15:00:00.000Z",
+    "description": "Hur syns dett?",
+    "assignee": "Leon",
+    "todoList": [],
+    "createdBy": "Admin",
+    "createdAt": "2025-12-15T09:33:27.828Z",
+    "deleted": true,
+    "cancelled": false,
+    "assignees": [
+      "Leon"
+    ],
+    "deletedAt": "2025-12-16T07:07:45.342Z",
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054b8",
+    "uid": "goj2vmg0vkn94130hasvpcbmurmk1fi5lk7s4hbo0fpqagn53es98k9chb@google.com",
+    "summary": "Tuva handbollsskola",
+    "location": "De la Gardiegymnasiet",
+    "coords": {
+      "lat": 58.5047424,
+      "lon": 13.1496512
+    },
+    "start": "2025-12-13T09:00:00.000Z",
+    "end": "2025-12-13T10:00:00.000Z",
+    "description": "",
+    "todoList": [],
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-13T13:47:51.510Z",
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054b9",
+    "uid": "20dcb03d-379b-4531-94ad-4b01bb09dbab",
+    "summary": "Test 1",
+    "start": "2025-12-14T18:35:00.000Z",
+    "end": "2025-12-14T16:38:00.000Z",
+    "createdBy": "Svante",
+    "createdAt": "2025-12-13T16:36:27.140Z",
+    "deleted": true,
+    "deletedAt": "2025-12-13T18:06:31.684Z",
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054ba",
+    "uid": "134989b3-1760-4637-87f7-973a8ad5e65b",
+    "summary": "Test 2",
+    "location": "Cypressvägen 8 lidköping",
+    "coords": {
+      "lat": 58.5381222,
+      "lon": 13.1199763
+    },
+    "start": "2025-12-14T18:50:00.000Z",
+    "end": "2025-12-14T19:50:00.000Z",
+    "description": "TEstar del 2",
+    "assignee": "Hela familjen",
+    "todoList": [],
+    "createdBy": "Svante",
+    "createdAt": "2025-12-13T16:48:21.528Z",
+    "deleted": true,
+    "deletedAt": "2025-12-13T18:09:17.906Z",
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054bb",
+    "uid": "7a28cb9e-a290-4e44-bca6-4a220e9f58ce",
+    "summary": "test 3",
+    "start": "2025-12-14T19:00:00.000Z",
+    "end": "2025-12-14T20:00:00.000Z",
+    "assignee": "Svante",
+    "createdBy": "Svante",
+    "createdAt": "2025-12-13T16:50:36.686Z",
+    "cancelled": true,
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054bd",
+    "uid": "3d81t3n8nvqjobj765ifn0223n@google.com",
+    "summary": "Mariestad 2HKL 2",
+    "location": "Stöpenhallen, Hästskovägen 4, 549 70 Skövde, Sverige",
+    "coords": null,
+    "start": "2025-12-20T11:50:00.000Z",
+    "end": "2025-12-20T12:50:00.000Z",
+    "description": "<table> <colgroup><col /> <col /> </colgroup><tbody><tr>  <td>3</td>  <td>4</td>  <td>Stöpenhallen, Skövde</td> </tr></tbody></table>",
+    "todoList": [],
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-13T20:16:49.843Z",
+    "cancelled": false,
+    "deleted": false,
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054c0",
+    "uid": "hcogcfgo8ilgc7cc9ht3cd40hdud3kf1psf9hv9i737t1mtguqk5secne5@google.com",
+    "summary": "Semester",
+    "location": "Okänd plats",
+    "coords": null,
+    "start": "2025-12-16T23:00:00.000Z",
+    "end": "2025-12-16T23:00:00.000Z",
+    "description": "",
+    "todoList": [],
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-15T09:38:21.615Z",
+    "cancelled": false,
+    "deleted": false,
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054c1",
+    "uid": "2hc9ng36kasjurfq6i9c0sne3si0lqd3mvqui5g6jed0f32uhsg0q2dgo3@google.com",
+    "summary": "Algot: Algot handbollsträning",
+    "location": "Rörstrand",
+    "coords": null,
+    "start": "2025-12-16T17:00:00.000Z",
+    "end": "2025-12-16T18:30:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": null,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-15T09:58:06.237Z",
+    "cancelled": false,
+    "deleted": true,
+    "deletedAt": "2025-12-15T20:29:14.309Z",
+    "migratedAt": "2025-12-16T16:31:01.664Z"
+  },
+  {
+    "_id": "6941894551b5f1d36d4054c2",
+    "uid": "1cc1jclc0hsn227f9l6qks7jmo@google.com",
+    "summary": "Algot & Leon: Klippning",
+    "location": "Okänd plats",
+    "coords": null,
+    "start": "2025-12-18T15:30:00.000Z",
+    "end": "2025-12-18T17:00:00.000Z",
+    "description": "\n\nTilldelad: Svante, Algot, Leon",
+    "todoList": [],
+    "assignee": "Algot, Leon",
+    "assignees": [
+      "Algot",
+      "Leon"
+    ],
+    "category": "Annat",
+    "source": "Svante (Privat) (Redigerad)",
+    "createdAt": "2025-12-15T20:30:27.456Z",
+    "cancelled": false,
+    "deleted": false,
+    "migratedAt": "2025-12-16T16:31:01.664Z",
+    "updatedAt": "2025-12-17T19:29:54.654Z"
+  },
+  {
+    "_id": "6941a541a69c921913f6367c",
+    "uid": "12881818-2648@sportadmin.se",
+    "inboxOnly": false,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-16T18:30:25.955Z"
+  },
+  {
+    "_id": "6941a7afe37dfe5077996882",
+    "uid": "740900cf-dd8a-4535-85bb-00fa76705c5a",
+    "summary": "Test 1",
+    "location": null,
+    "coords": null,
+    "start": "2025-12-17T18:40:00.000Z",
+    "end": "2025-12-17T18:40:00.000Z",
+    "description": null,
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": null,
+    "createdBy": "Admin",
+    "createdAt": "2025-12-16T18:40:47.458Z",
+    "deleted": false,
+    "cancelled": true,
+    "source": null,
+    "updatedAt": "2025-12-17T15:53:02.973Z",
+    "deletedAt": null
+  },
+  {
+    "_id": "6941ba83378b20f1ed2de49f",
+    "uid": "59tlgqumq9kk37i91cs5jileoq@google.com",
+    "summary": "Svante: Test 1 med g cal",
+    "location": "",
+    "coords": null,
+    "start": "2025-12-16T22:24:00.000Z",
+    "end": "2025-12-16T22:35:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "",
+    "assignees": [],
+    "category": null,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-16T20:01:07.112Z",
+    "cancelled": true,
+    "deleted": false
+  },
+  {
+    "_id": "6941c445e3f5ddd5c2360a59",
+    "uid": "7g9i5qdd6uvnj3bpcutk4qs3fo@google.com",
+    "summary": "Svante: test 2",
+    "location": "",
+    "coords": null,
+    "start": "2025-12-16T20:22:00.000Z",
+    "end": "2025-12-16T21:22:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "",
+    "assignees": [],
+    "category": null,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-16T20:42:45.338Z",
+    "cancelled": true,
+    "deleted": false
+  },
+  {
+    "_id": "6941d44d378b20f1ed2de4a0",
+    "uid": "24ce72d1-68b1-44f0-b27e-e162ab74ac43",
+    "summary": "Test i fam op",
+    "location": null,
+    "coords": null,
+    "start": "2025-12-17T19:00:00.000Z",
+    "end": "2025-12-17T20:00:00.000Z",
+    "description": null,
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": null,
+    "todoList": null,
+    "createdBy": "Admin",
+    "createdAt": "2025-12-16T21:51:09.888Z",
+    "deleted": false,
+    "cancelled": false,
+    "source": null,
+    "updatedAt": "2025-12-16T21:58:39.158Z",
+    "deletedAt": null
+  },
+  {
+    "_id": "6941da76731c053e545ef0cf",
+    "uid": "12695177-2648@sportadmin.se",
+    "inboxOnly": false,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-16T22:17:26.620Z"
+  },
+  {
+    "_id": "6941da7f731c053e545ef0d0",
+    "uid": "12695166-2648@sportadmin.se",
+    "inboxOnly": false,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-16T22:17:35.083Z",
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "cancelled": null,
+    "category": null,
+    "coords": null,
+    "description": "Samling: 11:15\nGripen bjuder in till poolspel i Slättbergshallen i Trollhättan.",
+    "end": "2026-01-25T16:30:00.000Z",
+    "location": "Slättbergshallen Trollhättan",
+    "start": "2026-01-25T12:15:00.000Z",
+    "summary": "Algot: Match: Poolspel - Villa-Lidköping Bandyklubb",
+    "todoList": [],
+    "updatedAt": "2025-12-17T11:36:42.335Z"
+  },
+  {
+    "_id": "6941da82731c053e545ef0d1",
+    "uid": "12695160-2648@sportadmin.se",
+    "inboxOnly": false,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-16T22:17:38.483Z"
+  },
+  {
+    "_id": "6941da86731c053e545ef0d2",
+    "uid": "29153236@laget.se",
+    "inboxOnly": false,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-16T22:17:42.621Z"
+  },
+  {
+    "_id": "6941da8d731c053e545ef0d3",
+    "uid": "12695187-2648@sportadmin.se",
+    "inboxOnly": false,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-16T22:17:49.900Z"
+  },
+  {
+    "_id": "6942953e8c14ed919f10fa99",
+    "uid": "dil5qov608hg7rutl8smmfjg4dt2ns33dfgetv73e7mpum863i3epkptdi@google.com",
+    "summary": "Jul i Filsbäck",
+    "location": "Okänd plats",
+    "coords": null,
+    "start": "2025-12-24T11:30:00.000Z",
+    "end": "2025-12-24T12:30:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "",
+    "assignees": [],
+    "category": "Annat",
+    "source": "Sarah (Privat) (Redigerad)",
+    "createdAt": "2025-12-17T11:34:22.237Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "_id": "6942a3f55eabfa181ab66e26",
+    "uid": "4b8671f1-3ffe-4ebf-bfe8-62d479ba939e",
+    "summary": "Twst",
+    "location": "",
+    "coords": null,
+    "start": "2025-12-18T12:36:00.000Z",
+    "end": "2025-12-18T18:15:00.000Z",
+    "description": "Hsbd",
+    "assignee": "Hela familjen",
+    "assignees": [],
+    "category": "Annat",
+    "todoList": [],
+    "createdBy": "Admin",
+    "createdAt": "2025-12-17T12:37:09.748Z",
+    "deleted": false,
+    "cancelled": false
+  },
+  {
+    "_id": "69432f49f368aa25264c30d3",
+    "uid": "liqbkd3d61po84udf8p638prf52hab4kgu8fh8lsjjk41t35pj3sso7lpc@google.com",
+    "summary": "Sarah & Tuva: Tuva klipptid",
+    "location": "Valves.",
+    "coords": null,
+    "start": "2025-12-27T10:00:00.000Z",
+    "end": "2025-12-27T10:30:00.000Z",
+    "description": "Stephanie",
+    "todoList": [],
+    "assignee": "Sarah, Tuva",
+    "assignees": [
+      "Sarah",
+      "Tuva"
+    ],
+    "category": null,
+    "source": "Sarah (Redigerad)",
+    "createdAt": "2025-12-17T22:31:37.556Z",
+    "cancelled": false,
+    "deleted": false,
+    "updatedAt": "2025-12-19T16:46:07.927Z"
+  },
+  {
+    "_id": "69432ffef368aa25264c30d4",
+    "uid": "300hiamjqipdoo9pv07h7f836e@google.com",
+    "summary": "Påminnelse: Träningskläder",
+    "location": "Okänd plats",
+    "coords": null,
+    "start": "2025-12-18T05:55:00.000Z",
+    "end": "2025-12-18T05:55:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": "Annat",
+    "source": "Svante (Privat) (Redigerad)",
+    "createdAt": "2025-12-17T22:34:38.221Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "_id": "6943f2071e07c5a572b72fd6",
+    "uid": "7n8jkda2hf9ukoqfms50enehm5@google.com",
+    "summary": "TEst 15:59",
+    "location": "",
+    "coords": null,
+    "start": "2025-12-17T19:00:00.000Z",
+    "end": "2025-12-17T20:00:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "",
+    "assignees": [],
+    "category": null,
+    "source": "Familjen (Redigerad)",
+    "createdAt": "2025-12-18T12:22:31.618Z",
+    "cancelled": true,
+    "deleted": false
+  },
+  {
+    "_id": "694539390a821ba60e4f67a8",
+    "uid": "19pbuv4s25kvk2oqbtd837okv7rlvfoqaloqq3s0q77qconm5fjfoqke8b@google.com",
+    "summary": "Tuva: Tuva handbollsskola",
+    "location": "De la Gardiegymnasiet",
+    "coords": null,
+    "start": "2025-12-06T09:00:00.000Z",
+    "end": "2025-12-06T10:00:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "Tuva",
+    "assignees": [
+      "Tuva"
+    ],
+    "category": null,
+    "source": "Sarah (Privat) (Redigerad)",
+    "createdAt": "2025-12-19T11:38:33.602Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "_id": "6956c6b2a1b65cfc81a5ce68",
+    "uid": "6ek8ku7lnhirqhgspooff6ubq1@google.com",
+    "summary": "Match: Poolspel - Villa-Lidköping Bandyklubb",
+    "location": "Arena Vänersborg",
+    "start": "2026-01-10T10:30:00.000Z",
+    "end": "2026-01-10T14:30:00.000Z",
+    "description": "Samling: 09:30, Lidköping Sparbanken Arena\nVänersborg bjuder in till poolspel.",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Bandy",
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-01T19:10:42.071Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "_id": "6956c9c7a1b65cfc81a5ce69",
+    "uid": "468l8pjq20621emva9v2ejqs0m@google.com",
+    "summary": "Algot: Match: Poolspel - Villa-Lidköping Bandyklubb",
+    "location": "Slättbergshallen Trollhättan",
+    "coords": null,
+    "start": "2026-01-25T12:15:00.000Z",
+    "end": "2026-01-25T16:30:00.000Z",
+    "description": "Samling: 11:15\nGripen bjuder in till poolspel i Slättbergshallen i Trollhättan.",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": null,
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-01T19:23:51.262Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "_id": "6956c9d1a1b65cfc81a5ce6a",
+    "uid": "35eap7clkm5fd68t9vui7ip1vj@google.com",
+    "summary": "Algot: Match: Poolspel - Villa-Lidköping Bandyklubb",
+    "location": "Tingvalla isstation Karlstad",
+    "coords": null,
+    "start": "2026-02-14T11:00:00.000Z",
+    "end": "2026-02-14T15:00:00.000Z",
+    "description": "Samling: 08:30\nBoltic bjuder in till poolspel på Tingvalla isstadion i Karlstad.",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": null,
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-01T19:24:01.266Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "_id": "6956c9d9a1b65cfc81a5ce6b",
+    "uid": "2os6ttjtm2iibmqkv08u0114i0@google.com",
+    "summary": "Algot: Match: Poolspel - Villa-Lidköping Bandyklubb",
+    "location": "Lidköping Isstadion",
+    "start": "2026-02-22T09:00:00.000Z",
+    "end": "2026-02-22T13:00:00.000Z",
+    "description": "Samling: 09:00\nLAIK bjuder in till poolspel på Isstadion i Lidköping.",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Bandy",
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-01T19:24:09.170Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "uid": "bgn6r2pitil61lrttu1389klieg7ktbs5nhalc42lfblafaqi75734gbrv@google.com",
+    "summary": "Algot: Algot handbollsmatch",
+    "location": "De la Gardiegymnasiet",
+    "coords": null,
+    "start": "2026-01-10T11:50:00.000Z",
+    "end": "2026-01-10T12:50:00.000Z",
+    "description": "",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Bandy",
+    "source": "Sarah (Redigerad)",
+    "createdAt": "2026-01-02T12:57:14.328Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "uid": "15s104d2bru8386h1s8im1121o@google.com",
+    "summary": "Algot: Hallbybollen",
+    "location": "Okänd plats",
+    "coords": null,
+    "start": "2026-01-04T09:00:00.000Z",
+    "end": "2026-01-04T14:00:00.000Z",
+    "description": "\n\n(Skapad via Family-Ops)",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Handboll",
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-02T13:24:49.637Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "uid": "hne3htc3rua8b76tqfg2grnft8@google.com",
+    "summary": "Tuva: Handbolls festival (Matcher)",
+    "location": "Skövde  (Rydshallen)",
+    "coords": null,
+    "start": "2026-01-24T11:30:00.000Z",
+    "end": "2026-01-24T13:30:00.000Z",
+    "description": "Samlingsinfo\nSamling I Rydshallen Skövde\nSamlingstid\n2026-01-24 12:30\nÖvrig info\nMatch 1 kl 13:20\nMatch 2 kl 13:40\nMatch 3 kl: 14:20",
+    "todoList": [],
+    "assignee": "Tuva",
+    "assignees": [
+      "Tuva"
+    ],
+    "category": null,
+    "source": "Örtendahls familjekalender (Redigerad)",
+    "createdAt": "2026-01-12T12:28:17.625Z",
+    "cancelled": false,
+    "deleted": false
+  },
+  {
+    "uid": "29234542@laget.se",
+    "cancelled": true,
+    "deleted": false,
+    "summary": "Träning - HK Lidköping P11/P10",
+    "location": "Idrottens hus (A-hallen)",
+    "start": "2026-01-14T16:30:00.000Z",
+    "end": "2026-01-14T18:00:00.000Z",
+    "description": "[[[]]]",
+    "todoList": [],
+    "assignee": "Algot",
+    "assignees": [
+      "Algot"
+    ],
+    "category": "Handboll",
+    "source": "HK Lidköping P11/P10 (Redigerad)"
+  },
+  {
+    "uid": "acimklv7b96koqfl8vs4bb6nr8",
+    "cancelled": true
+  },
+  {
+    "uid": "29234543@laget.se",
+    "cancelled": true
+  },
+  {
+    "uid": "29234546@laget.se",
+    "cancelled": true
+  },
+  {
+    "uid": "422550c2-847f-421b-b00a-e60dc25116e8",
+    "summary": "Svante: test1",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-13T11:00:00.000Z",
+    "end": "2026-01-13T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-13T10:44:49.987Z",
+    "deleted": false,
+    "cancelled": false
+  },
+  {
+    "uid": "7cb20eae-c867-49cd-b724-14bc1649cf46",
+    "summary": "Svante: Test3",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-13T11:00:00.000Z",
+    "end": "2026-01-13T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-13T10:46:46.602Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-13T10:58:38.990Z"
+  },
+  {
+    "uid": "c1bc694c-dfc5-4860-8588-0b558ffad082",
+    "summary": "Svante: test4",
+    "location": "",
+    "coords": null,
+    "start": "2026-01-13T11:00:00.000Z",
+    "end": "2026-01-13T12:00:00.000Z",
+    "description": "",
+    "assignee": "Svante",
+    "assignees": [
+      "Svante"
+    ],
+    "category": null,
+    "todoList": [],
+    "createdAt": "2026-01-13T10:49:01.647Z",
+    "deleted": true,
+    "cancelled": false,
+    "deletedAt": "2026-01-13T10:58:38.998Z"
+  }
+]

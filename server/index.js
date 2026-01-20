@@ -290,8 +290,7 @@ if (process.env.DATA_DIR && !fs.existsSync(DATA_DIR)) {
 // One-time cleanup when upgrading to prevent duplicates
 // This clears sync-related files but preserves user data (tasks, local_events, etc.)
 const VERSION_FILE = path.join(DATA_DIR, 'last_version.txt');
-const CURRENT_VERSION = '5.0.2';
-
+const CURRENT_VERSION = '6.0.2'; // Matches package.json
 function performVersionUpgradeCleanup() {
     let lastVersion = '';
     try {
@@ -2914,9 +2913,14 @@ app.get('/api/new-events', async (req, res) => {
             if (seenIds.has(e.uid)) return false;
             if (e.deleted || e.cancelled) return false;
 
-            // Source/Keyword check
             const textToCheck = ((e.source || '') + (e.summary || '')).toLowerCase();
+
+            // 1. Check general ignored sources (Arsenal, ÖIS etc)
             if (IGNORED_NOTIFICATION_SOURCES.some(s => textToCheck.includes(s.toLowerCase()))) return false;
+
+            // 2. Special logic for Vklass: Ignore schedule lessons
+            // The backend already marks lessons with isLesson=true based on regex (e.g. ma12a)
+            if (e.isLesson) return false;
 
             return true;
         };
