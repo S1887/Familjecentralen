@@ -28,7 +28,6 @@ import {
     deleteLocalEvent,
     getIgnoredEventIds,
     addIgnoredEvent,
-    getTrashedEvents,
     addToTrash,
     removeFromTrash,
     migrateFromJson
@@ -99,7 +98,7 @@ const app = express();
 // DEBUG LOGGER
 const LOG_FILE = path.join(__dirname, 'server_debug.log');
 function logToFile(msg) {
-    try { fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] ${msg}\n`); } catch (e) { }
+    try { fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] ${msg}\n`); } catch { /* ignore */ }
 }
 logToFile('--- SERVER STARTING ---');
 console.log('--- FAMILY OPS SERVER V5 DIAGNOSTIC START ---');
@@ -297,7 +296,7 @@ function performVersionUpgradeCleanup() {
         if (fs.existsSync(VERSION_FILE)) {
             lastVersion = fs.readFileSync(VERSION_FILE, 'utf8').trim();
         }
-    } catch (e) { /* ignore */ }
+    } catch { /* ignore */ }
 
     // Only run cleanup if upgrading from older version to 4.0.2+
     if (lastVersion && lastVersion >= CURRENT_VERSION) {
@@ -1039,7 +1038,7 @@ const readIgnoredEvents = async () => {
     if (!fs.existsSync(IGNORED_EVENTS_FILE)) return [];
     try {
         return JSON.parse(fs.readFileSync(IGNORED_EVENTS_FILE, 'utf8'));
-    } catch (e) { return []; }
+    } catch { return []; }
 };
 
 const writeIgnoredEvents = (data) => {
@@ -1051,7 +1050,7 @@ const readIgnoredEventsSync = () => {
     if (!fs.existsSync(IGNORED_EVENTS_FILE)) return [];
     try {
         return JSON.parse(fs.readFileSync(IGNORED_EVENTS_FILE, 'utf8'));
-    } catch (e) { return []; }
+    } catch { return []; }
 };
 
 // Ladda tasks - will be loaded from MongoDB after connection
@@ -1277,8 +1276,8 @@ app.post('/api/meals/suggest', async (req, res) => {
 
     try {
         const {
-            recentMeals = [],
-            preferences = '',
+            recentMeals: _recentMeals = [],
+            preferences: _preferences = '',
             weekEvents = [],
             dates = [],
             customInstructions = '',
@@ -1292,13 +1291,6 @@ app.post('/api/meals/suggest', async (req, res) => {
             model: 'gemini-2.5-flash',
             generationConfig: { responseMimeType: "application/json" }
         });
-
-        // Helper to find free slots
-        const findFreeSlot = (dateStr, startHour, endHour, events) => {
-            // Very simple slot finder: look for gaps
-            // This is a naive implementation passed to AI context
-            return `Mellan ${startHour}:00 och ${endHour}:00`;
-        };
 
         // Prepare schedule context for AI
         const scheduleContext = dates.map(date => {
@@ -1460,7 +1452,7 @@ JSON Format:
         let jsonResponse;
         try {
             jsonResponse = JSON.parse(textResponse);
-        } catch (e) {
+        } catch {
             console.error('Failed to parse AI JSON response:', textResponse);
             // Fallback if AI fails valid JSON for some reason
             jsonResponse = {
@@ -1902,22 +1894,6 @@ app.get('/api/events', async (req, res) => {
         // Filter out ignored/trashed events - BUT keep subscription events with isTrashed flag
         const ignoredEventIds = await readIgnoredEvents();
         const ignoredSet = new Set(ignoredEventIds);
-
-        // Helper to check if an event is from a subscription source (not personal calendar)
-        const isSubscriptionSource = (source) => {
-            if (!source) return false;
-            const s = source.toLowerCase();
-            return s.includes('arsenal') ||
-                s.includes('öis') ||
-                s.includes('örgryte') ||
-                s.includes('hk lidköping') ||
-                s.includes('villa lidköping') ||
-                s.includes('råda') ||
-                s.includes('vklass') ||
-                s.includes('sportadmin') ||
-                s.includes('laget') ||
-                s.includes('helgdag');
-        };
 
         // "Ej aktuell" events are removed from ALL views (and from Google)
         // They go to papperskorgen and can be restored from there
@@ -2857,13 +2833,13 @@ const readSeenEventsSync = (username) => {
     try {
         const data = JSON.parse(fs.readFileSync(SEEN_EVENTS_FILE, 'utf8'));
         return data[username] || []; // Returns array of UIDs
-    } catch (e) { return []; }
+    } catch { return []; }
 };
 
 const addSeenEventSync = (username, uid) => {
     let data = {};
     if (fs.existsSync(SEEN_EVENTS_FILE)) {
-        try { data = JSON.parse(fs.readFileSync(SEEN_EVENTS_FILE, 'utf8')); } catch (e) { }
+        try { data = JSON.parse(fs.readFileSync(SEEN_EVENTS_FILE, 'utf8')); } catch { /* ignore */ }
     }
     if (!data[username]) data[username] = [];
     if (!data[username].includes(uid)) {
@@ -2875,7 +2851,7 @@ const addSeenEventSync = (username, uid) => {
 const markAllSeenSync = (username, uids) => {
     let data = {};
     if (fs.existsSync(SEEN_EVENTS_FILE)) {
-        try { data = JSON.parse(fs.readFileSync(SEEN_EVENTS_FILE, 'utf8')); } catch (e) { }
+        try { data = JSON.parse(fs.readFileSync(SEEN_EVENTS_FILE, 'utf8')); } catch { /* ignore */ }
     }
     // Merge new UIDs
     const existing = new Set(data[username] || []);
@@ -3058,7 +3034,7 @@ app.get('/api/trash', async (req, res) => {
         // Returnera bara de som är deleted eller cancelled
         const trash = localEvents.filter(e => e.deleted || e.cancelled);
         res.json(trash);
-    } catch (e) {
+    } catch {
         res.status(500).json({ error: 'Kunde inte hämta papperskorgen' });
     }
 });
@@ -3072,7 +3048,7 @@ app.post('/api/create-event', async (req, res) => {
 
     try {
         fs.appendFileSync(path.join(__dirname, 'debug_log.txt'), `[CreateEvent] Received recurrence: ${recurrence}\n`);
-    } catch (e) { }
+    } catch { /* ignore */ }
 
     console.log('[CreateEvent] Received recurrence:', recurrence);
 

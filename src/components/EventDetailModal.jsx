@@ -15,6 +15,10 @@ const isAllDayEvent = (event) => {
 };
 
 const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onShowAllUpcoming, onTrash, getGoogleCalendarLink, isAdmin }) => {
+    // Hooks must be called unconditionally, before any early return
+    const [touchStart, setTouchStart] = useState(0);
+    const [touchEnd, setTouchEnd] = useState(0);
+
     if (!event) return null;
 
     // Sort events chronologically (upcoming only)
@@ -56,10 +60,6 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
             onNavigate(sortedEvents[currentIndex + 1]);
         }
     };
-
-    // Touch gestures for swipe navigation
-    const [touchStart, setTouchStart] = useState(0);
-    const [touchEnd, setTouchEnd] = useState(0);
 
     const handleTouchStart = (e) => {
         setTouchStart(e.targetTouches[0].clientX);

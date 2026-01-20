@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { getTravelTime, formatDuration } from '../mapService';
 import Icon from './Icon';
 
 // Hero image is served from HA's /config folder via API
@@ -35,7 +34,35 @@ const isAllDayEvent = (event) => {
     return startHour === 0 && startMin === 0 && ((endHour === 0 && endMin === 0) || (endHour === 23 && endMin === 59));
 };
 
-const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail, onOpenMatchModal, onDayClick, darkMode }) => {
+// Card component moved outside to prevent re-creation on each render
+const Card = ({ children, onClick, style, className, theme, darkMode }) => (
+    <div
+        onClick={onClick}
+        className={className}
+        style={{
+            background: theme.cardBg,
+            borderRadius: '24px',
+            padding: '1.2rem',
+            cursor: onClick ? 'pointer' : 'default',
+            boxShadow: darkMode ? '0 4px 6px rgba(0,0,0,0.1)' : '0 10px 20px rgba(0,0,0,0.1)',
+            border: darkMode ? '1px solid rgba(255,255,255,0.05)' : 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            transition: 'transform 0.2s ease, background 0.2s',
+            color: theme.cardText,
+            overflow: 'hidden',
+            position: 'relative',
+            ...style
+        }}
+        onMouseEnter={e => { if (onClick) e.currentTarget.style.transform = 'scale(1.02)'; }}
+        onMouseLeave={e => { if (onClick) e.currentTarget.style.transform = 'scale(1)'; }}
+    >
+        {children}
+    </div>
+);
+
+const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail, onOpenMatchModal, onDayClick, darkMode }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
@@ -65,7 +92,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
         .filter(e => new Date(e.start) > now)
         .sort((a, b) => new Date(a.start) - new Date(b.start));
 
-    const nextEvent = upcomingEvents[0];
+    const _nextEvent = upcomingEvents[0];
 
     // Get weather
     const getWeatherIcon = (code, isDay = 1) => {
@@ -121,33 +148,6 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
         nextEventBg: '#ffffff',
         textColorInverse: '#fff'
     };
-
-    const Card = ({ children, onClick, style, className }) => (
-        <div
-            onClick={onClick}
-            className={className}
-            style={{
-                background: theme.cardBg,
-                borderRadius: '24px',
-                padding: '1.2rem',
-                cursor: onClick ? 'pointer' : 'default',
-                boxShadow: darkMode ? '0 4px 6px rgba(0,0,0,0.1)' : '0 10px 20px rgba(0,0,0,0.1)',
-                border: darkMode ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                transition: 'transform 0.2s ease, background 0.2s',
-                color: theme.cardText, // Use cardText instead of textMain
-                overflow: 'hidden', // Enforce consistent size
-                position: 'relative', // For absolute positioning of sub-content
-                ...style
-            }}
-            onMouseEnter={e => { if (onClick) e.currentTarget.style.transform = 'scale(1.02)'; }}
-            onMouseLeave={e => { if (onClick) e.currentTarget.style.transform = 'scale(1)'; }}
-        >
-            {children}
-        </div>
-    );
 
     return (
         <>
@@ -208,7 +208,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                                 try {
                                     // Open in parent/top window context to bypass ingress iframe restrictions
                                     window.top.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank');
-                                } catch (e) {
+                                } catch {
                                     // Fallback
                                     window.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank');
                                 }
@@ -250,7 +250,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                     <div className="new-home-grid">
 
                         {/* 1. Today's Events - Spans Full Width */}
-                        <Card
+                        <Card theme={theme} darkMode={darkMode}
                             style={{ gridColumn: '1 / -1', minHeight: '120px', maxHeight: '300px', background: theme.nextEventBg, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
@@ -431,7 +431,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         {/* 2. Calendar Button */}
                         {/* 2. Calendar Button */}
                         {/* 2. Calendar Button */}
-                        <Card onClick={() => setActiveTab('timeline')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
+                        <Card theme={theme} darkMode={darkMode} onClick={() => setActiveTab('timeline')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
                             <div style={{ marginBottom: '0.5rem', color: '#4aa3df' }}>
                                 {/* Calendar Icon */}
                                 <Icon name="calendar" size={40} />
@@ -441,7 +441,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                         {/* 3. Tasks Button */}
                         {/* 3. Tasks Button */}
-                        <Card onClick={() => setActiveTab('todos')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
+                        <Card theme={theme} darkMode={darkMode} onClick={() => setActiveTab('todos')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
                             <div style={{ marginBottom: '0.5rem', color: theme.success }}>
                                 <Icon name="check" size={40} />
                             </div>
@@ -499,7 +499,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                         {/* 4. School Schedule Button */}
                         {/* 4. School Schedule Button */}
                         {user.name !== 'Leon' && (
-                            <Card onClick={() => setActiveTab('schedule')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
+                            <Card theme={theme} darkMode={darkMode} onClick={() => setActiveTab('schedule')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
                                 <div style={{ marginBottom: '0.5rem', color: '#ff9f43' }}>
                                     {/* School/Book Icon */}
                                     <Icon name="school" size={40} />
@@ -510,7 +510,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                         {/* 4.5. Meal Plan Card */}
                         {/* 4.5. Meal Plan Card */}
-                        <Card onClick={() => setActiveTab('matsedel')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
+                        <Card theme={theme} darkMode={darkMode} onClick={() => setActiveTab('matsedel')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
                             <div style={{ marginBottom: '0.5rem', color: '#ff7675' }}>
                                 {/* Utensils Icon */}
                                 <Icon name="utensils" size={40} />
@@ -548,7 +548,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
                             }
 
                             return (
-                                <Card
+                                <Card theme={theme} darkMode={darkMode}
                                     onClick={onOpenMatchModal}
                                     style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem', background: theme.cardBg }}
                                 >
@@ -583,7 +583,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal, setS
 
                         {/* 6. Cypressvägen 8 (Link) */}
                         {/* 6. Cypressvägen 8 (Link) */}
-                        <Card onClick={() => window.location.href = 'https://icdyb1l1q3laawhz67o2dpgt9uczhgfe.ui.nabu.casa/lovelace/Oversikt'} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
+                        <Card theme={theme} darkMode={darkMode} onClick={() => window.location.href = 'https://icdyb1l1q3laawhz67o2dpgt9uczhgfe.ui.nabu.casa/lovelace/Oversikt'} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
                             <div style={{ marginBottom: '0.5rem', color: '#9b59b6' }}>
                                 {/* House Icon */}
                                 <Icon name="home" size={40} />

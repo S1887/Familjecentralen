@@ -1,6 +1,7 @@
 // Week View with Multi-Day Event Spanning Logic
 
 // Helper to calculate spanning events
+// eslint-disable-next-line no-unused-vars
 function processWeekEvents(filteredEventsList, days) {
     const multiDayEvents = [];
     const singleDayEventsByDay = days.map(() => []);

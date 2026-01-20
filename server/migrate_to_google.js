@@ -49,6 +49,7 @@ const EXCLUDE_SOURCES = [
     'vklass'
 ];
 
+// eslint-disable-next-line no-unused-vars
 function isSportSource(source) {
     if (!source) return false;
     const lower = source.toLowerCase();
@@ -90,7 +91,7 @@ async function migrate() {
         if (fs.existsSync(IGNORED_FILE)) {
             ignoredUids = JSON.parse(fs.readFileSync(IGNORED_FILE, 'utf8'));
         }
-    } catch (error) {
+    } catch {
         console.warn('⚠️ Could not read ignored events');
     }
 

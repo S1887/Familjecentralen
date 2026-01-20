@@ -4,7 +4,7 @@ import Icon from './Icon';
 
 // V6.0: "Inkorg" is now "Nya händelser" list.
 // Shows events that the user hasn't seen yet.
-export default function InboxModal({ isOpen, onClose, currentUser, onMarkAllSeen, getGoogleLink, onEdit }) {
+export default function InboxModal({ isOpen, onClose, currentUser, onMarkAllSeen, getGoogleLink: _getGoogleLink, onEdit }) {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -14,6 +14,7 @@ export default function InboxModal({ isOpen, onClose, currentUser, onMarkAllSeen
         if (isOpen && currentUser) {
             fetchNewEvents();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, currentUser]);
 
     const fetchNewEvents = async () => {
@@ -47,29 +48,6 @@ export default function InboxModal({ isOpen, onClose, currentUser, onMarkAllSeen
             await onMarkAllSeen();
             setItems([]); // Clear list immediately
             onClose(); // Close modal
-        }
-    };
-
-    const handleTrash = async (item, e) => {
-        e.stopPropagation();
-        if (!window.confirm(`Vill du flytta "${item.summary}" till papperskorgen?`)) return;
-
-        try {
-            await fetch(getApiUrl('api/trash'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    uid: item.uid,
-                    summary: item.summary,
-                    start: item.start,
-                    source: item.source
-                })
-            });
-            // Remove from list locally
-            setItems(items.filter(i => i.uid !== item.uid));
-        } catch (err) {
-            console.error("Failed to trash event", err);
-            alert("Kunde inte ta bort händelsen.");
         }
     };
 

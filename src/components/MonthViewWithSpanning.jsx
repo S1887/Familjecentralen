@@ -11,7 +11,7 @@ const MonthViewWithSpanning = ({
     isAllDayEvent,
     getEventColorClass,
     openEditModal,
-    setSelectedDate,
+    setSelectedDate: _setSelectedDate,
     setNewEvent,
     setActiveTab,
     newEvent,
@@ -201,7 +201,7 @@ const MonthViewWithSpanning = ({
                         </div>
 
                         {/* Multi-day events that START in this cell */}
-                        {multiDayStartingHere.map((ev, evIdx) => {
+                        {multiDayStartingHere.map((ev) => {
                             const colorClass = getEventColorClass(ev);
                             const slotIndex = eventsByRow[ev.row].indexOf(ev);
 

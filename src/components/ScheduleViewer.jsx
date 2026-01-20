@@ -3,14 +3,9 @@ import Icon from './Icon';
 
 const ScheduleViewer = ({ events, initialStudent }) => {
     const validStudents = ['Algot', 'Tuva'];
-    const startStudent = validStudents.includes(initialStudent) ? initialStudent : 'Algot';
-    const [selectedStudent, setSelectedStudent] = useState(startStudent);
-
-    useEffect(() => {
-        if (validStudents.includes(initialStudent)) {
-            setSelectedStudent(initialStudent);
-        }
-    }, [initialStudent]);
+    // Initialize state directly from prop - no useEffect needed
+    const getValidStudent = (student) => validStudents.includes(student) ? student : 'Algot';
+    const [selectedStudent, setSelectedStudent] = useState(() => getValidStudent(initialStudent));
 
     const [weekOffset, setWeekOffset] = useState(0);
     const scrollRef = useRef(null);
@@ -369,7 +364,7 @@ const ScheduleViewer = ({ events, initialStudent }) => {
                         left: 0,
                         zIndex: 30
                     }}></div>
-                    {weekDays.map((d, index) => {
+                    {weekDays.map((d) => {
                         const dateStr = d.toISOString().split('T')[0];
                         const isToday = new Date().toISOString().split('T')[0] === dateStr;
                         return (

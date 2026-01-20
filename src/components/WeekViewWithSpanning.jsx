@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import Icon from './Icon';
 
 const WeekViewWithSpanning = ({
@@ -13,7 +13,7 @@ const WeekViewWithSpanning = ({
     setNewEvent,
     setActiveTab,
     newEvent,
-    onSwipe,
+    onSwipe: _onSwipe,
     newEventUids // V6.0 prop
 }) => {
     // Scroll to Today on Mount/Update
@@ -44,21 +44,26 @@ const WeekViewWithSpanning = ({
     };
 
     const containerRef = useRef(null);
-    const days = [];
-    const current = new Date(selectedDate);
-    const dayOfWeek = current.getDay() || 7; // 1 (Mon) - 7 (Sun)
 
-    // Set to Monday of this week
-    const startOfWeek = new Date(current);
-    startOfWeek.setDate(current.getDate() - dayOfWeek + 1);
-    startOfWeek.setHours(0, 0, 0, 0);
+    // Memoize days array to prevent useEffect dependency issues
+    const days = useMemo(() => {
+        const result = [];
+        const current = new Date(selectedDate);
+        const dayOfWeek = current.getDay() || 7; // 1 (Mon) - 7 (Sun)
 
-    // Generate 7 days
-    for (let i = 0; i < 7; i++) {
-        const d = new Date(startOfWeek);
-        d.setDate(startOfWeek.getDate() + i);
-        days.push(d);
-    }
+        // Set to Monday of this week
+        const startOfWeek = new Date(current);
+        startOfWeek.setDate(current.getDate() - dayOfWeek + 1);
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        // Generate 7 days
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(startOfWeek);
+            d.setDate(startOfWeek.getDate() + i);
+            result.push(d);
+        }
+        return result;
+    }, [selectedDate]);
 
     // Scroll to Today on Mount/Update
     const scrollContainerRef = useRef(null);
@@ -69,7 +74,7 @@ const WeekViewWithSpanning = ({
             const offset = todayCol.offsetLeft - 60; // Minus time axis
             scrollContainerRef.current.scrollLeft = Math.max(0, offset);
         }
-    }, [selectedDate, days]);
+    }, [selectedDate]);
 
     // Separate events
     const multiDayEvents = [];
@@ -508,7 +513,7 @@ const WeekViewWithSpanning = ({
                                     })()}
 
                                     {/* Render Events */}
-                                    {processedEvents.map((event, eventIdx) => {
+                                    {processedEvents.map((event) => {
                                         const start = new Date(event.start);
                                         const end = new Date(event.end);
 

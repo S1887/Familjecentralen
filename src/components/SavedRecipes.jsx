@@ -134,7 +134,7 @@ const SavedRecipes = ({ darkMode, getApiUrl, onBack }) => {
             try {
                 const parsed = JSON.parse(formatted);
                 formatted = parsed.recipe || formatted;
-            } catch (e) {
+            } catch {
                 // Not valid JSON, continue with original
             }
         }

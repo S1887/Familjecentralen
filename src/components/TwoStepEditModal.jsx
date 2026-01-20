@@ -21,11 +21,11 @@ const TwoStepEditModal = ({
     editEventData,
     setEditEventData,
     isAdmin,
-    isMobile,
+    isMobile: _isMobile,
     updateEvent,
     deleteEvent,
     setIsEditingEvent,
-    getApiUrl
+    getApiUrl: _getApiUrl
 }) => {
     const [isEditingMode, setIsEditingMode] = useState(false);
 

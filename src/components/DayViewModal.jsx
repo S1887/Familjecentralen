@@ -22,10 +22,10 @@ const DayViewModal = ({
     getEventColorClass,
     isSameDay
 }) => {
-    if (!selectedDate) return null;
-
     const [touchStart, setTouchStart] = useState(0);
     const [touchEnd, setTouchEnd] = useState(0);
+
+    if (!selectedDate) return null;
 
     // Get week number
     const getWeekNumber = (d) => {

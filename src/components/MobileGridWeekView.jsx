@@ -92,7 +92,7 @@ const MobileGridWeekView = ({
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
         >
-            {weekDays.map((day, index) => {
+            {weekDays.map((day) => {
                 const isToday = isSameDay(day, today);
                 const dayEvents = getDayEvents(day);
 

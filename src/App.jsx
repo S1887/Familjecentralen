@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, Fragment } from 'react'
+import { useState, useEffect, useMemo, Fragment } from 'react'
 import './App.css'
 import LoginPage from './components/LoginPage'
 import ScheduleViewer from './components/ScheduleViewer'
@@ -10,7 +10,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import heroCustomImg from './assets/hero-custom.jpg';
-import { getCoordinates, getTravelTime, formatDuration, searchAddress, getHomeCoords, formatDistance } from './mapService';
+import { getCoordinates, getTravelTime, formatDuration, searchAddress } from './mapService';
 
 import { getApiUrl } from './utils/api';
 
@@ -360,7 +360,7 @@ function App() {
         if (currentTime < sunrise || currentTime > sunset) {
           isDay = false;
         }
-      } catch (e) { }
+      } catch { /* ignore date parsing errors */ }
     } else {
       const hour = currentTime.getHours();
       if (hour < 6 || hour > 21) isDay = false;
@@ -476,8 +476,9 @@ function App() {
   const [pendingDeletes, setPendingDeletes] = useState([]); // UIDs of events being deleted (optimistic)
   const [tasks, setTasks] = useState([]); // Standalone tasks
 
-  // Persist Admin State - now derived from currentUser
-  const isAdmin = currentUser?.role === 'parent';
+  // Persist Admin State - now derived from currentUser or manual override
+  const [adminOverride, setAdminOverride] = useState(false);
+  const isAdmin = currentUser?.role === 'parent' || adminOverride;
   const isChildUser = currentUser?.role === 'child';
 
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -489,10 +490,10 @@ function App() {
   const [filterCategory, setFilterCategory] = useState('Alla');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [showMatchModal, setShowMatchModal] = useState(false);
-  const [showFamilyMenu, setShowFamilyMenu] = useState(false);
-  const [selectedTodoWeek, setSelectedTodoWeek] = useState(getWeekNumber(new Date()));
+  const [_showFamilyMenu, _setShowFamilyMenu] = useState(false);
+  const [selectedTodoWeek, _setSelectedTodoWeek] = useState(getWeekNumber(new Date()));
   const [viewMode, setViewMode] = useState(() => window.innerWidth < 1100 ? 'mobile_grid' : 'week');
-  const [activeAssignment, setActiveAssignment] = useState(null);
+  const [_activeAssignment, setActiveAssignment] = useState(null);
   const [showMobileTaskForm, setShowMobileTaskForm] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
@@ -631,7 +632,8 @@ function App() {
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleFocus);
     };
-  }, [currentUser]); // Added currentUser to dependency array for fetchNewEvents
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]); // fetchEvents/fetchNewEvents are stable callbacks
 
   // Force refresh from Google (bypasses cache)
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -655,7 +657,8 @@ function App() {
     fetchNewEvents();
     const newEventsTimer = setInterval(fetchNewEvents, 60000);
     return () => clearInterval(newEventsTimer);
-  }, [currentUser]); // Re-subscribe when user changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]); // fetchNewEvents is a stable callback
 
   const getSeenInboxIds = () => {
     const user = currentUser?.name || 'default';
@@ -920,7 +923,7 @@ function App() {
       });
   };
 
-  const toggleEventTask = (event, todoId) => {
+  const _toggleEventTask = (event, todoId) => {
     const updatedTodos = event.todoList.map(t => t.id === todoId ? { ...t, done: !t.done } : t);
     const updatedEvent = { ...event, todoList: updatedTodos };
 
@@ -936,18 +939,6 @@ function App() {
         // Refresh events to sync state
         fetchEvents();
       });
-  };
-
-  const fetchRoute = async (toCoords, mode) => {
-    setMapRoute(null); // Clear previous
-    const result = await getTravelTime(toCoords, mode);
-    if (result && result.geometry) {
-      // Decode geometry? No, mapService returns GeoJSON geometry object directly now.
-      // Leaflet Polyline needs [lat, lon] arrays. GeoJSON is [lon, lat].
-      // We need to swap them.
-      const swapped = result.geometry.coordinates.map(c => [c[1], c[0]]);
-      setMapRoute({ ...result, coordinates: swapped });
-    }
   };
 
   const enrichEventsWithGeo = async (initialEvents) => {
@@ -990,7 +981,7 @@ function App() {
 
   // ... (existing helper functions)
 
-  const assignTask = async (eventId, role, assignedUser) => {
+  const _assignTask = async (eventId, role, assignedUser) => {
     if (!assignedUser) return;
     try {
       await fetch(getApiUrl('api/assign'), {
@@ -1037,7 +1028,7 @@ function App() {
   };
 
   // Check if an event is multi-day (spans more than one calendar day)
-  const isMultiDayEvent = (event) => {
+  const _isMultiDayEvent = (event) => {
     const start = new Date(event.start);
     const end = new Date(event.end);
     start.setHours(0, 0, 0, 0);
@@ -1319,7 +1310,6 @@ function App() {
     const assignments = event.assignments || {};
     const assignedTo = assignments[role];
     const isDriver = role === 'driver';
-    const label = isDriver ? 'Vem kör?' : 'Vem packar?';
     const iconName = isDriver ? 'car' : 'backpack';
     const iconColor = isDriver ? '#74b9ff' : '#a29bfe';
 
@@ -1610,7 +1600,7 @@ function App() {
   };
 
 
-  const children = ['Alla', 'Algot', 'Tuva', 'Leon', 'Sarah', 'Svante'];
+  const _children = ['Alla', 'Algot', 'Tuva', 'Leon', 'Sarah', 'Svante'];
 
   const renderTravelInfo = (event) => {
     if (!event.travelTime) return null;
@@ -1742,7 +1732,7 @@ function App() {
       });
   };
 
-  const cancelEvent = (event) => {
+  const _cancelEvent = (event) => {
     if (!window.confirm('Vill du ställa in denna händelse?')) return;
 
     // We use update-event to set cancelled: true
@@ -1805,12 +1795,8 @@ function App() {
                 console.error('Import error:', error);
               }
             }}
-            onIgnore={async (event) => {
-              // Implement ignore logic if needed or pass existing handler
-              // The previous code seemed to have inline logic for import, but let's just fix the syntax error first.
-              // Looking at older 'handleIgnoreEvent' reference in my previous tool call attempt: 
-              // I should probably use `handleImportEvent` and `handleIgnoreEvent` if they exist, but the snippet showed inline async logic.
-              // I will restore the inline logic that was there before I broke it.
+            onIgnore={async (_event) => {
+              // Placeholder for ignore logic
             }}
           />
 
@@ -1842,7 +1828,7 @@ function App() {
                     <button onClick={() => setShowAdminLogin(false)}>Avbryt</button>
                     <button onClick={() => {
                       if (adminPin === '0608') {
-                        setIsAdmin(true);
+                        setAdminOverride(true);
                         setShowAdminLogin(false);
                         setAdminPin('');
                       } else {
@@ -2094,7 +2080,7 @@ function App() {
                       try {
                         // Navigate the top-level window (breaks out of HA ingress iframe)
                         window.top.location.href = link.url;
-                      } catch (e) {
+                      } catch {
                         // Fallback if cross-origin blocked
                         window.location.href = link.url;
                       }
@@ -2695,7 +2681,7 @@ function App() {
                               d.setHours(h + 1, m);
                               const newEnd = d.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
                               return { ...prev, time: newStart, endTime: newEnd };
-                            } catch (err) {
+                            } catch {
                               return { ...prev, time: newStart };
                             }
                           });
@@ -2919,7 +2905,7 @@ function App() {
               <div className="day-view-content" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {(() => {
                   const combined = [];
-                  const now = new Date(); // Used for sorting past/future events if needed
+                  const _now = new Date(); // Used for sorting past/future events if needed
                   const isSameDay = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
 
                   const heroTasks = tasks.filter(t => t.date && isSameDay(new Date(t.date), selectedDate));
@@ -2947,16 +2933,6 @@ function App() {
 
                   // 3. Sort Combined List
                   combined.sort((a, b) => {
-                    const getCategory = (item) => {
-                      if (item.type === 'task') {
-                        // Done tasks at bottom (3), Undone at top (0)
-                        return item.data.done ? 3 : 0;
-                      } else {
-                        // Event
-                        return 1;
-                      }
-                    };
-
                     // Simple Sort by Time for events, tasks at top/bottom depending
                     if (a.type === 'event' && b.type === 'event') {
                       return new Date(a.data.start) - new Date(b.data.start);
@@ -3131,7 +3107,7 @@ function App() {
                   onClick={() => {
                     try {
                       window.top.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank');
-                    } catch (e) {
+                    } catch {
                       window.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank');
                     }
                   }}
@@ -3164,7 +3140,7 @@ function App() {
                             const sunrise = new Date(weather.daily.sunrise[0]);
                             const sunset = new Date(weather.daily.sunset[0]);
                             if (currentTime < sunrise || currentTime > sunset) isDay = false;
-                          } catch (e) { }
+                          } catch { /* ignore date parsing errors */ }
                         } else {
                           // Future dates -> Always Day icon (forecast usually implies day conditions unless specific)
                           isDay = true;
@@ -3755,7 +3731,7 @@ function App() {
                     (() => {
                       let lastDate = null;
                       let lastWeek = null;
-                      return otherEvents.map((event, index) => {
+                      return otherEvents.map((event) => {
                         const eventDate = new Date(event.start);
                         const eventDateStr = eventDate.toLocaleDateString('sv-SE');
                         const eventWeek = getWeekNumber(eventDate);
@@ -3849,9 +3825,6 @@ function App() {
                                 <span className="source-badge" style={{ opacity: 0.7, fontSize: '0.8em' }}>
                                   {(() => {
                                     const source = event.source || 'Familjen';
-                                    // If it's a subscription source that was auto-imported through the family calendar
-                                    const subscriptionSources = ['Villa Lidköping', 'HK Lidköping', 'Råda BK', 'Örgryte IS', 'Vklass', 'Arsenal'];
-                                    const hasSubscriptionSource = subscriptionSources.some(sub => source.includes(sub));
 
                                     // Replace "Familjen" with "Örtendahls familjekalender"
                                     if (source === 'Familjen' || source.includes('Familjen')) {
