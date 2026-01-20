@@ -124,3 +124,14 @@ server/seen_events.json
 create_test_data.js
 create_test_recurring.js
 restore_script.js
+
+# Sensitive files - NEVER commit these!
+server/credentials/
+*.credentials.json
+*-service-account.json
+google-service-account.json
+.env.local
+.env.production
+server/calendar_cache.json
+server/google_event_map.json
+server/last_version.txt
