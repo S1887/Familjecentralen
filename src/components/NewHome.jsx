@@ -467,7 +467,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                             const assigneeColor = NAME_COLORS[t.assignee];
                                             return (
                                                 <div key={i} style={{
-                                                    fontSize: '0.6rem',
+                                                    fontSize: '0.7rem',
                                                     lineHeight: '1.2',
                                                     color: assigneeColor || theme.cardText,
                                                     maxWidth: '100%',
@@ -530,7 +530,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                     const source = e.source || '';
                                     const isArsenal = source.includes('Arsenal') || summary.includes('arsenal');
                                     const isOis = source.includes('Örgryte') || summary.includes('örgryte') || summary.includes('orgryte') || summary.includes('öis') || summary.includes('ois');
-                                    return (isArsenal || isOis) && new Date(e.start) > now;
+                                    return (isArsenal || isOis) && new Date(e.end || e.start) > now;
                                 })
                                 .sort((a, b) => new Date(a.start) - new Date(b.start));
 
@@ -564,12 +564,12 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                     </div>
 
                                     <div style={{ position: 'absolute', top: 'calc(50% + 40px)', left: 0, width: '100%', padding: '0 0.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <div style={{ fontSize: '0.65rem', color: theme.textMuted, lineHeight: 1.2, maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        <div style={{ fontSize: '0.7rem', color: theme.textMuted, lineHeight: 1.2, maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '500' }}>
                                             {cleanSummary}
                                         </div>
                                         {displayDate && (
-                                            <div style={{ fontSize: '0.6rem', color: theme.textMuted, marginTop: '1px' }}>
-                                                {displayDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' }).replace('.', '')}
+                                            <div style={{ fontSize: '0.7rem', color: theme.textMuted, marginTop: '1px', fontWeight: '500' }}>
+                                                {displayDate.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' }).replace('.', '')} kl {displayDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                                             </div>
                                         )}
                                     </div>

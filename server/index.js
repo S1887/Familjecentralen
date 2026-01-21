@@ -2872,6 +2872,7 @@ app.get('/api/new-events', async (req, res) => {
 
         const allEvents = await fetchAndCacheCalendars(); // Get fresh/cached data
         const seenIds = new Set(readSeenEventsSync(username));
+        const ignoredIds = new Set(await readIgnoredEvents()); // Events in trash
 
         // V6.0 MIGRATION LOGIC:
         // If user has NO seen history (first run after update), assume everything is seen.
@@ -2887,6 +2888,7 @@ app.get('/api/new-events', async (req, res) => {
         const shouldNotify = (e) => {
             // Basic checks
             if (seenIds.has(e.uid)) return false;
+            if (ignoredIds.has(e.uid)) return false; // Skip events in trash
             if (e.deleted || e.cancelled) return false;
 
             const textToCheck = ((e.source || '') + (e.summary || '')).toLowerCase();
