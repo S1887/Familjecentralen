@@ -2872,7 +2872,14 @@ app.get('/api/new-events', async (req, res) => {
 
         const allEvents = await fetchAndCacheCalendars(); // Get fresh/cached data
         const seenIds = new Set(readSeenEventsSync(username));
-        const ignoredIds = new Set(await readIgnoredEvents()); // Events in trash
+        const trashItems = readTrashFile();
+        const trashedIds = new Set(trashItems.map(t => t.eventId)); // Events in trash by UID
+
+        // Create a set of "content keys" for trashed items to match by content (handles changing UIDs from ICS feeds)
+        const trashedContentKeys = new Set(trashItems.map(t => {
+            const startDate = t.start ? new Date(t.start).toISOString().split('T')[0] : '';
+            return `${(t.summary || '').toLowerCase()}|${startDate}|${(t.source || '').toLowerCase()}`;
+        }));
 
         // V6.0 MIGRATION LOGIC:
         // If user has NO seen history (first run after update), assume everything is seen.
@@ -2888,7 +2895,14 @@ app.get('/api/new-events', async (req, res) => {
         const shouldNotify = (e) => {
             // Basic checks
             if (seenIds.has(e.uid)) return false;
-            if (ignoredIds.has(e.uid)) return false; // Skip events in trash
+            if (trashedIds.has(e.uid)) return false; // Skip events in trash by UID
+            if (e.linkedSourceUid && trashedIds.has(e.linkedSourceUid)) return false; // Skip if linked source is in trash
+
+            // Check by content (summary + date + source) - handles ICS feeds with changing UIDs
+            const startDate = e.start ? new Date(e.start).toISOString().split('T')[0] : '';
+            const contentKey = `${(e.summary || '').toLowerCase()}|${startDate}|${(e.source || '').toLowerCase()}`;
+            if (trashedContentKeys.has(contentKey)) return false;
+
             if (e.deleted || e.cancelled) return false;
 
             const textToCheck = ((e.source || '') + (e.summary || '')).toLowerCase();
