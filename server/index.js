@@ -1636,7 +1636,14 @@ app.get('/api/events', async (req, res) => {
                 // Merge local overrides into the Google event
                 return {
                     ...googleEvent,
-                    // Apply local overrides for editable fields
+                    // CRITICAL: Apply local overrides for EDITED content fields
+                    // These fields are edited by the user and must override the source data
+                    summary: localOverride.summary || googleEvent.summary,
+                    start: localOverride.start || googleEvent.start,
+                    end: localOverride.end || googleEvent.end,
+                    location: localOverride.location !== undefined ? localOverride.location : googleEvent.location,
+                    description: localOverride.description !== undefined ? localOverride.description : googleEvent.description,
+                    // Apply local overrides for metadata fields
                     assignee: localOverride.assignee || googleEvent.assignee,
                     assignees: localOverride.assignees || googleEvent.assignees || [],
                     category: localOverride.category || googleEvent.category,
@@ -3179,20 +3186,63 @@ app.post('/api/update-event', async (req, res) => {
                 else if (uid.includes('@google.com')) {
                     googleId = uid.replace(/@google\.com$/, '');
                 }
-                // 3. Fallback: Assume it's a raw Google ID if it looks like one
-                else if (!uid.includes('@') && uid.length > 5) { // Simple heuristic
+                // 3. Check if it's a Google Calendar ICS-format UID (base32 encoded, 25+ chars)
+                // Use findEventByICalUID to get the actual Google Event ID
+                else if (!uid.includes('@') && uid.length >= 25 && /^[a-z0-9]+$/.test(uid)) {
+                    // Determine which calendars to search based on source
+                    const calendarsToSearch = [];
+                    if (source && source.includes('Svante')) {
+                        calendarsToSearch.push(googleCalendar.CALENDAR_CONFIG.svante);
+                    } else if (source && source.includes('Sarah')) {
+                        calendarsToSearch.push(googleCalendar.CALENDAR_CONFIG.sarah);
+                    }
+                    // Always include familjen as fallback
+                    calendarsToSearch.push(googleCalendar.CALENDAR_CONFIG.familjen);
+
+                    // Try to find event by iCalUID in each calendar
+                    const iCalUID = uid + '@google.com';
+                    console.log(`[Update] Looking up event by iCalUID: ${iCalUID} in calendars: ${calendarsToSearch.length}`);
+
+                    for (const searchCalId of calendarsToSearch) {
+                        if (!searchCalId || googleId) continue;
+
+                        const foundEvent = await googleCalendar.findEventByICalUID(iCalUID, searchCalId);
+                        if (foundEvent) {
+                            googleId = foundEvent.id;
+                            calendarId = searchCalId; // Update to correct calendar
+                            console.log(`[Update] Found Google Event ID: ${googleId} in calendar: ${searchCalId}`);
+                            break;
+                        }
+
+                        // Fallback: try with raw UID as iCalUID
+                        const foundEvent2 = await googleCalendar.findEventByICalUID(uid, searchCalId);
+                        if (foundEvent2) {
+                            googleId = foundEvent2.id;
+                            calendarId = searchCalId;
+                            console.log(`[Update] Found Google Event ID (raw): ${googleId} in calendar: ${searchCalId}`);
+                            break;
+                        }
+                    }
+                }
+                // 4. Fallback: Assume it's a raw Google ID if it looks like one
+                else if (!uid.includes('@') && uid.length > 5 && uid.length <= 30) {
                     googleId = uid;
                 }
 
                 if (googleId) {
                     console.log(`[Update] Pushing changes to Google Calendar (ID: ${googleId}, Cal: ${calendarId})...`);
-                    await googleCalendar.updateEvent(googleId, calendarId, {
+                    const updateResult = await googleCalendar.updateEvent(googleId, calendarId, {
                         summary,
                         location,
                         description,
                         start: start,
                         end: end
                     });
+                    if (updateResult) {
+                        console.log(`[Update] Successfully updated Google Calendar event`);
+                    }
+                } else {
+                    console.log(`[Update] Could not find Google Event ID for UID: ${uid}`);
                 }
             } catch (syncError) {
                 console.error('[Update] Google Sync Failed:', syncError.message);
@@ -3263,9 +3313,26 @@ app.post('/api/update-event', async (req, res) => {
             await writeDb(uid, assignments);
         }
 
-        // Invalidate cache for instant UI refresh
-        cacheTimestamp = 0;
-        console.log('[Update] Cache invalidated for instant refresh');
+        // Update event in cache instead of invalidating entire cache
+        // This avoids expensive full refresh of all calendars
+        const updatedEvent = events.find(e => e.uid === uid);
+        if (updatedEvent && cachedCalendarEvents.length > 0) {
+            const cacheIndex = cachedCalendarEvents.findIndex(e => e.uid === uid);
+            if (cacheIndex >= 0) {
+                cachedCalendarEvents[cacheIndex] = { ...cachedCalendarEvents[cacheIndex], ...updatedEvent };
+                console.log('[Update] Updated event in cache (no full refresh needed)');
+            } else {
+                // Event not in cache, add it
+                cachedCalendarEvents.push(updatedEvent);
+                console.log('[Update] Added event to cache');
+            }
+            // Save updated cache to disk
+            saveCacheToDisk();
+        } else {
+            // Fallback: invalidate cache if something is wrong
+            cacheTimestamp = 0;
+            console.log('[Update] Cache invalidated (fallback)');
+        }
 
         res.json({ success: true });
     } catch (error) {

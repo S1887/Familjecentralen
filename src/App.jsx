@@ -548,14 +548,28 @@ function App() {
     return 'assigned-family'; // Default for everything else (Family/Unassigned)
   };
 
-  // State för att skapa nytt event
+  // Helper to get next full hour (e.g., 17:43 -> 18:00)
+  const getNextFullHour = () => {
+    const now = new Date();
+    now.setMinutes(0, 0, 0);
+    now.setHours(now.getHours() + 1);
+    return now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+  };
 
+  const getDefaultEndTime = () => {
+    const now = new Date();
+    now.setMinutes(0, 0, 0);
+    now.setHours(now.getHours() + 2); // 1 hour after start
+    return now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // State för att skapa nytt event
   const [newEvent, setNewEvent] = useState({
     summary: '',
     date: new Date().toISOString().split('T')[0],
     endDate: '',
-    time: '12:00',
-    endTime: '13:00',
+    time: getNextFullHour(),
+    endTime: getDefaultEndTime(),
     location: '',
     description: '',
     assignments: { driver: null, packer: null },
@@ -759,6 +773,12 @@ function App() {
 
         // MERGE instead of REPLACE to preserve optimistic events
         setEvents(prevEvents => {
+          // Safety check - if prevEvents is invalid, just use server data
+          if (!prevEvents || !Array.isArray(prevEvents)) {
+            console.warn('[fetchEvents] prevEvents invalid, using server data directly');
+            return processedData.filter(e => !pendingDeletes.includes(e.uid));
+          }
+
           // 1. Keep optimistic events (not yet confirmed by server)
           const optimisticEvents = prevEvents.filter(e => e.isOptimistic);
 
@@ -778,6 +798,10 @@ function App() {
         // Försök hämta koordinater och restid för events (asynkront i bakgrunden)
         enrichEventsWithGeo(processedData).then(enriched => {
           setEvents(prevEvents => {
+            // Safety check
+            if (!prevEvents || !Array.isArray(prevEvents)) {
+              return enriched.filter(e => !pendingDeletes.includes(e.uid));
+            }
             // Same merge logic for geo enrichment
             const optimisticEvents = prevEvents.filter(e => e.isOptimistic);
             const serverUids = new Set(enriched.map(e => e.uid));
@@ -1352,6 +1376,7 @@ function App() {
       // Sync driver/packer from assignments for edit form
       driver: event.assignments?.driver || '',
       packer: event.assignments?.packer || '',
+      source: event.source || 'Familjen', // Ensure source is never undefined
       isExternalSource, // Flag for origin
       isLocked: isExternalSource // Default lock state (can be unlocked by user)
     });
@@ -1420,12 +1445,13 @@ function App() {
         })
       });
 
-      // Success - Silent refresh to ensure sync
+      // Success - optimistic update already applied, no immediate fetch needed
       console.log('Event updated successfully (optimistic)');
-      // Delay fetch slightly to allow server propagation to Google if needed
-      // But since we have local shadow, we don't strictly need to fetch immediately if we trust our shadow.
-      // However, to get the "Clean" source string back, we should eventually fetch.
-      fetchEvents();
+      // Delay fetch to allow Google sync to complete and avoid UI flicker
+      // The optimistic update is already showing, so user sees instant feedback
+      setTimeout(() => {
+        fetchEvents();
+      }, 3000); // Fetch after 3 seconds to sync any server-side changes
 
     } catch (err) {
       console.error("Could not update event", err);
@@ -1522,8 +1548,8 @@ function App() {
       assignments: { driver: '', packer: '' }, // Reset assignments
       category: null,
       date: new Date().toISOString().split('T')[0],
-      time: '12:00',
-      endTime: '13:00',
+      time: getNextFullHour(),
+      endTime: getDefaultEndTime(),
       endDate: '',
       isAllDay: false,
       recurrence: null // Reset recurrence
