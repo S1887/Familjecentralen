@@ -2539,11 +2539,9 @@ app.delete('/api/trash/:uid', async (req, res) => {
                     description: eventData.description || ''
                 };
 
-                // Determine target calendar
+                // Create the event (createEvent determines calendar internally via assignees)
+                const createdEvent = await googleCalendar.createEvent(googleEvent);
                 const calendarId = googleCalendar.getTargetCalendarId(eventData.assignees);
-
-                // Create the event
-                const createdEvent = await googleCalendar.createEvent(googleEvent, calendarId);
 
                 if (createdEvent) {
                     await googleCalendar.saveMapping(uid, createdEvent.id, calendarId);
@@ -3188,13 +3186,13 @@ app.post('/api/update-event', async (req, res) => {
 
                 if (googleId) {
                     console.log(`[Update] Pushing changes to Google Calendar (ID: ${googleId}, Cal: ${calendarId})...`);
-                    await googleCalendar.updateEvent(googleId, {
+                    await googleCalendar.updateEvent(googleId, calendarId, {
                         summary,
                         location,
                         description,
-                        start: { dateTime: start, timeZone: 'Europe/Stockholm' },
-                        end: { dateTime: end, timeZone: 'Europe/Stockholm' }
-                    }, calendarId);
+                        start: start,
+                        end: end
+                    });
                 }
             } catch (syncError) {
                 console.error('[Update] Google Sync Failed:', syncError.message);

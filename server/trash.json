@@ -1,0 +1,41 @@
+[
+  {
+    "eventId": "96739dfd-091c-421a-bd8b-f5c7380b1030",
+    "summary": "Utvecklingssamtal",
+    "start": "2026-01-28T23:00:00.000Z",
+    "source": "Vklass (Skola Tuva)",
+    "trashType": "deleted",
+    "trashedAt": "2026-01-21T09:52:40.215Z"
+  },
+  {
+    "eventId": "69a0be85-8501-48df-91bc-ba4bf35156a3",
+    "summary": "Utvecklingssamtal",
+    "start": "2026-01-28T23:00:00.000Z",
+    "source": "Vklass (Skola Tuva)",
+    "trashType": "deleted",
+    "trashedAt": "2026-01-21T09:53:10.398Z"
+  },
+  {
+    "eventId": "5fd841ac-5d74-40a9-8979-489d6625f9c3",
+    "summary": "Utvecklingssamtal",
+    "start": "2026-01-27T23:00:00.000Z",
+    "source": "Vklass (Skola)",
+    "trashType": "deleted",
+    "trashedAt": "2026-01-21T09:53:16.983Z"
+  },
+  {
+    "eventId": "7a6cb95c-a737-4071-ad52-aac530eacdaa",
+    "summary": "Utvecklingssamtal",
+    "start": "2026-01-27T23:00:00.000Z",
+    "source": "Vklass (Skola)",
+    "trashType": "deleted",
+    "trashedAt": "2026-01-21T12:28:54.168Z"
+  },
+  {
+    "eventId": "6ee6lia1ak5doen7sf6m8vgai8",
+    "summary": "Test Recurrence Script 3001",
+    "source": "Svante",
+    "trashType": "deleted",
+    "trashedAt": "2026-01-21T20:24:03.271Z"
+  }
+]
