@@ -35,9 +35,22 @@ const DayViewModal = ({
         return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     };
 
-    // Filter events for this day
+    // Filter events for this day (including multi-day events that span this date)
+    const dayStart = new Date(selectedDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(selectedDate);
+    dayEnd.setHours(23, 59, 59, 999);
+
     const dayEvents = events
-        .filter(e => isSameDay(new Date(e.start), selectedDate))
+        .filter(e => {
+            const eventStart = new Date(e.start);
+            let eventEnd = new Date(e.end || e.start);
+            // Adjust exclusive end date (midnight → previous day)
+            if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0 && eventEnd > eventStart) {
+                eventEnd = new Date(eventEnd.getTime() - 1);
+            }
+            return eventStart <= dayEnd && eventEnd >= dayStart;
+        })
         .sort((a, b) => {
             const startDiff = new Date(a.start) - new Date(b.start);
             if (startDiff !== 0) return startDiff;
@@ -271,6 +284,25 @@ const DayViewModal = ({
                                 const isPast = eventEndTime && eventEndTime < new Date();
                                 const colorClass = getEventColorClass ? getEventColorClass(event) : '';
 
+                                // Calculate multi-day info
+                                let multiDayLabel = null;
+                                if (isAllDayEvent(event)) {
+                                    const evStart = new Date(event.start);
+                                    evStart.setHours(0, 0, 0, 0);
+                                    let evEnd = new Date(event.end || event.start);
+                                    if (evEnd.getHours() === 0 && evEnd.getMinutes() === 0 && evEnd > evStart) {
+                                        evEnd = new Date(evEnd.getTime() - 1);
+                                    }
+                                    evEnd.setHours(0, 0, 0, 0);
+                                    const totalDays = Math.round((evEnd - evStart) / (1000 * 60 * 60 * 24)) + 1;
+                                    if (totalDays > 1) {
+                                        const currentDay = new Date(selectedDate);
+                                        currentDay.setHours(0, 0, 0, 0);
+                                        const dayNumber = Math.round((currentDay - evStart) / (1000 * 60 * 60 * 24)) + 1;
+                                        multiDayLabel = `dag ${dayNumber}/${totalDays}`;
+                                    }
+                                }
+
                                 // Get border color from CSS class
                                 const getBorderColor = () => {
                                     if (colorClass.includes('svante')) return '#ff4757';
@@ -318,7 +350,7 @@ const DayViewModal = ({
                                             textAlign: 'center'
                                         }}>
                                             {isAllDayEvent(event) ? (
-                                                <div style={{ fontSize: '0.8rem' }}>Heldag</div>
+                                                <div style={{ fontSize: '0.8rem' }}>{multiDayLabel ? `Heldag (${multiDayLabel})` : 'Heldag'}</div>
                                             ) : (
                                                 eventTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
                                             )}

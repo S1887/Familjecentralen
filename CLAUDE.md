@@ -137,6 +137,63 @@ for (const searchCalId of calendarsToSearch) {
 
 ---
 
+### Problem: Borttagning av händelser synkas inte till Google Calendar (v6.0.8)
+
+**Symptom:** Händelser tas bort lokalt men finns kvar i Google Calendar.
+
+**Orsak:** Trash/delete/cancel-endpointsen saknade `findEventByICalUID`-sökning som update-endpointen hade. Utan denna sökning hittades inte ICS-baserade händelser i Google Calendar.
+
+**Lösning:** Lade till iCalUID-sökning som sista fallback i alla tre endpoints. Söker med både `uid` och `uid@google.com`:
+```javascript
+const iCalUIDsToTry = [uid];
+if (!uid.includes('@')) {
+    iCalUIDsToTry.push(uid + '@google.com');
+}
+for (const cal of calendarsToSearch) {
+    for (const iCalUID of iCalUIDsToTry) {
+        const foundEvent = await googleCalendar.findEventByICalUID(iCalUID, cal.id);
+        if (foundEvent) {
+            await googleCalendar.deleteEvent(foundEvent.id, cal.id);
+        }
+    }
+}
+```
+
+**Plats i kod:** `server/index.js` i `/api/trash`, `/api/delete-event`, `/api/cancel-event`
+
+---
+
+### Problem: Heldags/flerdagshändelser synkas fel till Google Calendar (v6.0.8)
+
+**Symptom:** Heldagshändelser skapas/uppdateras på fel datum i Google Calendar (off-by-one), eller konverteras till timed events.
+
+**Orsak:**
+1. `googleCalendar.createEvent()` använde `toISOString().split('T')[0]` för datum, som ger fel i UTC-miljöer (Docker/HA)
+2. `googleCalendar.updateEvent()` använde alltid `dateTime`-format, aldrig `date`-format för heldagar
+3. Backend skickade inte `allDay`-flaggan till Google Calendar vid uppdatering
+
+**Lösning:**
+1. Använd `getStockholmISOString()` för korrekt datumextraktion:
+   ```javascript
+   const startDateStr = getStockholmISOString(event.start).split('T')[0];
+   ```
+2. `updateEvent()` kollar nu `updates.allDay` och väljer rätt format
+3. Backend destructurar och skickar `allDay` från request body
+
+**Plats i kod:** `server/googleCalendar.js` i `createEvent()` och `updateEvent()`, `server/index.js` i `/api/update-event`
+
+---
+
+### Flerdagshändelser: dag X/Y-etikett i alla vyer (v6.0.8)
+
+Alla vyer visar nu vilken dag av en flerdagshändelse som visas:
+- **MobileGridWeekView** - `dag 2/3` bredvid händelsenamnet
+- **DayViewModal** - `Heldag (dag 2/3)` + fixad filtrering (visar nu händelser som sträcker sig över dagen)
+- **NewHome** - `Heldag (dag 2/3)` på startsidan
+- **EventDetailModal** - `Heldag (3 dagar)` i detaljvyn
+
+---
+
 ## Home Assistant Deployment
 
 **VIKTIGT:** För att Home Assistant ska upptäcka en ny version måste versionen uppdateras på **TVÅ** ställen:

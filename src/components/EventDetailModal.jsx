@@ -86,6 +86,22 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
 
     if (isNaN(eventDate.getTime())) return null;
 
+    // Calculate multi-day info
+    let multiDayLabel = null;
+    if (isAllDayEvent(event)) {
+        const evStart = new Date(event.start);
+        evStart.setHours(0, 0, 0, 0);
+        let evEnd = new Date(event.end || event.start);
+        if (evEnd.getHours() === 0 && evEnd.getMinutes() === 0 && evEnd > evStart) {
+            evEnd = new Date(evEnd.getTime() - 1);
+        }
+        evEnd.setHours(0, 0, 0, 0);
+        const totalDays = Math.round((evEnd - evStart) / (1000 * 60 * 60 * 24)) + 1;
+        if (totalDays > 1) {
+            multiDayLabel = `${totalDays} dagar`;
+        }
+    }
+
     const formatDate = (date) => {
         const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
         return date.toLocaleDateString('sv-SE', options);
@@ -201,7 +217,7 @@ const EventDetailModal = ({ event, allEvents, onClose, onEdit, onNavigate, onSho
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.1rem' }}>
                             <Icon name="clock" size={24} />
                             <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-                                {isAllDayEvent(event) ? 'Heldag' : `${eventDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })} - ${eventEnd.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}`}
+                                {isAllDayEvent(event) ? (multiDayLabel ? `Heldag (${multiDayLabel})` : 'Heldag') : `${eventDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })} - ${eventEnd.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}`}
                             </span>
                         </div>
 

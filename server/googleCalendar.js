@@ -239,15 +239,16 @@ async function createEvent(event) {
         // Handle all-day vs timed events
         if (event.allDay) {
             // All-day events use 'date' format (YYYY-MM-DD) instead of 'dateTime'
-            const startDate = new Date(event.start);
-            const endDate = new Date(event.end);
+            // Use Stockholm timezone to avoid UTC date shift (midnight Stockholm = 22:00/23:00 UTC previous day)
+            const startDateStr = getStockholmISOString(event.start).split('T')[0];
+            const endDateStr = getStockholmISOString(event.end).split('T')[0];
 
             googleEvent.start = {
-                date: startDate.toISOString().split('T')[0],
+                date: startDateStr,
                 timeZone: 'Europe/Stockholm'
             };
             googleEvent.end = {
-                date: endDate.toISOString().split('T')[0],
+                date: endDateStr,
                 timeZone: 'Europe/Stockholm'
             };
         } else {
@@ -327,19 +328,42 @@ async function updateEvent(eventId, calendarId, updates) {
     if (updates.location) resource.location = updates.location;
     if (updates.description) resource.description = updates.description;
 
-    if (updates.start) {
-        const startDate = new Date(updates.start);
-        resource.start = {
-            dateTime: startDate.toISOString(),
-            timeZone: 'Europe/Stockholm'
-        };
-    }
-    if (updates.end) {
-        const endDate = new Date(updates.end);
-        resource.end = {
-            dateTime: endDate.toISOString(),
-            timeZone: 'Europe/Stockholm'
-        };
+    if (updates.start && updates.end) {
+        if (updates.allDay) {
+            // All-day events use 'date' format (YYYY-MM-DD)
+            // Use Stockholm timezone to avoid UTC date shift
+            resource.start = {
+                date: getStockholmISOString(updates.start).split('T')[0],
+                timeZone: 'Europe/Stockholm'
+            };
+            resource.end = {
+                date: getStockholmISOString(updates.end).split('T')[0],
+                timeZone: 'Europe/Stockholm'
+            };
+        } else {
+            // Timed events use 'dateTime' format
+            resource.start = {
+                dateTime: new Date(updates.start).toISOString(),
+                timeZone: 'Europe/Stockholm'
+            };
+            resource.end = {
+                dateTime: new Date(updates.end).toISOString(),
+                timeZone: 'Europe/Stockholm'
+            };
+        }
+    } else {
+        if (updates.start) {
+            resource.start = {
+                dateTime: new Date(updates.start).toISOString(),
+                timeZone: 'Europe/Stockholm'
+            };
+        }
+        if (updates.end) {
+            resource.end = {
+                dateTime: new Date(updates.end).toISOString(),
+                timeZone: 'Europe/Stockholm'
+            };
+        }
     }
 
     try {
@@ -405,6 +429,30 @@ async function findEventByUid(uid, calendarId = CALENDAR_CONFIG.familjen) {
         return null;
     } catch (error) {
         console.error('[GoogleCalendar] Find event failed:', error.message);
+        return null;
+    }
+}
+
+/**
+ * Find event by iCalUID - used to find Google event ID from ICS UID
+ */
+async function findEventByICalUID(iCalUID, calendarId = CALENDAR_CONFIG.familjen) {
+    const calendar = await initializeClient();
+    if (!calendar) return null;
+
+    try {
+        const result = await calendar.events.list({
+            calendarId,
+            iCalUID: iCalUID,
+            maxResults: 1
+        });
+
+        if (result.data.items && result.data.items.length > 0) {
+            return result.data.items[0];
+        }
+        return null;
+    } catch (error) {
+        console.error('[GoogleCalendar] Find event by iCalUID failed:', error.message);
         return null;
     }
 }
@@ -495,6 +543,7 @@ export default {
     updateEvent,
     deleteEvent,
     findEventByUid,
+    findEventByICalUID,
     listEvents,
     cancelEvent,
     testConnection,

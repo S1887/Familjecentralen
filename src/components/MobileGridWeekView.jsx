@@ -131,13 +131,34 @@ const MobileGridWeekView = ({
                         <div className="mobile-day-events">
                             {dayEvents.map(event => {
                                 const isAllDay = isAllDayEvent ? isAllDayEvent(event) : false;
-                                const timeStr = isAllDay ? null : new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+                                let timeStr = isAllDay ? null : new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+
+                                // Calculate multi-day info for spanning events
+                                let multiDayLabel = null;
+                                if (isAllDay) {
+                                    const eventStart = new Date(event.start);
+                                    eventStart.setHours(0, 0, 0, 0);
+                                    let eventEnd = new Date(event.end);
+                                    // Adjust exclusive end date (midnight → previous day)
+                                    if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0) {
+                                        eventEnd = new Date(eventEnd.getTime() - 1);
+                                    }
+                                    eventEnd.setHours(0, 0, 0, 0);
+                                    const totalDays = Math.round((eventEnd - eventStart) / (1000 * 60 * 60 * 24)) + 1;
+                                    if (totalDays > 1) {
+                                        const currentDay = new Date(day);
+                                        currentDay.setHours(0, 0, 0, 0);
+                                        const dayNumber = Math.round((currentDay - eventStart) / (1000 * 60 * 60 * 24)) + 1;
+                                        multiDayLabel = `dag ${dayNumber}/${totalDays}`;
+                                    }
+                                }
+
                                 const colorClass = getEventColorClass ? getEventColorClass(event) : '';
                                 const isNew = newEventUids && newEventUids.has(event.uid);
 
                                 return (
                                     <div
-                                        key={event.uid}
+                                        key={`${event.uid}-${day.toISOString()}`}
                                         className={`mobile-event-compact ${colorClass}`}
                                         onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
                                         style={{ border: isNew ? '1px solid #ff4757' : 'none' }}
@@ -145,6 +166,7 @@ const MobileGridWeekView = ({
                                         <div style={{ display: 'flex', alignItems: 'center' }}>
                                             {isNew && <span style={{ color: '#ff4757', marginRight: '2px', fontWeight: 'bold', fontSize: '0.7em' }}>●</span>}
                                             {timeStr && <span className="event-time-compact">{timeStr}</span>}
+                                            {multiDayLabel && <span className="event-time-compact" style={{ fontSize: '0.65em', opacity: 0.8 }}>{multiDayLabel}</span>}
                                         </div>
                                         <span className="event-summary-compact">{event.summary}</span>
                                     </div>

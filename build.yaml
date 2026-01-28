@@ -1,0 +1,9 @@
+build_from:
+  aarch64: ghcr.io/home-assistant/aarch64-base:3.20
+  amd64: ghcr.io/home-assistant/amd64-base:3.20
+  armv7: ghcr.io/home-assistant/armv7-base:3.20
+labels:
+  org.opencontainers.image.title: "Örtendahls familjecentral"
+  org.opencontainers.image.description: "Familjekalender och sysslor för Home Assistant"
+  org.opencontainers.image.source: "https://github.com/S1887/Familjecentralen"
+  org.opencontainers.image.version: "6.0.8"

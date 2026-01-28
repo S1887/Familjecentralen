@@ -2446,6 +2446,42 @@ app.post('/api/trash', async (req, res) => {
                 }
             }
 
+            // Method 4: Search by iCalUID (reliable for ICS-originated events)
+            if (!googleDeleted) {
+                const calendarsToSearch = [];
+                if (source && source.includes('Svante')) {
+                    calendarsToSearch.push({ id: googleCalendar.CALENDAR_CONFIG.svante, name: 'Svante' });
+                } else if (source && source.includes('Sarah')) {
+                    calendarsToSearch.push({ id: googleCalendar.CALENDAR_CONFIG.sarah, name: 'Sarah' });
+                }
+                calendarsToSearch.push({ id: googleCalendar.CALENDAR_CONFIG.familjen, name: 'Familjen' });
+
+                // Try both uid directly and uid@google.com (Google stores iCalUID with @google.com suffix)
+                const iCalUIDsToTry = [uid];
+                if (!uid.includes('@')) {
+                    iCalUIDsToTry.push(uid + '@google.com');
+                }
+
+                for (const cal of calendarsToSearch.filter(c => c.id)) {
+                    if (googleDeleted) break;
+                    for (const iCalUID of iCalUIDsToTry) {
+                        if (googleDeleted) break;
+                        try {
+                            console.log(`[Trash] Searching by iCalUID ${iCalUID} in ${cal.name}...`);
+                            const foundEvent = await googleCalendar.findEventByICalUID(iCalUID, cal.id);
+                            if (foundEvent) {
+                                console.log(`[Trash] Found event via iCalUID in ${cal.name}: ${foundEvent.id}`);
+                                await googleCalendar.deleteEvent(foundEvent.id, cal.id);
+                                console.log(`[Trash] Event DELETED from ${cal.name} via iCalUID`);
+                                googleDeleted = true;
+                            }
+                        } catch (iCalError) {
+                            console.error(`[Trash] iCalUID search/delete in ${cal.name} failed:`, iCalError.message);
+                        }
+                    }
+                }
+            }
+
             if (!googleDeleted) {
                 console.log(`[Trash] Event ${uid} could not be deleted from any Google Calendar`);
             }
@@ -2654,6 +2690,42 @@ app.post('/api/cancel-event', async (req, res) => {
                     console.error('[Cancel] Fallback delete failed:', fallbackError.message);
                 }
             }
+
+            // Search by iCalUID (reliable for ICS-originated events)
+            if (!googleDeleted) {
+                const calendarsToSearch = [];
+                if (source && source.toLowerCase().includes('svante')) {
+                    calendarsToSearch.push({ id: googleCalendar.CALENDAR_CONFIG.svante, name: 'Svante' });
+                } else if (source && source.toLowerCase().includes('sarah')) {
+                    calendarsToSearch.push({ id: googleCalendar.CALENDAR_CONFIG.sarah, name: 'Sarah' });
+                }
+                calendarsToSearch.push({ id: googleCalendar.CALENDAR_CONFIG.familjen, name: 'Familjen' });
+
+                // Try both uid directly and uid@google.com (Google stores iCalUID with @google.com suffix)
+                const iCalUIDsToTry = [uid];
+                if (!uid.includes('@')) {
+                    iCalUIDsToTry.push(uid + '@google.com');
+                }
+
+                for (const cal of calendarsToSearch.filter(c => c.id)) {
+                    if (googleDeleted) break;
+                    for (const iCalUID of iCalUIDsToTry) {
+                        if (googleDeleted) break;
+                        try {
+                            console.log(`[Cancel] Searching by iCalUID ${iCalUID} in ${cal.name}...`);
+                            const foundEvent = await googleCalendar.findEventByICalUID(iCalUID, cal.id);
+                            if (foundEvent) {
+                                console.log(`[Cancel] Found event via iCalUID in ${cal.name}: ${foundEvent.id}`);
+                                await googleCalendar.deleteEvent(foundEvent.id, cal.id);
+                                console.log(`[Cancel] Event DELETED from ${cal.name} via iCalUID`);
+                                googleDeleted = true;
+                            }
+                        } catch (iCalError) {
+                            console.error(`[Cancel] iCalUID search/delete in ${cal.name} failed:`, iCalError.message);
+                        }
+                    }
+                }
+            }
         }
 
         // Invalidate cache for instant UI refresh
@@ -2776,6 +2848,42 @@ app.post('/api/delete-event', async (req, res) => {
                         // Ignore 404 (not found in this calendar)
                         if (!deleteError.message?.includes('404')) {
                             console.error(`[Delete] Direct delete failed type:`, deleteError.message);
+                        }
+                    }
+                }
+            }
+
+            // 3. Search by iCalUID (reliable for ICS-originated events)
+            if (!googleDeleted) {
+                const calendarsToSearch = [];
+                if (source && source.includes('Svante')) {
+                    calendarsToSearch.push({ id: googleCalendar.CALENDAR_CONFIG.svante, name: 'Svante' });
+                } else if (source && source.includes('Sarah')) {
+                    calendarsToSearch.push({ id: googleCalendar.CALENDAR_CONFIG.sarah, name: 'Sarah' });
+                }
+                calendarsToSearch.push({ id: googleCalendar.CALENDAR_CONFIG.familjen, name: 'Familjen' });
+
+                // Try both uid directly and uid@google.com (Google stores iCalUID with @google.com suffix)
+                const iCalUIDsToTry = [uid];
+                if (!uid.includes('@')) {
+                    iCalUIDsToTry.push(uid + '@google.com');
+                }
+
+                for (const cal of calendarsToSearch.filter(c => c.id)) {
+                    if (googleDeleted) break;
+                    for (const iCalUID of iCalUIDsToTry) {
+                        if (googleDeleted) break;
+                        try {
+                            console.log(`[Delete] Searching by iCalUID ${iCalUID} in ${cal.name}...`);
+                            const foundEvent = await googleCalendar.findEventByICalUID(iCalUID, cal.id);
+                            if (foundEvent) {
+                                console.log(`[Delete] Found event via iCalUID in ${cal.name}: ${foundEvent.id}`);
+                                await googleCalendar.deleteEvent(foundEvent.id, cal.id);
+                                console.log(`[Delete] Event DELETED from ${cal.name} via iCalUID`);
+                                googleDeleted = true;
+                            }
+                        } catch (iCalError) {
+                            console.error(`[Delete] iCalUID search/delete in ${cal.name} failed:`, iCalError.message);
                         }
                     }
                 }
@@ -3164,7 +3272,7 @@ app.post('/api/create-event', async (req, res) => {
 });
 
 app.post('/api/update-event', async (req, res) => {
-    const { uid, summary, location, coords, start, end, description, todoList, cancelled, assignments, assignee, assignees, category, source } = req.body;
+    const { uid, summary, location, coords, start, end, description, todoList, cancelled, assignments, assignee, assignees, category, source, allDay } = req.body;
 
     try {
         let events = await readLocalEvents();
@@ -3243,7 +3351,8 @@ app.post('/api/update-event', async (req, res) => {
                         location,
                         description,
                         start: start,
-                        end: end
+                        end: end,
+                        allDay: allDay || false
                     });
                     if (updateResult) {
                         console.log(`[Update] Successfully updated Google Calendar event`);

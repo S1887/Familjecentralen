@@ -359,6 +359,25 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                             const eventEndTime = event.end ? new Date(event.end) : null;
                                             const isPast = eventEndTime && eventEndTime < now;
 
+                                            // Calculate multi-day info
+                                            let multiDayLabel = null;
+                                            if (isAllDayEvent(event)) {
+                                                const evStart = new Date(event.start);
+                                                evStart.setHours(0, 0, 0, 0);
+                                                let evEnd = new Date(event.end || event.start);
+                                                if (evEnd.getHours() === 0 && evEnd.getMinutes() === 0 && evEnd > evStart) {
+                                                    evEnd = new Date(evEnd.getTime() - 1);
+                                                }
+                                                evEnd.setHours(0, 0, 0, 0);
+                                                const totalDays = Math.round((evEnd - evStart) / (1000 * 60 * 60 * 24)) + 1;
+                                                if (totalDays > 1) {
+                                                    const today = new Date();
+                                                    today.setHours(0, 0, 0, 0);
+                                                    const dayNumber = Math.round((today - evStart) / (1000 * 60 * 60 * 24)) + 1;
+                                                    multiDayLabel = `dag ${dayNumber}/${totalDays}`;
+                                                }
+                                            }
+
                                             return (
                                                 <div
                                                     key={event.uid || idx}
@@ -384,7 +403,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                                         fontSize: '0.95rem',
                                                         color: isPast ? theme.textMuted : theme.accent
                                                     }}>
-                                                        {isAllDayEvent(event) ? 'Heldag' : eventTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                                        {isAllDayEvent(event) ? (multiDayLabel ? `Heldag (${multiDayLabel})` : 'Heldag') : eventTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                                                     </div>
 
                                                     {/* Event Info */}
