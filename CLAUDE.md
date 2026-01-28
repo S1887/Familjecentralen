@@ -137,6 +137,28 @@ for (const searchCalId of calendarsToSearch) {
 
 ---
 
+## Home Assistant Deployment
+
+**VIKTIGT:** För att Home Assistant ska upptäcka en ny version måste versionen uppdateras på **TVÅ** ställen:
+
+1. `config.yaml` (i roten) - används lokalt
+2. `familjecentralen/config.yaml` - **KRITISKT** - detta är filen som GitHub Actions deploy workflow läser från!
+
+GitHub Actions workflow (`.github/workflows/deploy.yml`) extraherar versionen så här:
+```yaml
+VERSION=$(grep '^version:' familjecentralen/config.yaml | sed 's/version: *"\(.*\)"/\1/')
+```
+
+**Checklista vid release:**
+- [ ] Uppdatera `version` i `config.yaml`
+- [ ] Uppdatera `version` i `familjecentralen/config.yaml`
+- [ ] Uppdatera `version` i `package.json`
+- [ ] Uppdatera `org.opencontainers.image.version` i `build.yaml`
+- [ ] Commit och push till main
+- [ ] Vänta på att GitHub Actions bygger Docker-imagen
+
+---
+
 ## Projektstruktur
 
 - `src/App.jsx` - Huvudkomponent för frontend
