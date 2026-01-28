@@ -77,8 +77,28 @@ const MobileGridWeekView = ({
         return date.getDate();
     };
 
+    // Check if event spans a given day (for multi-day events)
+    const isEventOnDay = (event, targetDay) => {
+        const dayStart = new Date(targetDay);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(targetDay);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        const eventStart = new Date(event.start);
+        let eventEnd = new Date(event.end);
+
+        // All-day events in ICS/Google have exclusive end dates (midnight next day)
+        // Adjust to 23:59:59 of the previous day for correct display
+        if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0) {
+            eventEnd = new Date(eventEnd.getTime() - 1); // 23:59:59.999 previous day
+        }
+
+        // Event spans this day if: starts before day ends AND ends after day starts
+        return eventStart <= dayEnd && eventEnd >= dayStart;
+    };
+
     const getDayEvents = (day) => {
-        return filteredEventsList.filter(event => isSameDay(new Date(event.start), day));
+        return filteredEventsList.filter(event => isEventOnDay(event, day));
     };
 
     const formatMonthName = (date) => {

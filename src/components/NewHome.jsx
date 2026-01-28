@@ -76,11 +76,20 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
     const todayEnd = new Date(todayStart);
     todayEnd.setDate(todayEnd.getDate() + 1);
 
-    // Get all today's events (including past ones)
+    // Get all today's events (including multi-day events that span today)
     const todaysEvents = events
         .filter(e => {
-            const eventDate = new Date(e.start);
-            return eventDate >= todayStart && eventDate < todayEnd;
+            const eventStart = new Date(e.start);
+            let eventEnd = new Date(e.end);
+
+            // All-day events in ICS/Google have exclusive end dates (midnight next day)
+            // Adjust to 23:59:59 of the previous day for correct display
+            if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0) {
+                eventEnd = new Date(eventEnd.getTime() - 1);
+            }
+
+            // Event spans today if: starts before today ends AND ends after today starts
+            return eventStart < todayEnd && eventEnd > todayStart;
         })
         .sort((a, b) => {
             const startDiff = new Date(a.start) - new Date(b.start);

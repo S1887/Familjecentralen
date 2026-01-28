@@ -78,6 +78,65 @@ for (const searchCalId of calendarsToSearch) {
 
 ---
 
+### Problem: Flerdagshändelser visas fel (v6.0.7)
+
+**Symptom:**
+1. Flerdagshändelser (t.ex. "Beredskap 17-20 april") visar fel datum i edit-modalen (off-by-one)
+2. Flerdagshändelser visas bara på startdagen i kalendervyer
+
+**Orsak:**
+1. `toISOString()` konverterar till UTC vilket ger -1 dag för svenska tider
+2. ICS/Google Calendar använder "exklusivt" slutdatum (midnatt nästa dag)
+3. Kalendervyer filtrerade endast på `event.start`, inte om händelsen sträcker sig över dagen
+
+**Lösning:**
+1. Använd lokal datumformatering i `openEditModal()`:
+   ```javascript
+   const formatLocalDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+   ```
+
+2. Justera exklusivt slutdatum (midnatt → 23:59 föregående dag):
+   ```javascript
+   if (endDate.getHours() === 0 && endDate.getMinutes() === 0) {
+       endDate = new Date(endDate.getTime() - 1);
+       endTimeStr = '23:59';
+   }
+   ```
+
+3. Expandera flerdagshändelser i listvyn och kolla om händelse sträcker sig över dag:
+   ```javascript
+   const isEventOnDay = (event, targetDay) => {
+       // Event spans this day if: starts before day ends AND ends after day starts
+       return eventStart <= dayEnd && eventEnd >= dayStart;
+   };
+   ```
+
+**Plats i kod:**
+- `src/App.jsx` - `openEditModal()`, `updateEvent()`, `isEventOnDate()`, `otherEvents`
+- `src/components/MobileGridWeekView.jsx` - `isEventOnDay()`
+- `src/components/NewHome.jsx` - `todaysEvents` filter
+
+---
+
+### Problem: Cache invalideras i onödan (v6.0.7)
+
+**Symptom:** Händelser försvinner efter redigering i Home Assistant (tom cache vid serverstart)
+
+**Orsak:** Fallback-logik invaliderade hela cachen om `cachedCalendarEvents.length === 0`
+
+**Lösning:** Ta bort cache-invalidering som fallback - händelser sparas ändå i local_events.json:
+```javascript
+} else if (updatedEvent) {
+    // Cache is empty but event was saved to local_events.json
+    // DON'T invalidate cache - the event will be merged when fetched
+    console.log('[Update] Cache empty, event saved to local_events.json (no cache invalidation)');
+}
+```
+
+**Plats i kod:** `server/index.js` i `/api/update-event` och `/api/create-event`
+
+---
+
 ## Projektstruktur
 
 - `src/App.jsx` - Huvudkomponent för frontend

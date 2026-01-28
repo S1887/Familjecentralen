@@ -3142,9 +3142,16 @@ app.post('/api/create-event', async (req, res) => {
             }
         }
 
-        // Invalidate cache for instant UI refresh
-        cacheTimestamp = 0;
-        console.log('[CreateEvent] Cache invalidated for instant refresh');
+        // Add new event to cache instead of invalidating entire cache
+        if (cachedCalendarEvents.length > 0) {
+            cachedCalendarEvents.push(newEvent);
+            saveCacheToDisk();
+            console.log('[CreateEvent] Added event to cache (no full refresh needed)');
+        } else {
+            // Cache is empty - event was saved to local_events.json
+            // DON'T invalidate cache - the event will be included when cache is populated
+            console.log('[CreateEvent] Cache empty, event saved to local_events.json (no cache invalidation)');
+        }
 
         res.json({ success: true, event: newEvent, googlePushed: !!googleResult });
     } catch (error) {
@@ -3328,10 +3335,13 @@ app.post('/api/update-event', async (req, res) => {
             }
             // Save updated cache to disk
             saveCacheToDisk();
+        } else if (updatedEvent) {
+            // Cache is empty but event was saved to local_events.json
+            // DON'T invalidate cache - the event will be merged when fetched
+            console.log('[Update] Cache empty, event saved to local_events.json (no cache invalidation)');
         } else {
-            // Fallback: invalidate cache if something is wrong
-            cacheTimestamp = 0;
-            console.log('[Update] Cache invalidated (fallback)');
+            // This should never happen - log error but don't invalidate cache
+            console.error('[Update] WARNING: Could not find updated event in local_events array');
         }
 
         res.json({ success: true });

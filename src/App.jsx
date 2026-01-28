@@ -1044,7 +1044,12 @@ function App() {
     const start = new Date(event.start);
     start.setHours(0, 0, 0, 0);
 
-    const end = new Date(event.end);
+    let end = new Date(event.end);
+    // All-day events in ICS/Google have exclusive end dates (midnight next day)
+    // Adjust to previous day for correct comparison
+    if (end.getHours() === 0 && end.getMinutes() === 0) {
+      end = new Date(end.getTime() - 1);
+    }
     end.setHours(0, 0, 0, 0);
 
     // Event spans this date if target is between start and end (inclusive)
@@ -1285,7 +1290,58 @@ function App() {
   // I will change this to:
   // Include ALL filtered events (including today), sorted by start date
   // Today's events should appear first, followed by future events in chronological order
-  const otherEvents = [...filteredEventsList].sort((a, b) => new Date(a.start) - new Date(b.start));
+  // For multi-day events, create virtual entries for each day they span
+  const otherEvents = useMemo(() => {
+    const expandedEvents = [];
+
+    filteredEventsList.forEach(event => {
+      const startDate = new Date(event.start);
+      let endDate = new Date(event.end);
+
+      // All-day events in ICS/Google have exclusive end dates (midnight next day)
+      // Adjust to 23:59:59 of the previous day for correct calculation
+      if (endDate.getHours() === 0 && endDate.getMinutes() === 0) {
+        endDate = new Date(endDate.getTime() - 1);
+      }
+
+      // Normalize to start of day for comparison
+      const startDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+      const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+      // Calculate number of days the event spans
+      const daysDiff = Math.round((endDay - startDay) / (1000 * 60 * 60 * 24));
+
+      if (daysDiff <= 0) {
+        // Single day event - add as-is
+        expandedEvents.push(event);
+      } else {
+        // Multi-day event - create entry for each day
+        for (let i = 0; i <= daysDiff; i++) {
+          const displayDate = new Date(startDay);
+          displayDate.setDate(startDay.getDate() + i);
+
+          // Create a virtual entry with a display date for grouping
+          expandedEvents.push({
+            ...event,
+            _displayDate: displayDate,
+            _multiDayInfo: {
+              dayNumber: i + 1,
+              totalDays: daysDiff + 1,
+              isFirstDay: i === 0,
+              isLastDay: i === daysDiff
+            }
+          });
+        }
+      }
+    });
+
+    // Sort by display date (or start date for non-multi-day events)
+    return expandedEvents.sort((a, b) => {
+      const dateA = a._displayDate || new Date(a.start);
+      const dateB = b._displayDate || new Date(b.start);
+      return dateA - dateB;
+    });
+  }, [filteredEventsList]);
 
   // Helper to get color class based on who the event is FOR (checks assignees, summary, then assignments)
   const getAssignedColorClass = (event) => {
@@ -1364,13 +1420,27 @@ function App() {
       event.source !== 'Familjen' &&
       !event.source.includes('Örtendahls familjekalender');
 
+    // Use local date formatting to avoid UTC timezone shift for all-day events
+    const startDate = new Date(event.start);
+    let endDate = new Date(event.end);
+    let endTimeStr = endDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+
+    // All-day events in ICS/Google have exclusive end dates (midnight next day)
+    // Adjust to 23:59 of the previous day for correct display
+    if (endDate.getHours() === 0 && endDate.getMinutes() === 0) {
+      endDate = new Date(endDate.getTime() - 1); // Go to 23:59:59.999 of previous day
+      endTimeStr = '23:59';
+    }
+
+    const formatLocalDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
     setEditEventData({
       ...event,
-      // Ensure we have correct date inputs format
-      date: new Date(event.start).toISOString().split('T')[0],
-      endDate: new Date(event.end).toISOString().split('T')[0],
-      time: new Date(event.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
-      endTime: new Date(event.end).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
+      // Ensure we have correct date inputs format (local timezone, not UTC)
+      date: formatLocalDate(startDate),
+      endDate: formatLocalDate(endDate),
+      time: startDate.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
+      endTime: endTimeStr,
       todoList: event.todoList || [],
       assignments: event.assignments || { driver: null, packer: null },
       // Sync driver/packer from assignments for edit form
@@ -1387,9 +1457,27 @@ function App() {
     e.preventDefault();
     if (!editEventData) return;
 
-    const startDateTime = new Date(`${editEventData.date}T${editEventData.time}`);
+    let startDateTime, endDateTime;
     const effectiveEndDate = editEventData.endDate || editEventData.date;
-    const endDateTime = new Date(`${effectiveEndDate}T${editEventData.endTime}`);
+
+    // Check if this is an all-day event (time is 00:00 and end time is 23:59 or 00:00)
+    const isAllDay = editEventData.time === '00:00' &&
+      (editEventData.endTime === '23:59' || editEventData.endTime === '00:00');
+
+    if (isAllDay) {
+      // All-day event: Use Google Calendar's exclusive end date convention
+      startDateTime = new Date(editEventData.date);
+      startDateTime.setHours(0, 0, 0, 0);
+
+      endDateTime = new Date(effectiveEndDate);
+      endDateTime.setHours(0, 0, 0, 0);
+      // Add 1 day for exclusive end date (so the selected end date is included)
+      endDateTime.setDate(endDateTime.getDate() + 1);
+    } else {
+      // Timed event: Use specified times
+      startDateTime = new Date(`${editEventData.date}T${editEventData.time}`);
+      endDateTime = new Date(`${effectiveEndDate}T${editEventData.endTime}`);
+    }
 
     // Auto-save any text remaining in the todo input field
     let finalTodoList = editEventData.todoList || [];
@@ -1412,6 +1500,7 @@ function App() {
       assignees: editEventData.assignees || [], // Ensure array
       assignee: (editEventData.assignees || []).join(', '),
       category: editEventData.category || null,
+      allDay: isAllDay, // Track if this is an all-day event
       source: editEventData.source.includes('(Redigerad)') ? editEventData.source : `${editEventData.source} (Sparar...)`
     };
 
@@ -1440,6 +1529,7 @@ function App() {
           assignees: editEventData.assignees || [],
           assignee: (editEventData.assignees || []).join(', '),
           category: editEventData.category || null,
+          allDay: isAllDay,
           source: editEventData.source,
           cancelled: editEventData.cancelled
         })
@@ -3757,8 +3847,9 @@ function App() {
                     (() => {
                       let lastDate = null;
                       let lastWeek = null;
-                      return otherEvents.map((event) => {
-                        const eventDate = new Date(event.start);
+                      return otherEvents.map((event, index) => {
+                        // Use display date for multi-day events, otherwise use start date
+                        const eventDate = event._displayDate || new Date(event.start);
                         const eventDateStr = eventDate.toLocaleDateString('sv-SE');
                         const eventWeek = getWeekNumber(eventDate);
 
@@ -3774,8 +3865,11 @@ function App() {
                         const assignments = event.assignments || {};
                         const isFullyAssigned = assignments.driver && assignments.packer;
 
+                        // Unique key for multi-day expanded events
+                        const eventKey = event._multiDayInfo ? `${event.uid}-day${event._multiDayInfo.dayNumber}` : event.uid;
+
                         return (
-                          <Fragment key={event.uid}>
+                          <Fragment key={eventKey}>
                             {/* Week separator */}
                             {showWeekSeparator && (
                               <div style={{
@@ -3846,7 +3940,9 @@ function App() {
                             >
                               <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem', fontSize: '0.85rem' }}>
                                 <span className="time" style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>
-                                  {isAllDayEvent(event) ? 'Heldag' : new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+                                  {event._multiDayInfo
+                                    ? `Heldag (dag ${event._multiDayInfo.dayNumber}/${event._multiDayInfo.totalDays})`
+                                    : isAllDayEvent(event) ? 'Heldag' : new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 <span className="source-badge" style={{ opacity: 0.7, fontSize: '0.8em' }}>
                                   {(() => {
