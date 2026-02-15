@@ -305,13 +305,29 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                             onTouchMove={handleTouchMove}
                             onTouchEnd={handleTouchEnd}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.8rem', gap: 0, flexWrap: 'nowrap' }}>
+                            {dayOffset !== 0 && (
+                                <div
+                                    onClick={(e) => { e.stopPropagation(); setDayOffset(0); }}
+                                    style={{
+                                        fontSize: '1.2rem', color: theme.accent, cursor: 'pointer',
+                                        padding: '0.2rem 0.5rem', borderRadius: '8px',
+                                        transition: 'opacity 0.2s',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        minWidth: '36px', minHeight: '36px',
+                                        position: 'absolute', left: '0.4rem', top: '0.4rem', zIndex: 1
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                    title="Tillbaka till idag"
+                                >↩</div>
+                            )}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.8rem', gap: '0.2rem', flexWrap: 'nowrap' }}>
                                 <div
                                     onClick={(e) => { e.stopPropagation(); setDayOffset(d => d - 1); }}
                                     style={{
-                                        cursor: 'pointer', fontSize: '1.6rem', color: theme.textMuted,
-                                        padding: '0.2rem 0.4rem', borderRadius: '8px', lineHeight: 0.9,
-                                        transition: 'color 0.2s', minWidth: '36px', minHeight: '36px',
+                                        cursor: 'pointer', fontSize: '1.8rem', color: theme.textMuted,
+                                        padding: '0.2rem 0.5rem', borderRadius: '8px', lineHeight: 0.9,
+                                        transition: 'color 0.2s', minWidth: '44px', minHeight: '44px',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         flexShrink: 0, position: 'relative', top: '-2px'
                                     }}
@@ -326,11 +342,11 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                         setActiveTab('timeline');
                                     }}
                                     style={{
-                                        fontSize: '0.85rem',
+                                        fontSize: '1.05rem',
                                         color: theme.accent,
-                                        fontWeight: '600',
+                                        fontWeight: '700',
                                         textTransform: 'uppercase',
-                                        letterSpacing: '0.5px',
+                                        letterSpacing: '1px',
                                         cursor: 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
@@ -346,61 +362,15 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                 <div
                                     onClick={(e) => { e.stopPropagation(); setDayOffset(d => d + 1); }}
                                     style={{
-                                        cursor: 'pointer', fontSize: '1.6rem', color: theme.textMuted,
-                                        padding: '0.2rem 0.4rem', borderRadius: '8px', lineHeight: 0.9,
-                                        transition: 'color 0.2s', minWidth: '36px', minHeight: '36px',
+                                        cursor: 'pointer', fontSize: '1.8rem', color: theme.textMuted,
+                                        padding: '0.2rem 0.5rem', borderRadius: '8px', lineHeight: 0.9,
+                                        transition: 'color 0.2s', minWidth: '44px', minHeight: '44px',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         flexShrink: 0, position: 'relative', top: '-2px'
                                     }}
                                     onMouseEnter={e => e.currentTarget.style.color = theme.accent}
                                     onMouseLeave={e => e.currentTarget.style.color = theme.textMuted}
                                 >›</div>
-                                {dayOffset !== 0 && (
-                                    <div
-                                        onClick={(e) => { e.stopPropagation(); setDayOffset(0); }}
-                                        style={{
-                                            fontSize: '1.2rem', color: theme.accent, cursor: 'pointer',
-                                            padding: '0.2rem 0.5rem', borderRadius: '8px',
-                                            transition: 'opacity 0.2s',
-                                            flexShrink: 0,
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            minWidth: '36px', minHeight: '36px'
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
-                                        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                                        title="Tillbaka till idag"
-                                    >↩</div>
-                                )}
-                                <div style={{ flex: 1 }} />
-                                <div
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveTab('create-event');
-                                    }}
-                                    style={{
-                                        background: theme.accent,
-                                        padding: '0.3rem 0.6rem',
-                                        borderRadius: '10px',
-                                        fontSize: '0.75rem',
-                                        fontWeight: '600',
-                                        color: theme.textColorInverse,
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '0.3rem',
-                                        transition: 'transform 0.2s',
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-                                        whiteSpace: 'nowrap',
-                                        minWidth: '55px',
-                                        minHeight: '28px',
-                                        flexShrink: 0
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                                >
-                                    <span style={{ fontSize: '1.1rem', lineHeight: 0.5, display: 'inline-block', position: 'relative', top: '-1px' }}>+</span> Ny
-                                </div>
                             </div>
 
                             <div style={{ flex: 1 }}>
