@@ -2306,14 +2306,14 @@ function App() {
                       top: '100%',
                       right: 0,
                       marginTop: '0.5rem',
-                      background: 'var(--card-bg)',
+                      background: darkMode ? '#1c1c1c' : '#ffffff',
                       border: '1px solid var(--border-color)',
                       borderRadius: '12px',
                       boxShadow: '0 4px 12px var(--shadow-color)',
                       zIndex: 1000,
                       minWidth: '200px',
                       overflow: 'hidden',
-                      color: 'var(--card-text)' // Ensure text inherits correct color
+                      color: 'var(--card-text)'
                     }}>
 
                       {currentUser?.role !== 'child' && (

@@ -35,10 +35,13 @@ const isAllDayEvent = (event) => {
 };
 
 // Card component moved outside to prevent re-creation on each render
-const Card = ({ children, onClick, style, className, theme, darkMode }) => (
+const Card = ({ children, onClick, style, className, theme, darkMode, onTouchStart, onTouchMove, onTouchEnd }) => (
     <div
         onClick={onClick}
         className={className}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
         style={{
             background: theme.cardBg,
             borderRadius: '24px',
@@ -64,19 +67,56 @@ const Card = ({ children, onClick, style, className, theme, darkMode }) => (
 
 const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onOpenModal, setSelectedDate, setViewMode, holidays, onOpenEventDetail, onOpenMatchModal, onDayClick, darkMode }) => {
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [dayOffset, setDayOffset] = useState(0);
+    const [touchStart, setTouchStart] = useState(0);
+    const [touchEnd, setTouchEnd] = useState(0);
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
 
+    // Swipe handlers for day navigation
+    const handleTouchStart = (e) => {
+        setTouchStart(e.targetTouches[0].clientX);
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+    const handleTouchMove = (e) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+    const handleTouchEnd = () => {
+        if (touchStart - touchEnd > 75) {
+            setDayOffset(d => d + 1); // Swipe left → next day
+        }
+        if (touchStart - touchEnd < -75) {
+            setDayOffset(d => d - 1); // Swipe right → previous day
+        }
+    };
+
+    // Build date label for the events card header
+    const getDateLabel = (offset) => {
+        if (offset === 0) return 'Dagens händelser';
+        if (offset === 1) return 'Imorgon';
+        if (offset === -1) return 'Igår';
+        const d = new Date();
+        d.setDate(d.getDate() + offset);
+        return capitalizeFirst(d.toLocaleDateString('sv-SE', { weekday: 'short', day: 'numeric', month: 'short' }));
+    };
+
     // Filter next upcoming event
     const now = new Date();
+    const viewDate = new Date(now);
+    viewDate.setDate(viewDate.getDate() + dayOffset);
+    const viewDayStart = new Date(viewDate.getFullYear(), viewDate.getMonth(), viewDate.getDate());
+    const viewDayEnd = new Date(viewDayStart);
+    viewDayEnd.setDate(viewDayEnd.getDate() + 1);
+
+    // Keep todayStart/todayEnd for other uses (upcoming events etc.)
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayEnd = new Date(todayStart);
     todayEnd.setDate(todayEnd.getDate() + 1);
 
-    // Get all today's events (including multi-day events that span today)
+    // Get events for the viewed day (including multi-day events that span it)
     const todaysEvents = events
         .filter(e => {
             const eventStart = new Date(e.start);
@@ -88,8 +128,8 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                 eventEnd = new Date(eventEnd.getTime() - 1);
             }
 
-            // Event spans today if: starts before today ends AND ends after today starts
-            return eventStart < todayEnd && eventEnd > todayStart;
+            // Event spans viewed day if: starts before day ends AND ends after day starts
+            return eventStart < viewDayEnd && eventEnd > viewDayStart;
         })
         .sort((a, b) => {
             const startDiff = new Date(a.start) - new Date(b.start);
@@ -260,13 +300,30 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
 
                         {/* 1. Today's Events - Spans Full Width */}
                         <Card theme={theme} darkMode={darkMode}
-                            style={{ gridColumn: '1 / -1', minHeight: '120px', maxHeight: '300px', background: theme.nextEventBg, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+                            style={{ gridColumn: '1 / -1', minHeight: '120px', maxHeight: '300px', background: theme.nextEventBg, overflow: 'hidden', display: 'flex', flexDirection: 'column', touchAction: 'pan-y' }}
+                            onTouchStart={handleTouchStart}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
                         >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.8rem', gap: '0.2rem', flexWrap: 'nowrap' }}>
+                                <div
+                                    onClick={(e) => { e.stopPropagation(); setDayOffset(d => d - 1); }}
+                                    style={{
+                                        cursor: 'pointer', fontSize: '1.8rem', color: theme.textMuted,
+                                        padding: '0.2rem 0.6rem', borderRadius: '8px', lineHeight: 0.9,
+                                        transition: 'color 0.2s', minWidth: '44px', minHeight: '44px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        flexShrink: 0, position: 'relative', top: '-2px'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.color = theme.accent}
+                                    onMouseLeave={e => e.currentTarget.style.color = theme.textMuted}
+                                >‹</div>
                                 <div
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        onDayClick && onDayClick(new Date());
+                                        setSelectedDate(new Date());
+                                        setViewMode('upcoming');
+                                        setActiveTab('timeline');
                                     }}
                                     style={{
                                         fontSize: '0.9rem',
@@ -277,80 +334,79 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                         cursor: 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '0.5rem',
-                                        transition: 'opacity 0.2s'
+                                        transition: 'opacity 0.2s',
+                                        whiteSpace: 'nowrap'
                                     }}
                                     onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
                                     onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                                    title="Klicka för att se dagsvy"
+                                    title="Visa alla kommande händelser"
                                 >
-                                    Dagens händelser <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>›</span>
+                                    {getDateLabel(dayOffset)}
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: 'auto', paddingLeft: '1rem' }}>
+                                <div
+                                    onClick={(e) => { e.stopPropagation(); setDayOffset(d => d + 1); }}
+                                    style={{
+                                        cursor: 'pointer', fontSize: '1.8rem', color: theme.textMuted,
+                                        padding: '0.2rem 0.6rem', borderRadius: '8px', lineHeight: 0.9,
+                                        transition: 'color 0.2s', minWidth: '44px', minHeight: '44px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        flexShrink: 0, position: 'relative', top: '-2px'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.color = theme.accent}
+                                    onMouseLeave={e => e.currentTarget.style.color = theme.textMuted}
+                                >›</div>
+                                {dayOffset !== 0 && (
                                     <div
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setActiveTab('create-event');
-                                        }}
+                                        onClick={(e) => { e.stopPropagation(); setDayOffset(0); }}
                                         style={{
-                                            background: theme.accent,
-                                            padding: '0.3rem 0.6rem',
-                                            borderRadius: '10px',
-                                            fontSize: '0.75rem',
-                                            fontWeight: '600',
-                                            color: theme.textColorInverse,
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '0.3rem',
-                                            transition: 'transform 0.2s',
-                                            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-                                            whiteSpace: 'nowrap',
-                                            minWidth: '55px'
+                                            fontSize: '1.2rem', color: theme.accent, cursor: 'pointer',
+                                            padding: '0.2rem 0.5rem', borderRadius: '8px',
+                                            transition: 'opacity 0.2s',
+                                            flexShrink: 0,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            minWidth: '36px', minHeight: '36px'
                                         }}
-                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                                    >
-                                        <span style={{ fontSize: '1.1rem', lineHeight: 0.5, display: 'inline-block', position: 'relative', top: '-1px' }}>+</span> Ny
-                                    </div>
-                                    <div
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedDate(new Date()); // Ensure we're on today's date
-                                            setViewMode('upcoming');
-                                            setActiveTab('timeline');
-                                        }}
-                                        style={{
-                                            background: theme.accent,
-                                            color: theme.textColorInverse,
-                                            padding: '0.3rem 0.6rem',
-                                            borderRadius: '10px',
-                                            fontSize: '0.75rem',
-                                            fontWeight: '600',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '0.3rem',
-                                            transition: 'transform 0.2s',
-                                            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-                                            whiteSpace: 'nowrap',
-                                            minWidth: '55px'
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-                                        title="Visa alla kommande händelser"
-                                    >
-                                        Alla →
-                                    </div>
+                                        onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                                        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                        title="Tillbaka till idag"
+                                    >↩</div>
+                                )}
+                                <div style={{ flex: 1 }} />
+                                <div
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveTab('create-event');
+                                    }}
+                                    style={{
+                                        background: theme.accent,
+                                        padding: '0.3rem 0.6rem',
+                                        borderRadius: '10px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '600',
+                                        color: theme.textColorInverse,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.3rem',
+                                        transition: 'transform 0.2s',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                                        whiteSpace: 'nowrap',
+                                        minWidth: '55px',
+                                        minHeight: '28px',
+                                        flexShrink: 0
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                >
+                                    <span style={{ fontSize: '1.1rem', lineHeight: 0.5, display: 'inline-block', position: 'relative', top: '-1px' }}>+</span> Ny
                                 </div>
                             </div>
 
                             <div style={{ flex: 1, overflowY: 'auto', marginRight: '-0.5rem', paddingRight: '0.5rem' }}>
                                 {todaysEvents.length === 0 ? (
                                     <div style={{ fontSize: '1.1rem', color: theme.textMuted, fontStyle: 'italic', padding: '1rem 0' }}>
-                                        Inga händelser idag. Njut av dagen! 🌟
+                                        {dayOffset === 0 ? 'Inga händelser idag. Njut av dagen! 🌟' : 'Inga händelser denna dag.'}
                                     </div>
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
@@ -612,7 +668,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                         {/* 6. Cypressvägen 8 (Link) */}
                         {/* 6. Cypressvägen 8 (Link) */}
                         <Card theme={theme} darkMode={darkMode} onClick={() => window.location.href = 'https://icdyb1l1q3laawhz67o2dpgt9uczhgfe.ui.nabu.casa/lovelace/Oversikt'} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
-                            <div style={{ marginBottom: '0.5rem', color: '#9b59b6' }}>
+                            <div style={{ marginBottom: '0.5rem', color: '#e74c3c' }}>
                                 {/* House Icon */}
                                 <Icon name="home" size={40} />
                             </div>
