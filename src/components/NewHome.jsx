@@ -305,13 +305,13 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                             onTouchMove={handleTouchMove}
                             onTouchEnd={handleTouchEnd}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.8rem', gap: '0.2rem', flexWrap: 'nowrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.8rem', gap: 0, flexWrap: 'nowrap' }}>
                                 <div
                                     onClick={(e) => { e.stopPropagation(); setDayOffset(d => d - 1); }}
                                     style={{
-                                        cursor: 'pointer', fontSize: '1.8rem', color: theme.textMuted,
-                                        padding: '0.2rem 0.6rem', borderRadius: '8px', lineHeight: 0.9,
-                                        transition: 'color 0.2s', minWidth: '44px', minHeight: '44px',
+                                        cursor: 'pointer', fontSize: '1.6rem', color: theme.textMuted,
+                                        padding: '0.2rem 0.4rem', borderRadius: '8px', lineHeight: 0.9,
+                                        transition: 'color 0.2s', minWidth: '36px', minHeight: '36px',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         flexShrink: 0, position: 'relative', top: '-2px'
                                     }}
@@ -326,11 +326,11 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                         setActiveTab('timeline');
                                     }}
                                     style={{
-                                        fontSize: '0.9rem',
+                                        fontSize: '0.85rem',
                                         color: theme.accent,
                                         fontWeight: '600',
                                         textTransform: 'uppercase',
-                                        letterSpacing: '1px',
+                                        letterSpacing: '0.5px',
                                         cursor: 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
@@ -346,9 +346,9 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                 <div
                                     onClick={(e) => { e.stopPropagation(); setDayOffset(d => d + 1); }}
                                     style={{
-                                        cursor: 'pointer', fontSize: '1.8rem', color: theme.textMuted,
-                                        padding: '0.2rem 0.6rem', borderRadius: '8px', lineHeight: 0.9,
-                                        transition: 'color 0.2s', minWidth: '44px', minHeight: '44px',
+                                        cursor: 'pointer', fontSize: '1.6rem', color: theme.textMuted,
+                                        padding: '0.2rem 0.4rem', borderRadius: '8px', lineHeight: 0.9,
+                                        transition: 'color 0.2s', minWidth: '36px', minHeight: '36px',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         flexShrink: 0, position: 'relative', top: '-2px'
                                     }}
