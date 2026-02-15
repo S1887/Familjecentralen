@@ -300,7 +300,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
 
                         {/* 1. Today's Events - Spans Full Width */}
                         <Card theme={theme} darkMode={darkMode}
-                            style={{ gridColumn: '1 / -1', minHeight: '120px', maxHeight: '300px', background: theme.nextEventBg, overflow: 'hidden', display: 'flex', flexDirection: 'column', touchAction: 'pan-y' }}
+                            style={{ gridColumn: '1 / -1', minHeight: '120px', background: theme.nextEventBg, display: 'flex', flexDirection: 'column', touchAction: 'pan-y' }}
                             onTouchStart={handleTouchStart}
                             onTouchMove={handleTouchMove}
                             onTouchEnd={handleTouchEnd}
@@ -403,7 +403,7 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                 </div>
                             </div>
 
-                            <div style={{ flex: 1, overflowY: 'auto', marginRight: '-0.5rem', paddingRight: '0.5rem' }}>
+                            <div style={{ flex: 1 }}>
                                 {todaysEvents.length === 0 ? (
                                     <div style={{ fontSize: '1.1rem', color: theme.textMuted, fontStyle: 'italic', padding: '1rem 0' }}>
                                         {dayOffset === 0 ? 'Inga händelser idag. Njut av dagen! 🌟' : 'Inga händelser denna dag.'}
