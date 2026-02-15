@@ -32,8 +32,6 @@
 
   --week-header-bg: #f8f9fa;
   --week-header-text: #2d3436;
-  --weather-widget-bg: rgba(255, 255, 255, 0.9);
-  --weather-widget-border: rgba(0, 0, 0, 0.1);
   --next-event-bg: linear-gradient(135deg, #ffffff 0%, #f1f2f6 100%);
 }
 
@@ -85,8 +83,6 @@
 
   --week-header-bg: #282828;
   --week-header-text: #ffffff;
-  --weather-widget-bg: rgba(255, 255, 255, 0.08);
-  --weather-widget-border: rgba(255, 255, 255, 0.1);
   --next-event-bg: rgba(28, 28, 28, 0.8);
 }
 
@@ -243,134 +239,6 @@ body {
   color: white;
 }
 
-/* Hero varies by weather ! */
-.today-hero {
-  /* Default Fallback */
-  background: linear-gradient(135deg, #6ba5f2 0%, #a4e0f9 100%);
-  color: white;
-  padding: 0.5rem 1rem;
-  min-height: auto;
-  border-radius: 16px;
-  margin-bottom: 1rem;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: flex-start;
-  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.2);
-  transition: background 1s ease;
-  /* Smooth transition */
-  position: relative;
-  overflow: hidden;
-}
-
-/* Brighten background image if one is set */
-.today-hero::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.25);
-  /* White overlay to brighten */
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Ensure content is above the brightness overlay */
-.today-hero>* {
-  position: relative;
-  z-index: 1;
-}
-
-/* DAY THEMES */
-.today-hero.day-clear {
-  background: linear-gradient(135deg, #56CCF2 0%, #2F80ED 100%);
-  /* Bright Blue */
-}
-
-.today-hero.day-cloudy {
-  background: linear-gradient(135deg, #a7bfe8 0%, #6190e8 100%);
-  /* Muted Blue/Grey */
-}
-
-.today-hero.day-rain {
-  background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
-  /* Darker Blue/Purple for rain */
-}
-
-.today-hero.day-snow {
-  background: linear-gradient(135deg, #E0EAFC 0%, #CFDEF3 100%);
-  /* Very light blue/white */
-  color: #333;
-  /* Dark text for contrast on snow? Or keep white with shadow? Let's try dark text or shadow. */
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.today-hero.day-snow h2,
-.today-hero.day-snow p {
-  color: #2c3e50;
-}
-
-.today-hero.day-snow .today-events-list h3 {
-  color: #2c3e50;
-  border-bottom-color: rgba(0, 0, 0, 0.1);
-}
-
-/* NIGHT THEMES */
-.today-hero.night-clear {
-  background: linear-gradient(135deg, #141E30 0%, #243B55 100%);
-  /* Dark Blue/Black */
-}
-
-.today-hero.night-cloudy {
-  background: linear-gradient(135deg, #232526 0%, #414345 100%);
-  /* Dark Grey */
-}
-
-.today-hero.night-rain {
-  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-  /* Dark Teal/Blue */
-}
-
-.today-hero.night-snow {
-  background: linear-gradient(135deg, #29323c 0%, #485563 100%);
-  /* Greyish Blue */
-}
-
-/* Animation element */
-.weather-bg-icon {
-  position: absolute;
-  top: -20px;
-  right: -20px;
-  font-size: 15rem;
-  opacity: 0.1;
-  pointer-events: none;
-}
-
-.today-info h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  /* Smaller on mobile */
-}
-
-.today-info p {
-  margin: 0.25rem 0 0;
-  font-size: 1rem;
-  opacity: 0.9;
-}
-
-.weather-widget {
-  text-align: right;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 0.5rem;
-  border-radius: 10px;
-  backdrop-filter: blur(5px);
-  max-width: 100%;
-  flex-shrink: 1;
-  font-size: 0.85rem;
-}
 
 .filter-bar {
   display: flex;
@@ -445,13 +313,6 @@ body {
   color: var(--card-text);
   font-size: 0.95rem;
   /* Mobile: slightly smaller */
-}
-
-.card.today-highlight {
-  border: 2px solid #646cff;
-  border-left: 5px solid #646cff;
-  background: rgba(100, 108, 255, 0.1);
-  /* Transparent blue works on dark too */
 }
 
 
@@ -843,19 +704,6 @@ h3 {
     font-size: 1.3rem;
   }
 
-  .today-hero {
-    padding: 0.8rem;
-    border-radius: 12px;
-  }
-
-  .today-info h2 {
-    font-size: 1.5rem;
-  }
-
-  .today-info p {
-    font-size: 1rem;
-  }
-
   .filter-bar {
     gap: 0.4rem;
     margin-bottom: 1rem;
@@ -918,12 +766,6 @@ h3 {
     padding: 1px 3px;
   }
 
-  /* Weather widget */
-  .weather-widget {
-    padding: 0.5rem;
-    font-size: 0.9rem;
-  }
-
   /* Todo section */
   .todo-section {
     padding: 0.8rem;
@@ -938,19 +780,6 @@ h3 {
 
   .header h1 {
     font-size: 1.1rem;
-  }
-
-  .today-hero {
-    padding: 0.5rem;
-    min-height: auto;
-  }
-
-  .today-info h2 {
-    font-size: 1.2rem;
-  }
-
-  .today-info p {
-    font-size: 0.85rem;
   }
 
   .filter-btn {
@@ -999,22 +828,8 @@ h3 {
   }
 }
 
-/* Mobile: Hero section stacking */
+/* Mobile: View mode tabs */
 @media (max-width: 600px) {
-  .today-hero {
-    flex-direction: column !important;
-    align-items: stretch !important;
-  }
-
-  .today-hero>div {
-    width: 100% !important;
-  }
-
-  .weather-widget {
-    text-align: center;
-    margin-top: 0.5rem;
-  }
-
   /* View mode tabs - horizontal scroll */
   .view-mode-selector {
     justify-content: flex-start !important;
@@ -1171,60 +986,6 @@ body.modal-open {
   }
 }
 
-/* Custom Background for Hero */
-.today-hero.has-custom-bg {
-  min-height: 250px;
-  background: #354a36 !important;
-  position: relative;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
-  border: none !important;
-  /* Use ::after for the background image so we can filter it independently */
-  background-image: none !important;
-  overflow: hidden;
-}
-
-.today-hero.has-custom-bg::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: var(--hero-bg);
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  filter: brightness(1.25);
-  /* Increase brightness */
-  z-index: 0;
-  pointer-events: none;
-}
-
-@media (max-width: 768px) {
-  .today-hero.has-custom-bg {
-    background-size: contain;
-    background-position: top center;
-  }
-}
-
-.today-hero.has-custom-bg::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.5) 100%);
-  border-radius: 20px;
-  /* Match today-hero border-radius */
-  z-index: 0;
-  pointer-events: none;
-}
-
-.today-hero.has-custom-bg>* {
-  position: relative;
-  z-index: 1;
-}
 
 /* NewHome Responsive Grid */
 .new-home-container {

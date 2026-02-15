@@ -9,7 +9,6 @@ import Icon from './components/Icon'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import heroCustomImg from './assets/hero-custom.jpg';
 import { getCoordinates, getTravelTime, formatDuration, searchAddress } from './mapService';
 
 import { getApiUrl } from './utils/api';
@@ -309,83 +308,6 @@ function App() {
     const timer = setInterval(fetchWeather, 300000); // 5 minutes
     return () => clearInterval(timer);
   }, []);
-
-  const getSelectedDayWeather = () => {
-    if (!weather) return null;
-
-    const dateStr = selectedDate.toISOString().split('T')[0];
-
-    // Check if it is today, use current
-    if (isToday(selectedDate) && weather.current) {
-      return {
-        temp: Math.round(weather.current.temperature_2m),
-        code: weather.current.weather_code,
-        isMax: false
-      };
-    }
-
-    // Find in daily
-    if (weather.daily && weather.daily.time) {
-      const index = weather.daily.time.indexOf(dateStr);
-      if (index !== -1) {
-        return {
-          temp: Math.round(weather.daily.temperature_2m_max[index]),
-          code: weather.daily.weather_code[index],
-          isMax: true
-        };
-      }
-    }
-    return null;
-  };
-
-  const getWeatherIcon = (code, isDay = true) => {
-    if (code === 0) return isDay ? 'Soligt' : 'Klar natt'; // Clear
-    if (code >= 1 && code <= 3) return isDay ? 'Växlande molnighet' : 'Molnigt'; // Cloudy
-    if (code >= 45 && code <= 48) return 'Dimma';
-    if (code >= 51 && code <= 67) return 'Regn';
-    if (code >= 71 && code <= 77) return 'Snö';
-    if (code >= 95) return 'Åska';
-    return isDay ? 'Växlande molnighet' : 'Molnigt';
-  };
-
-  const getHeroClass = () => {
-    if (!weather) return 'today-hero';
-
-    // Determine IS DAY vs IS NIGHT
-    let isDay = true;
-    if (weather.daily && weather.daily.sunrise && weather.daily.sunset) {
-      try {
-        const sunrise = new Date(weather.daily.sunrise[0]);
-        const sunset = new Date(weather.daily.sunset[0]);
-        if (currentTime < sunrise || currentTime > sunset) {
-          isDay = false;
-        }
-      } catch { /* ignore date parsing errors */ }
-    } else {
-      const hour = currentTime.getHours();
-      if (hour < 6 || hour > 21) isDay = false;
-    }
-
-    // Determine Weather Condition
-    let wCode = 0;
-    if (isToday(selectedDate) && weather.current) {
-      wCode = weather.current.weather_code;
-    } else if (weather.daily) {
-      const dateStr = selectedDate.toISOString().split('T')[0];
-      const idx = weather.daily.time.indexOf(dateStr);
-      if (idx !== -1) wCode = weather.daily.weather_code[idx];
-    }
-
-    let type = 'clear';
-    if ([1, 2, 3].includes(wCode)) type = 'cloudy';
-    if ([45, 48].includes(wCode)) type = 'cloudy';
-    if ([51, 53, 55, 61, 63, 65, 80, 81, 82, 95].includes(wCode)) type = 'rain';
-    if ([71, 73, 75, 85, 86].includes(wCode)) type = 'snow';
-
-    return `today-hero ${isDay ? 'day' : 'night'}-${type}`;
-  };
-
-
 
   // Name colors for standardizing across the app (Flat/Neon Palette)
   const NAME_COLORS = {
@@ -1067,12 +989,6 @@ function App() {
 
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const [showHeroDetails, setShowHeroDetails] = useState(false);
-
-  // Reset hero details view when day changes
-  useEffect(() => {
-    setShowHeroDetails(false);
-  }, [selectedDate]);
 
   const changeDay = (direction) => {
     // Top Header: Always change ONLY 1 day
@@ -2172,11 +2088,8 @@ function App() {
                 <Icon name="users" size={22} strokeWidth="2" />
               </button>
 
-              {/* Quick Links - only show in HA environment */}
-              {(window.location.pathname.includes('ingress') ||
-                window.location.pathname.includes('hassio') ||
-                window.location.hostname.includes('homeassistant') ||
-                window.location.hostname.includes('nabu.casa')) && [
+              {/* Quick Links */}
+              {[
                   {
                     name: 'Översikt', url: '/lovelace/Oversikt', icon: <Icon name="home" size={22} strokeWidth="2" />
                   },
@@ -2184,7 +2097,7 @@ function App() {
                     name: 'Belysning', url: '/lovelace/hue', icon: <Icon name="lightbulb" size={22} strokeWidth="2" />
                   },
                   {
-                    name: 'Larm', url: '/lovelace/larm', icon: <Icon name="bell" size={22} strokeWidth="2" />
+                    name: 'Rum', url: '/lovelace/rum', icon: <Icon name="media" size={22} strokeWidth="2" />
                   },
                   {
                     name: 'Bil', url: '/lovelace/bil', icon: <Icon name="car" size={22} strokeWidth="2" />
@@ -2193,12 +2106,18 @@ function App() {
                   <div
                     key={i}
                     onClick={() => {
-                      try {
-                        // Navigate the top-level window (breaks out of HA ingress iframe)
-                        window.top.location.href = link.url;
-                      } catch {
-                        // Fallback if cross-origin blocked
-                        window.location.href = link.url;
+                      const isHA = window.location.pathname.includes('ingress') ||
+                        window.location.pathname.includes('hassio') ||
+                        window.location.hostname.includes('homeassistant') ||
+                        window.location.hostname.includes('nabu.casa');
+                      if (isHA) {
+                        try {
+                          window.top.location.href = link.url;
+                        } catch {
+                          window.location.href = link.url;
+                        }
+                      } else {
+                        window.open('https://icdyb1l1q3laawhz67o2dpgt9uczhgfe.ui.nabu.casa' + link.url, '_blank');
                       }
                     }}
                     title={link.name}
@@ -2316,6 +2235,30 @@ function App() {
                       color: 'var(--card-text)'
                     }}>
 
+                      <button
+                        onClick={() => {
+                          setActiveTab('create-event');
+                          setShowMoreMenu(false);
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '0.8rem 1rem',
+                          background: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid var(--border-color)',
+                          color: 'var(--card-text)',
+                          fontSize: '0.95rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          textAlign: 'left',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        <Icon name="calendar" size={20} style={{ color: '#646cff' }} /> Skapa ny händelse
+                      </button>
+
                       {currentUser?.role !== 'child' && (
                         <button
                           onClick={() => {
@@ -2407,28 +2350,6 @@ function App() {
                         </button>
                       )}
 
-                      {currentUser && (currentUser.name === 'Svante' || currentUser.name === 'Sarah') && (
-                        <button
-                          onClick={() => { setActiveTab('dashboard'); setShowMoreMenu(false); }}
-                          style={{
-                            width: '100%',
-                            padding: '0.8rem 1rem',
-                            background: 'transparent',
-                            border: 'none',
-                            borderBottom: '1px solid var(--border-color)',
-                            color: 'var(--card-text)',
-                            fontSize: '0.95rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            textAlign: 'left',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          <Icon name="barChart" size={20} style={{ color: '#646cff' }} /> Gamla Dashboarden
-                        </button>
-                      )}
                       <button
                         onClick={() => { setDarkMode(!darkMode); setShowMoreMenu(false); }}
                         style={{
@@ -2482,8 +2403,6 @@ function App() {
 
           </header >
         </div >
-        {/* END of dashboard-only block for header area */}
-
         {/* Global Back Button for helper views */}
         {
           activeTab !== 'new-home' && activeTab !== 'day-view' && activeTab !== 'create-event' && (
@@ -2649,7 +2568,7 @@ function App() {
             <div className="create-event-view" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', paddingBottom: '80px', color: 'var(--card-text)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <h2>Skapa ny händelse</h2>
-                {/* Close button that goes back to dashboard */}
+                {/* Close button */}
                 <button
                   onClick={() => setActiveTab('timeline')}
                   style={{
@@ -3127,627 +3046,11 @@ function App() {
           )
         }
 
-        {/* Dashboard content continues here - Only visible activeTab === 'dashboard' */}
-        <div style={{ display: (activeTab === 'dashboard' || activeTab === 'timeline' || activeTab === 'todos') ? 'block' : 'none' }}>
+        {/* Timeline & Todos - visible when those tabs are active */}
+        <div style={{ display: (activeTab === 'timeline' || activeTab === 'todos') ? 'block' : 'none' }}>
 
-          {/* Greeting Section - Above Hero - ONLY DASHBOARD */}
-          <div style={{ padding: '0.5rem 1rem 0.2rem', textAlign: 'left', marginTop: '0.5rem', display: activeTab === 'dashboard' ? 'block' : 'none' }}>
-            <p style={{ margin: 0, fontSize: isMobile ? '1.2rem' : '1.4rem', fontWeight: 'bold', color: 'var(--text-main)' }}>
-              Hej {currentUser.name}!
-            </p>
-          </div>
-
-          {/* Today Hero Section - ONLY DASHBOARD */}
-          <div
-            className={`${getHeroClass()} has-custom-bg`}
-            style={{
-              '--hero-bg': `url(${heroCustomImg})`,
-              display: activeTab === 'dashboard' ? 'flex' : 'none'
-            }}
-          >
-            <div className="hero-header" style={{ width: '100%', marginBottom: '0.5rem' }}>
-              {/* Date row */}
-              <h2 style={{ fontSize: isMobile ? '1.4rem' : '2.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', margin: 0, marginBottom: '0.3rem', marginTop: '-0.3rem' }}>
-                <button
-                  onClick={() => changeDay(-1)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'white',
-                    fontSize: isMobile ? '4rem' : '3rem', /* Larger on mobile for easier touch */
-                    fontWeight: '300',
-                    cursor: 'pointer',
-                    opacity: 0.8,
-                    padding: '0 0.2rem',
-                    textShadow: '0 2px 5px rgba(0,0,0,0.5)',
-                    lineHeight: 1
-                  }}
-                >
-                  ‹
-                </button>
-                <span style={{ textAlign: 'center', flexGrow: 1, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-                  {isToday(selectedDate)
-                    ? `Idag, ${selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' })}, ${selectedDate.getDate()} ${selectedDate.toLocaleDateString('sv-SE', { month: 'long' })}`
-                    : `${capitalizeFirst(selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' }))}, ${selectedDate.getDate()} ${selectedDate.toLocaleDateString('sv-SE', { month: 'long' })}`
-                  }
-                </span>
-                <button
-                  onClick={() => changeDay(1)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'white',
-                    fontSize: isMobile ? '4rem' : '3rem', /* Larger on mobile for easier touch */
-                    fontWeight: '300',
-                    cursor: 'pointer',
-                    opacity: 0.8,
-                    padding: '0 0.2rem',
-                    textShadow: '0 2px 5px rgba(0,0,0,0.5)',
-                    lineHeight: 1
-                  }}
-                >
-                  ›
-                </button>
-              </h2>
-              {(() => {
-                const holidayToday = holidays.find(h => isSameDay(h.start, selectedDate));
-                if (holidayToday) {
-                  return (
-                    <div style={{ textAlign: 'center', color: '#ff6b6b', fontWeight: 'bold', textShadow: '0 1px 3px rgba(0,0,0,0.8)', fontSize: '1.1rem', marginTop: '-0.3rem', marginBottom: '0.5rem' }}>
-                      🎄 {holidayToday.summary} 🎄
-                    </div>
-                  );
-                }
-              })()}
-
-              {/* Clock + Weather row */}
-              {/* Clock + Weather row */}
-              <div style={{ display: 'flex', alignItems: 'stretch', justifyContent: 'space-between', gap: '1rem' }}>
-                <div style={{
-                  fontSize: isMobile ? '1rem' : '2rem', /* Match Weather Temp */
-                  fontWeight: 'bold',
-                  lineHeight: '1',
-                  background: 'rgba(255,255,255,0.2)',
-                  padding: isMobile ? '0.2rem 0.4rem' : '0.5rem 1rem',
-                  borderRadius: '10px',
-                  backdropFilter: 'blur(5px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: isMobile ? '85px' : '130px', /* Fixed identical width */
-                  minWidth: isMobile ? '85px' : '130px',
-                }}>
-                  {currentTime.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                </div>
-                <div className="weather-widget"
-                  onClick={() => {
-                    try {
-                      window.top.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank');
-                    } catch {
-                      window.open('https://www.yr.no/nb/v%C3%A6rvarsel/daglig-tabell/2-2703382/Sverige/V%C3%A4stra%20G%C3%B6talands%20l%C3%A4n/Lidk%C3%B6pings%20Kommun/Jakobstorp', '_blank');
-                    }
-                  }}
-                  style={{
-                    cursor: 'pointer',
-                    background: 'rgba(255,255,255,0.2)',
-                    padding: isMobile ? '0.2rem 0.4rem' : '0.5rem 1rem',
-                    borderRadius: '10px', /* Match Clock */
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center', /* Center content */
-                    width: isMobile ? '85px' : '130px', /* Fixed identical width */
-                    minWidth: isMobile ? '85px' : '130px',
-                    gap: '0.5rem',
-                    backdropFilter: 'blur(5px)',
-                    zIndex: 10
-                  }}
-                  title="Se prognos hos YR"
-                >
-                  {(() => {
-                    const w = getSelectedDayWeather();
-                    if (w) {
-                      // Determine Day/Night for Icon
-                      let isDay = true;
-                      if (weather && weather.daily && weather.daily.sunrise && weather.daily.sunset) {
-                        // If showing TODAY -> Use Current Time
-                        if (isToday(selectedDate)) {
-                          try {
-                            const sunrise = new Date(weather.daily.sunrise[0]);
-                            const sunset = new Date(weather.daily.sunset[0]);
-                            if (currentTime < sunrise || currentTime > sunset) isDay = false;
-                          } catch { /* ignore date parsing errors */ }
-                        } else {
-                          // Future dates -> Always Day icon (forecast usually implies day conditions unless specific)
-                          isDay = true;
-                        }
-                      } else {
-                        // Fallback using hour
-                        if (isToday(selectedDate)) {
-                          const h = currentTime.getHours();
-                          if (h < 6 || h > 21) isDay = false;
-                        }
-                      }
-
-                      return (
-                        <>
-                          <span style={{ fontSize: isMobile ? '1.2rem' : '2rem' }}>{getWeatherIcon(w.code, isDay)}</span>
-                          <span style={{ fontSize: isMobile ? '1rem' : '2rem', fontWeight: 'bold' }}>{w.temp}°C</span>
-                        </>
-                      );
-                    }
-                    return <span>..</span>;
-                  })()}
-                </div>
-              </div>
-            </div>
-
-            {(heroEvents.length > 0 || heroTasks.length > 0) && (
-              <div className="today-events-list" style={{ marginTop: '0.5rem' }}>
-
-
-                <div className="hero-content-wrapper" style={{ display: 'flex', alignItems: 'center' }}>
-                  {(() => {
-                    // CONDITIONAL RENDER: Summary
-                    if (!showHeroDetails) {
-                      return (
-                        <div
-                          className="card summary-card"
-                          onClick={() => setShowHeroDetails(true)}
-                          style={{
-                            width: '100%',
-                            cursor: 'pointer',
-                            textAlign: 'center',
-                            padding: isMobile ? '0.2rem' : '0.6rem',
-                            background: 'rgba(255,255,255,0.2)', /* Match weather widget */
-                            backdropFilter: 'blur(5px)',
-                            color: 'white',
-                            maxWidth: isMobile ? '110px' : '220px',
-                            margin: isMobile ? '0' : '0 auto',
-                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
-                            position: isMobile ? 'absolute' : 'relative',
-                            bottom: isMobile ? '2px' : 'auto',
-                            left: isMobile ? '50%' : 'auto',
-                            transform: isMobile ? 'translateX(-50%)' : 'none',
-                            zIndex: 5,
-                            border: 'none', /* Remove grey strip from .card class */
-                            borderRadius: '10px' /* Match weather widget radius */
-                          }}
-                        >
-                          <h3 style={{ margin: '0 0 0.1rem 0', fontSize: isMobile ? '0.65rem' : '0.9rem' }}>
-                            Dagens händelser
-                          </h3>
-                          <p style={{ margin: 0, fontSize: isMobile ? '0.65rem' : '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
-                            <Icon name="calendar" size={12} style={{ color: 'white' }} />
-                            {heroEvents.length}
-                            {heroTasks.length > 0 && (
-                              <>
-                                <span style={{ opacity: 0.6 }}>•</span>
-                                <Icon name="check" size={12} style={{ color: 'var(--accent)' }} />
-                                {heroTasks.length}
-                              </>
-                            )}
-                          </p>
-                          <div style={{ marginTop: '0.2rem', fontSize: '0.65rem', opacity: 0.8, fontStyle: 'italic', display: isMobile ? 'none' : 'block' }}>
-                            Klicka för detaljer
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    // DETAILS VIEW with BACK BUTTON
-                    const combined = [];
-                    const now = new Date();
-
-                    // 1. Add Tasks
-                    heroTasks.forEach(task => {
-                      combined.push({ type: 'task', data: task });
-                    });
-
-                    // 2. Add Events
-                    heroEvents.forEach(event => {
-                      combined.push({ type: 'event', data: event });
-                    });
-
-                    // 3. Sort Combined List
-                    // Order: Done Tasks -> Past Events (Chronological) -> Future Events (Chronological) -> Undone Tasks
-                    combined.sort((a, b) => {
-                      const getCategory = (item) => {
-                        if (item.type === 'task') {
-                          return item.data.done ? 0 : 3;
-                        } else {
-                          // Event
-                          const endDate = new Date(item.data.end);
-                          return endDate < now ? 1 : 2;
-                        }
-                      };
-
-                      const catA = getCategory(a);
-                      const catB = getCategory(b);
-                      if (catA !== catB) return catA - catB;
-
-                      if (a.type === 'event' && b.type === 'event') {
-                        return new Date(a.data.start) - new Date(b.data.start);
-                      }
-                      return 0;
-                    });
-
-                    // 4. Render
-                    return (
-                      <>
-                        <button
-                          onClick={() => setShowHeroDetails(false)}
-                          title="Tillbaka"
-                          style={{
-                            background: 'rgba(255,255,255,0.9)',
-                            color: '#333',
-                            border: 'none',
-                            borderRadius: '8px',
-                            width: '40px',
-                            height: '40px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            marginRight: '0.5rem',
-                            fontSize: '1.2rem',
-                            flexShrink: 0,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                          }}
-                        >
-                          ‹
-                        </button>
-                        <div className="horizontal-scroll-container" style={{ flexGrow: 1, width: 'calc(100% - 60px)' }}>
-                          {combined.map((item) => {
-                            const key = item.type === 'task' ? `task-${item.data.id}` : `event-${item.data.uid}`;
-
-                            if (item.type === 'task') {
-                              const task = item.data;
-                              return (
-                                <div key={key} className="card" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.9)', color: '#333', borderLeft: '4px solid #2ed573', opacity: task.done ? 0.6 : 1 }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontWeight: 'bold', textDecoration: task.done ? 'line-through' : 'none' }}>{task.done ? '✅' : '⬜'} {task.text}</span>
-                                    <span style={{ fontSize: '0.8rem', background: '#e1f7e7', padding: '2px 6px', borderRadius: '4px', color: '#2ed573' }}>Dagens uppgift</span>
-                                  </div>
-                                  {task.assignee && <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.2rem' }}>👤 {task.assignee}</div>}
-                                </div>
-                              );
-                            } else {
-                              const event = item.data;
-                              let sourceClass = '';
-                              if (event.source === 'Svante (Privat)') sourceClass = 'source-svante';
-                              if (event.source === 'Sarah (Privat)') sourceClass = 'source-mamma';
-
-                              const assignments = event.assignments || {};
-                              const isFullyAssigned = assignments.driver && assignments.packer;
-                              const passedStyle = getEventStatusStyle(event.end);
-                              const colorClass = getAssignedColorClass(event);
-
-                              const renderTravelInfoLocal = () => {
-                                if (!event.travelTime) return null;
-                                return (
-                                  <div className="travel-info" style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}>
-                                    <div className="travel-badge">
-                                      <Icon name="car" size={14} style={{ color: '#74b9ff', marginRight: '0.25rem' }} />
-                                      {formatDuration(event.travelTime.duration)}
-                                    </div>
-                                    {event.travelTime.distance < 10000 && (
-                                      <>
-                                        {event.travelTimeBike && <div className="travel-badge">🚲 {formatDuration(event.travelTimeBike.duration)}</div>}
-                                        {event.travelTimeWalk && <div className="travel-badge">🚶 {formatDuration(event.travelTimeWalk.duration)}</div>}
-                                      </>
-                                    )}
-                                  </div>
-                                );
-                              };
-
-                              return (
-                                <div key={key} className={`card ${sourceClass} ${colorClass} ${isFullyAssigned ? 'assigned' : ''} `}
-                                  style={{
-                                    cursor: 'pointer',
-                                    background: 'rgba(255,255,255,0.9)',
-                                    color: '#333',
-                                    ...passedStyle,
-                                    ...(event.cancelled ? { opacity: 0.6, textDecoration: 'line-through' } : {})
-                                  }}
-                                  onClick={(e) => { e.stopPropagation(); openEditModal(event); }}
-                                >
-                                  <div className="card-header">
-                                    <span className="time">
-                                      {new Date(event.start).toLocaleString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                    <span className="source-badge">{event.source || 'Familjen'}</span>
-                                  </div>
-
-                                  <h3>{event.summary}</h3>
-
-                                  {/* Clickable Location */}
-                                  <p className="location"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openEditModal(event);
-                                    }}
-                                    style={{ cursor: 'pointer', color: event.coords ? '#4a90e2' : 'inherit', textDecoration: event.coords ? 'underline' : 'none' }}
-                                    title="Klicka för att se detaljer">
-                                    <Icon name="mapPin" size={14} style={{ color: '#ff7675', marginRight: '0.25rem' }} />
-                                    {event.location || 'Hemma/Okänd plats'}
-                                  </p>
-
-                                  {renderTravelInfoLocal()}
-
-                                  <div className="actions" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
-                                    {renderAssignmentControl(event, 'driver')}
-                                    {renderAssignmentControl(event, 'packer')}
-                                  </div>
-                                </div>
-                              );
-                            }
-                          })}
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-
-
-          </div>
-
-          {/* Combined Filter Button */}
-          <div style={{ marginBottom: '0.5rem' }}>
-            {/* SIDE-BY-SIDE HEADER: Filter & View Mode */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.2rem', padding: '0 0.2rem' }}>
-              {/* 1. FILTER BUTTON */}
-              <button
-                onClick={() => setShowFilterMenu(!showFilterMenu)}
-                style={{
-                  flex: 1,
-                  padding: '0.4rem 0.5rem',
-                  background: 'var(--bg-main)', // Slight background for contrast
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '8px',
-                  color: 'var(--card-text)',
-                  fontSize: '0.85rem',
-                  textAlign: 'left',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  cursor: 'pointer'
-                }}
-              >
-                <span style={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                  Filter: <strong>{filterChild === 'Alla' ? 'Familj' : filterChild}</strong> • {filterCategory}
-                </span>
-                <span style={{ fontSize: '0.7em', opacity: 0.7 }}>▼</span>
-              </button>
-
-              {/* 2. VIEW BUTTON */}
-              <button
-                onClick={() => setShowViewMenu(!showViewMenu)}
-                style={{
-                  flex: 1,
-                  padding: '0.4rem 0.5rem',
-                  background: 'var(--bg-main)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '8px',
-                  color: 'var(--card-text)',
-                  fontSize: '0.85rem',
-                  textAlign: 'left', // Keep text left-aligned for symmetry
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  cursor: 'pointer'
-                }}
-              >
-                <span>
-                  Vy: {
-                    viewMode === 'upcoming' ? 'Lista' :
-                      viewMode === 'mobile_grid' ? 'Mobil' :
-                        viewMode === 'week' ? `V.${getWeekNumber(selectedDate)}` :
-                          viewMode === 'month' ? selectedDate.toLocaleDateString('sv-SE', { month: 'short' }) :
-                            'Historik'
-                  }
-                </span>
-                <span style={{ fontSize: '0.7em', opacity: 0.7 }}>▼</span>
-              </button>
-            </div>
-
-            {/* VIEW MODE MODAL */}
-            {showViewMenu && (
-              <div
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: 'rgba(0,0,0,0.5)',
-                  zIndex: 1000,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '1rem'
-                }}
-                onClick={() => setShowViewMenu(false)}
-              >
-                <div
-                  style={{
-                    background: 'var(--card-bg)',
-                    borderRadius: '16px',
-                    padding: '1.5rem',
-                    maxWidth: '300px',
-                    width: '100%',
-                    color: 'var(--card-text)'
-                  }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: 0 }}>Välj Vy</h3>
-                    <button onClick={() => setShowViewMenu(false)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', color: 'var(--card-text)', cursor: 'pointer' }}>✕</button>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {[
-                      { id: 'upcoming', label: '📜 Lista' },
-                      { id: 'mobile_grid', label: '📱 Mobilvecka' },
-                      { id: 'week', label: `📅 Vecka ${getWeekNumber(selectedDate)}` },
-
-                      { id: 'month', label: `🗓️ Månad (${selectedDate.toLocaleDateString('sv-SE', { month: 'short' })})` }
-                    ].map(option => (
-                      <button
-                        key={option.id}
-                        onClick={() => { setViewMode(option.id); setShowViewMenu(false); }}
-                        style={{
-                          padding: '1rem',
-                          background: viewMode === option.id ? '#2ed573' : 'transparent',
-                          color: viewMode === option.id ? 'white' : 'var(--card-text)',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '8px',
-                          textAlign: 'left',
-                          fontSize: '1rem',
-                          fontWeight: viewMode === option.id ? 'bold' : 'normal'
-                        }}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* COMBINED FILTER BUTTON REPLACED ABOVE */}
-
-            {/* Filter Modal */}
-            {showFilterMenu && (
-              <div
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: 'rgba(0,0,0,0.5)',
-                  zIndex: 1000,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '1rem'
-                }}
-                onClick={() => setShowFilterMenu(false)}
-              >
-                <div
-                  style={{
-                    background: 'var(--card-bg)',
-                    borderRadius: '16px',
-                    padding: '1.5rem',
-                    maxWidth: '400px',
-                    width: '100%',
-                    maxHeight: '80vh',
-                    overflowY: 'auto',
-                    color: 'var(--card-text)'
-                  }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Filtrera</h3>
-                    <button
-                      onClick={() => setShowFilterMenu(false)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        fontSize: '1.5rem',
-                        cursor: 'pointer',
-                        color: 'var(--card-text)',
-                        padding: '0',
-                        lineHeight: 1
-                      }}
-                      aria-label="Stäng"
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  {/* Two-column layout for filters */}
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    {/* Family Filter Section */}
-                    <div style={{ flex: 1 }}>
-                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}><Icon name="users" size={14} style={{ marginRight: '0.3rem' }} />Familj</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                        {['Alla', 'Algot', 'Tuva', 'Leon', 'Sarah', 'Svante', 'Arsenal', 'ÖIS'].map(child => (
-                          <button
-                            key={child}
-                            onClick={() => setFilterChild(child)}
-                            style={{
-                              padding: '0.5rem 0.8rem',
-                              background: filterChild === child ? '#2ed573' : 'transparent',
-                              color: filterChild === child ? 'white' : 'var(--card-text)',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              fontSize: '0.9rem',
-                              fontWeight: filterChild === child ? 'bold' : 'normal'
-                            }}
-                          >
-                            {child === 'Alla' ? 'Samtliga' : child} {filterChild === child && '✓'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Category Filter Section */}
-                    <div style={{ flex: 1 }}>
-                      <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', opacity: 0.7 }}>📂 Kategori</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                        {['Alla', 'Handboll', 'Fotboll', 'Bandy', 'Dans', 'Skola', 'Kalas', 'Arbete', 'Annat'].map(cat => (
-                          <button
-                            key={cat}
-                            onClick={() => setFilterCategory(cat)}
-                            style={{
-                              padding: '0.5rem 0.8rem',
-                              background: filterCategory === cat ? '#2ed573' : 'transparent',
-                              color: filterCategory === cat ? 'white' : 'var(--card-text)',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              fontSize: '0.9rem',
-                              fontWeight: filterCategory === cat ? 'bold' : 'normal'
-                            }}
-                          >
-                            {cat} {filterCategory === cat && '✓'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Close Button */}
-                  <button
-                    onClick={() => setShowFilterMenu(false)}
-                    style={{
-                      width: '100%',
-                      marginTop: '1.5rem',
-                      padding: '0.8rem',
-                      background: 'var(--primary-color)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    Stäng
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Main Content Grid (Timeline + Todo) - on mobile: Events first, then Todo */}
-          <div className={`main-content-grid ${viewMode === 'week' ? 'week-view-active' : ''} ${activeTab !== 'dashboard' ? 'single-view-active' : ''}`} style={isMobile ? {
+          {/* Main Content Grid (Timeline + Todo) */}
+          <div className={`main-content-grid ${viewMode === 'week' ? 'week-view-active' : ''} single-view-active`} style={isMobile ? {
             marginTop: '0',
             display: 'flex',
             flexDirection: 'column',
@@ -3755,8 +3058,8 @@ function App() {
           } : { marginTop: '0' }}>
             {/* Left: Timeline / Calendar View */}
             <div className="timeline-section" style={{
-              display: (activeTab === 'dashboard' || activeTab === 'timeline') ? 'block' : 'none',
-              flex: (activeTab === 'timeline') ? '1 1 100%' : '2' // Full width if standalone
+              display: activeTab === 'timeline' ? 'block' : 'none',
+              flex: '1 1 100%'
             }}>
 
 
@@ -3993,8 +3296,8 @@ function App() {
 
             {/* Right: Todo */}
             <div className="todo-section" style={{
-              display: (activeTab === 'dashboard' || activeTab === 'todos') ? 'block' : 'none',
-              flex: (activeTab === 'todos') ? '1 1 100%' : '1' // Full width if standalone
+              display: activeTab === 'todos' ? 'block' : 'none',
+              flex: '1 1 100%'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderLeft: '4px solid #2ed573', paddingLeft: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
