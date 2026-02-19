@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, Fragment } from 'react'
+import { useState, useEffect, useMemo, Fragment, useRef } from 'react'
 import './App.css'
 import LoginPage from './components/LoginPage'
 import ScheduleViewer from './components/ScheduleViewer'
@@ -180,6 +180,9 @@ function App() {
   const [selectedEventForDetail, setSelectedEventForDetail] = useState(null); // Event detail modal state
   const [selectedDayView, setSelectedDayView] = useState(null); // Day view modal state
   const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
+
+  const dayViewTouchStart = useRef(null);
+  const dayViewTouchEnd = useRef(null);
 
   const capitalizeFirst = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
@@ -780,12 +783,12 @@ function App() {
   };
 
   // V6.0: Mark single event as seen
-  const markEventAsSeen = (uid) => {
+  const markEventAsSeen = (uid, event = null) => {
     if (!currentUser) return;
     fetch(getApiUrl('api/mark-seen'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: currentUser.name, uid, role: currentUser.role })
+      body: JSON.stringify({ username: currentUser.name, uid, role: currentUser.role, summary: event?.summary, start: event?.start, source: event?.source })
     })
       .then(res => {
         if (res.ok) fetchNewEvents();
@@ -1326,7 +1329,7 @@ function App() {
   const openEditModal = (event) => {
     // V6.0: Mark as seen when opening
     if (newEventUids.has(event.uid)) {
-      markEventAsSeen(event.uid);
+      markEventAsSeen(event.uid, event);
     }
 
     // Show banner only for TRUE external sources (subscriptions)
@@ -2405,7 +2408,7 @@ function App() {
         </div >
         {/* Global Back Button for helper views */}
         {
-          activeTab !== 'new-home' && activeTab !== 'day-view' && activeTab !== 'create-event' && (
+          activeTab !== 'new-home' && activeTab !== 'create-event' && (
             <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.5rem' }}>
               <button
                 onClick={() => setActiveTab('new-home')}
@@ -2858,27 +2861,6 @@ function App() {
                       <option value="Får skjuts">Får skjuts</option>
                     </select>
                   </div>
-                  <div>
-                    <label>
-                      <Icon name="backpack" size={16} style={{ color: '#a29bfe', marginRight: '0.5rem' }} />
-                      Vem packar?
-                    </label>
-                    <select
-                      value={newEvent.assignments?.packer || ''}
-                      onChange={e => setNewEvent({
-                        ...newEvent,
-                        assignments: { ...newEvent.assignments, packer: e.target.value || '' }
-                      })}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-main)' }}
-                    >
-                      <option value="">Välj...</option>
-                      <option value="Svante">Svante</option>
-                      <option value="Sarah">Sarah</option>
-                      <option value="Leon">Leon</option>
-                      <option value="Tuva">Tuva</option>
-                      <option value="Algot">Algot</option>
-                    </select>
-                  </div>
                 </div>
 
                 <div>
@@ -2904,37 +2886,116 @@ function App() {
           )
         }
 
+        {/* View + Filter toolbar (visible for timeline and day-view) */}
+        {(activeTab === 'timeline' || activeTab === 'day-view') && (() => {
+          const viewOptions = [
+            { label: 'Dag', mode: 'day-view' },
+            { label: 'Vecka', mode: isMobile ? 'mobile_grid' : 'week' },
+            { label: 'Månad', mode: 'month' },
+            { label: 'Lista', mode: 'upcoming' },
+          ];
+          const currentViewLabel = activeTab === 'day-view' ? 'Dag' : (viewOptions.find(v => v.mode === viewMode)?.label ?? 'Vecka');
+          const hasPersonFilter = filterChild !== 'Alla';
+          const hasCatFilter = filterCategory !== 'Alla';
+          const hasFilter = hasPersonFilter || hasCatFilter;
+          const activeFiltersText = [hasPersonFilter && filterChild, hasCatFilter && filterCategory].filter(Boolean).join(', ');
+          const dropdownBase = {
+            position: 'absolute',
+            top: '110%',
+            left: 0,
+            background: darkMode ? '#1c1c1c' : '#fff',
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+            zIndex: 200,
+            padding: '0.4rem',
+            minWidth: '160px',
+          };
+          const item = (active) => ({
+            padding: '0.45rem 0.8rem',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            background: active ? '#646cff' : 'transparent',
+            color: active ? 'white' : 'var(--card-text)',
+            fontWeight: active ? 700 : 400,
+            fontSize: '0.9rem',
+          });
+          const sectionLabel = { padding: '0.4rem 0.8rem 0.15rem', fontSize: '0.72rem', opacity: 0.55, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' };
+          return (
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              {/* Vy-knapp */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowFilterMenu(showFilterMenu === 'view' ? false : 'view')}
+                  style={{ padding: '0.35rem 0.8rem', borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--card-text)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', minHeight: '36px', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                >
+                  <Icon name="calendar" size={16} />{currentViewLabel}<Icon name="chevronDown" size={14} />
+                </button>
+                {showFilterMenu === 'view' && (
+                  <div style={dropdownBase}>
+                    {viewOptions.map(({ label, mode }) => (
+                      <div key={mode} style={item(mode === 'day-view' ? activeTab === 'day-view' : (activeTab !== 'day-view' && viewMode === mode))} onClick={() => {
+                        if (mode === 'day-view') { setActiveTab('day-view'); }
+                        else { setViewMode(mode); setActiveTab('timeline'); }
+                        setShowFilterMenu(false);
+                      }}>
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Filter-knapp */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowFilterMenu(showFilterMenu === 'filter' ? false : 'filter')}
+                  style={{ padding: '0.35rem 0.8rem', borderRadius: '18px', border: `1px solid ${hasFilter ? '#646cff' : 'var(--border-color)'}`, background: hasFilter ? '#646cff' : 'var(--card-bg)', color: hasFilter ? 'white' : 'var(--card-text)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', minHeight: '36px', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                >
+                  <Icon name="filter" size={16} />{hasFilter ? activeFiltersText : 'Filter'}<Icon name="chevronDown" size={14} />
+                </button>
+                {showFilterMenu === 'filter' && (
+                  <div style={{ ...dropdownBase, minWidth: '200px' }}>
+                    <div style={sectionLabel}>Person</div>
+                    {['Alla', 'Svante', 'Sarah', 'Algot', 'Tuva', 'Leon'].map(p => (
+                      <div key={p} style={item(filterChild === p)} onClick={() => setFilterChild(p)}>{p}</div>
+                    ))}
+                    <div style={{ ...sectionLabel, borderTop: '1px solid var(--border-color)', paddingTop: '0.5rem', marginTop: '0.3rem' }}>Kategori</div>
+                    {['Alla', 'Fotboll', 'Arsenal', 'ÖIS', 'Handboll', 'Dans', 'Skola', 'Kalas', 'Arbete'].map(c => (
+                      <div key={c} style={item(filterCategory === c)} onClick={() => setFilterCategory(c)}>{c}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {showFilterMenu && <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => setShowFilterMenu(false)} />}
+            </div>
+          );
+        })()}
+
         {/* DAY VIEW (Full Page) */}
         {
           activeTab === 'day-view' && (
-            <div className="day-view-container" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', paddingBottom: '80px', minHeight: '100vh', background: 'var(--bg-color)' }}>
+            <div className="day-view-container" style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', paddingBottom: '80px', minHeight: '100vh', background: 'var(--bg-color)', touchAction: 'pan-y' }}
+              onTouchStart={(e) => { dayViewTouchStart.current = e.targetTouches[0].clientX; dayViewTouchEnd.current = null; }}
+              onTouchMove={(e) => { dayViewTouchEnd.current = e.targetTouches[0].clientX; }}
+              onTouchEnd={() => {
+                if (!dayViewTouchStart.current || !dayViewTouchEnd.current) return;
+                const dist = dayViewTouchStart.current - dayViewTouchEnd.current;
+                if (dist > 75) changeDay(1);
+                else if (dist < -75) changeDay(-1);
+              }}
+            >
 
-              {/* Header with Navigation */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
-                <button
-                  onClick={() => setActiveTab('new-home')}
-                  style={{
-                    background: 'transparent', border: 'none', fontSize: '1rem', cursor: 'pointer',
-                    color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.4rem',
-                    opacity: 0.8
-                  }}
-                >
-                  ‹ Tillbaka
-                </button>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <button onClick={() => changeDay(-1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)', opacity: 0.7 }}>‹</button>
-                  <div style={{ textAlign: 'center', lineHeight: '1.2' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{capitalizeFirst(selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' }))}</div>
-                    <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
-                      {selectedDate.getDate()} {selectedDate.toLocaleDateString('sv-SE', { month: 'short' })}
-                    </div>
-                  </div>
-                  <button onClick={() => changeDay(1)} style={{ background: 'transparent', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)', opacity: 0.7 }}>›</button>
-                </div>
-
-                <div style={{ width: '60px' }}></div> {/* Spacer for center alignment */}
-              </div>
+              {/* Date navigation — matches week/month style */}
+              <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1rem', margin: '0.1rem 0', paddingRight: '1rem' }}>
+                <button onClick={() => changeDay(-1)} style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-main)', padding: '0 0.5rem' }}>◀</button>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '1.1rem' }}>
+                  <Icon name="calendar" size={20} style={{ color: '#a29bfe' }} />
+                  {capitalizeFirst(selectedDate.toLocaleDateString('sv-SE', { weekday: 'long' }))} {selectedDate.getDate()} {selectedDate.toLocaleDateString('sv-SE', { month: 'short' })}
+                </span>
+                <button onClick={() => changeDay(1)} style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-main)', padding: '0 0.5rem' }}>▶</button>
+              </h2>
 
               {/* Content List */}
               <div className="day-view-content" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -3063,34 +3124,6 @@ function App() {
             }}>
 
 
-              {/* View Mode Selector */}
-              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-                {[
-                  { label: 'Kommande', mode: isMobile ? 'upcoming' : 'upcoming' },
-                  { label: 'Vecka', mode: isMobile ? 'mobile_grid' : 'week' },
-                  { label: 'Månad', mode: 'month' },
-                ].map(({ label, mode }) => (
-                  <button
-                    key={mode}
-                    onClick={() => setViewMode(mode)}
-                    style={{
-                      padding: '0.35rem 0.85rem',
-                      borderRadius: '18px',
-                      border: '1px solid var(--border-color)',
-                      background: viewMode === mode ? '#646cff' : 'var(--card-bg)',
-                      color: viewMode === mode ? 'white' : 'var(--card-text)',
-                      fontWeight: 600,
-                      fontSize: '0.85rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      minHeight: '36px',
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
               <div className="timeline">
                 <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1rem', margin: '0.1rem 0', paddingRight: '1rem' }}>
                   {(viewMode === 'week' || viewMode === 'month' || viewMode === 'mobile_grid') ? (
@@ -3161,7 +3194,7 @@ function App() {
                     getEventColorClass={getEventColorClass}
                     openEditModal={openEditModal}
                     isAllDayEvent={isAllDayEvent}
-                    onDayClick={(day) => setSelectedDayView(day)}
+                    onDayClick={(day) => { setSelectedDate(day); setActiveTab('day-view'); }}
                     onSwipe={navigateView}
                     newEventUids={newEventUids}
                   />

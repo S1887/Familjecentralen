@@ -259,8 +259,10 @@ const WeekViewWithSpanning = ({
                                 borderRight: '1px solid var(--border-color)',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                justifyContent: 'center'
+                                justifyContent: 'center',
+                                cursor: 'pointer'
                             }}
+                            onClick={() => { setSelectedDate(d); setActiveTab('day-view'); }}
                         >
                             <div style={{ fontWeight: 'bold', color: isToday ? 'var(--accent)' : 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.8rem' }}>{d.toLocaleDateString('sv-SE', { weekday: 'short' })}</div>
                             <div style={{ fontSize: '1.2rem', fontWeight: isToday ? 'bold' : 'normal', color: isToday ? 'var(--accent)' : 'var(--text-main)' }}>{d.getDate()}</div>

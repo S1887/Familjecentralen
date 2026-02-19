@@ -2949,7 +2949,7 @@ const readSeenEventsSync = (username) => {
     } catch { return []; }
 };
 
-const addSeenEventSync = (username, uid) => {
+const addSeenEventSync = (username, uid, contentKey = null) => {
     let data = {};
     if (fs.existsSync(SEEN_EVENTS_FILE)) {
         try { data = JSON.parse(fs.readFileSync(SEEN_EVENTS_FILE, 'utf8')); } catch { /* ignore */ }
@@ -2957,8 +2957,16 @@ const addSeenEventSync = (username, uid) => {
     if (!data[username]) data[username] = [];
     if (!data[username].includes(uid)) {
         data[username].push(uid);
-        fs.writeFileSync(SEEN_EVENTS_FILE, JSON.stringify(data, null, 2));
     }
+    // Also store content key so events are still recognized as seen if UID changes (vklass ICS feeds)
+    if (contentKey) {
+        const ckKey = `${username}_contentKeys`;
+        if (!data[ckKey]) data[ckKey] = [];
+        if (!data[ckKey].includes(contentKey)) {
+            data[ckKey].push(contentKey);
+        }
+    }
+    fs.writeFileSync(SEEN_EVENTS_FILE, JSON.stringify(data, null, 2));
 };
 
 const markAllSeenSync = (username, uids) => {
@@ -2984,7 +2992,9 @@ app.get('/api/new-events', async (req, res) => {
         if (!username) return res.status(400).json({ error: 'Username required' });
 
         const allEvents = await fetchAndCacheCalendars(); // Get fresh/cached data
-        const seenIds = new Set(readSeenEventsSync(username));
+        const seenData = (() => { try { return JSON.parse(fs.readFileSync(SEEN_EVENTS_FILE, 'utf8')); } catch { return {}; } })();
+        const seenIds = new Set(seenData[username] || []);
+        const seenContentKeys = new Set(seenData[`${username}_contentKeys`] || []);
         const trashItems = readTrashFile();
         const trashedIds = new Set(trashItems.map(t => t.eventId)); // Events in trash by UID
 
@@ -3015,6 +3025,7 @@ app.get('/api/new-events', async (req, res) => {
             const startDate = e.start ? new Date(e.start).toISOString().split('T')[0] : '';
             const contentKey = `${(e.summary || '').toLowerCase()}|${startDate}|${(e.source || '').toLowerCase()}`;
             if (trashedContentKeys.has(contentKey)) return false;
+            if (seenContentKeys.has(contentKey)) return false; // Also check seen by content key
 
             if (e.deleted || e.cancelled) return false;
 
@@ -3040,9 +3051,14 @@ app.get('/api/new-events', async (req, res) => {
 });
 
 app.post('/api/mark-seen', (req, res) => {
-    const { username, uid } = req.body;
+    const { username, uid, summary, start, source } = req.body;
     if (!username || !uid) return res.status(400).json({ error: 'Missing fields' });
-    addSeenEventSync(username, uid);
+    let contentKey = null;
+    if (summary !== undefined && start !== undefined) {
+        const startDate = start ? new Date(start).toISOString().split('T')[0] : '';
+        contentKey = `${(summary || '').toLowerCase()}|${startDate}|${(source || '').toLowerCase()}`;
+    }
+    addSeenEventSync(username, uid, contentKey);
     res.json({ success: true });
 });
 
@@ -3051,10 +3067,22 @@ app.post('/api/mark-all-seen', async (req, res) => {
     if (!username) return res.status(400).json({ error: 'Missing fields' });
 
     try {
-        // We mark ALL CURRENTLY VISIBLE events as seen
+        // We mark ALL CURRENTLY VISIBLE events as seen (including content keys for UID-change robustness)
         const allEvents = await fetchAndCacheCalendars();
-        const uids = allEvents.map(e => e.uid);
-        markAllSeenSync(username, uids);
+        let data = {};
+        if (fs.existsSync(SEEN_EVENTS_FILE)) {
+            try { data = JSON.parse(fs.readFileSync(SEEN_EVENTS_FILE, 'utf8')); } catch { /* ignore */ }
+        }
+        if (!data[username]) data[username] = [];
+        const ckKey = `${username}_contentKeys`;
+        if (!data[ckKey]) data[ckKey] = [];
+        allEvents.forEach(e => {
+            if (!data[username].includes(e.uid)) data[username].push(e.uid);
+            const startDate = e.start ? new Date(e.start).toISOString().split('T')[0] : '';
+            const ck = `${(e.summary || '').toLowerCase()}|${startDate}|${(e.source || '').toLowerCase()}`;
+            if (!data[ckKey].includes(ck)) data[ckKey].push(ck);
+        });
+        fs.writeFileSync(SEEN_EVENTS_FILE, JSON.stringify(data, null, 2));
         res.json({ success: true });
     } catch (e) {
         console.error("Mark all seen error:", e);

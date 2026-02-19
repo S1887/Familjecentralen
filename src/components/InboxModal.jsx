@@ -61,11 +61,11 @@ export default function InboxModal({ isOpen, onClose, currentUser, onMarkAllSeen
 
         // Fire requests
         try {
-            await Promise.all(groupUids.map(uid =>
+            await Promise.all(groupEvents.map(ev =>
                 fetch(getApiUrl('api/mark-seen'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: currentUser.name, uid, role: currentUser.role })
+                    body: JSON.stringify({ username: currentUser.name, uid: ev.uid, role: currentUser.role, summary: ev.summary, start: ev.start, source: ev.source })
                 })
             ));
             // Refresh in background to be sure

@@ -6,4 +6,4 @@ labels:
   org.opencontainers.image.title: "Örtendahls familjecentral"
   org.opencontainers.image.description: "Familjekalender och sysslor för Home Assistant"
   org.opencontainers.image.source: "https://github.com/S1887/Familjecentralen"
-  org.opencontainers.image.version: "6.1.5"
+  org.opencontainers.image.version: "6.1.6"

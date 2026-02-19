@@ -119,39 +119,39 @@
 .calendar-event.source-svante,
 .calendar-event-spanning.assigned-svante,
 .calendar-event-spanning.source-svante {
-  border-left: 3px solid #ff4757 !important;
-  background: rgba(255, 71, 87, 0.25) !important;
-  color: var(--text-main) !important;
+  background: #ff4757 !important;
+  color: white !important;
+  border-left: none !important;
 }
 
 .calendar-event.assigned-sarah,
 .calendar-event.source-sarah,
 .calendar-event-spanning.assigned-sarah,
 .calendar-event-spanning.source-sarah {
-  border-left: 3px solid #f1c40f !important;
-  background: rgba(241, 196, 15, 0.25) !important;
-  color: var(--text-main) !important;
+  background: #e6a817 !important;
+  color: white !important;
+  border-left: none !important;
 }
 
 .calendar-event.assigned-algot,
 .calendar-event-spanning.assigned-algot {
-  border-left: 3px solid #2e86de !important;
-  background: rgba(46, 134, 222, 0.25) !important;
-  color: var(--text-main) !important;
+  background: #2e86de !important;
+  color: white !important;
+  border-left: none !important;
 }
 
 .calendar-event.assigned-leon,
 .calendar-event-spanning.assigned-leon {
-  border-left: 3px solid #2ed573 !important;
-  background: rgba(46, 213, 115, 0.25) !important;
-  color: var(--text-main) !important;
+  background: #20bf6b !important;
+  color: white !important;
+  border-left: none !important;
 }
 
 .calendar-event.assigned-tuva,
 .calendar-event-spanning.assigned-tuva {
-  border-left: 3px solid #a29bfe !important;
-  background: rgba(162, 155, 254, 0.25) !important;
-  color: var(--text-main) !important;
+  background: #8854d0 !important;
+  color: white !important;
+  border-left: none !important;
 }
 
 /* Global reset for mobile */
@@ -530,7 +530,7 @@ h3 {
 /* CALENDAR VIEWS */
 .calendar-grid-month {
   display: grid;
-  grid-template-columns: repeat(7, minmax(40px, 1fr));
+  grid-template-columns: 24px repeat(7, minmax(40px, 1fr));
   gap: 6px;
   background: transparent;
   padding: 0;
@@ -559,8 +559,8 @@ h3 {
   /* Match main bg */
   min-height: 90px;
   /* Reduced from 100px */
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
 
   padding: 0.5rem;
   font-size: 0.8rem;
@@ -572,9 +572,7 @@ h3 {
 }
 
 .calendar-cell:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .calendar-cell.different-month {
@@ -593,7 +591,7 @@ h3 {
   background: #74b9ff;
   color: #2d3436;
   padding: 3px 6px;
-  border-radius: 8px;
+  border-radius: 3px;
   margin-bottom: 2px;
   font-size: 0.75rem;
   white-space: nowrap;

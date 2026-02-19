@@ -260,6 +260,13 @@ const Icon = ({ name, size = 16, className = '', ...props }) => {
         <line x1="8" y1="21" x2="16" y2="21" />
         <line x1="12" y1="17" x2="12" y2="21" />
       </svg>
+    ),
+    filter: (
+      <svg {...iconProps}>
+        <line x1="4" y1="6" x2="20" y2="6" />
+        <line x1="7" y1="12" x2="17" y2="12" />
+        <line x1="10" y1="18" x2="14" y2="18" />
+      </svg>
     )
 
   };

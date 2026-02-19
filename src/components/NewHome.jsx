@@ -562,17 +562,6 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                             </Card>
                         )}
 
-                        {/* 4.5. Meal Plan Card */}
-                        {/* 4.5. Meal Plan Card */}
-                        <Card theme={theme} darkMode={darkMode} onClick={() => setActiveTab('matsedel')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
-                            <div style={{ marginBottom: '0.5rem', color: '#ff7675' }}>
-                                {/* Utensils Icon */}
-                                <Icon name="utensils" size={40} />
-                            </div>
-                            <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Matsedel</div>
-                        </Card>
-
-
                         {/* 5.5. Next Match Card */}
                         {/* 5.5. Next Match Card */}
                         {/* 5.5. Next Match Card */}
@@ -643,6 +632,14 @@ const NewHome = ({ user, weather, events, tasks, setActiveTab, onOpenModal: _onO
                                 <Icon name="home" size={40} />
                             </div>
                             <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Cypressvägen 8</div>
+                        </Card>
+
+                        {/* Meal Plan Card */}
+                        <Card theme={theme} darkMode={darkMode} onClick={() => setActiveTab('matsedel')} style={{ aspectRatio: '1/1', width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0.5rem' }}>
+                            <div style={{ marginBottom: '0.5rem', color: '#ff7675' }}>
+                                <Icon name="utensils" size={40} />
+                            </div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: '500' }}>Matsedel</div>
                         </Card>
 
                     </div>

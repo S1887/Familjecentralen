@@ -11,7 +11,7 @@ const MonthViewWithSpanning = ({
     isAllDayEvent,
     getEventColorClass,
     openEditModal,
-    setSelectedDate: _setSelectedDate,
+    setSelectedDate,
     setNewEvent,
     setActiveTab,
     newEvent,
@@ -142,11 +142,23 @@ const MonthViewWithSpanning = ({
         eventsByRow[ev.row].push(ev);
     });
 
-    // Calculate how many multi-day event slots each row needs
-    const rowSlots = {};
-    for (let row = 0; row < 6; row++) {
-        rowSlots[row] = eventsByRow[row] ? eventsByRow[row].length : 0;
-    }
+    // Calculate per-cell slot count: how many spanning events actually pass through each cell
+    // (a spanning event occupies cells cellStart..cellEnd, positioned at its row-level slotIndex)
+    const cellSlots = days.map((_, idx) => {
+        const eventsThrough = multiDayEvents.filter(ev => ev.cellStart <= idx && idx <= ev.cellEnd);
+        if (eventsThrough.length === 0) return 0;
+        const maxSlot = Math.max(...eventsThrough.map(ev => eventsByRow[ev.row].indexOf(ev)));
+        return maxSlot + 1;
+    });
+
+    // Helper to get ISO week number
+    const getWeekNumber = (date) => {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    };
 
     return (
         <div
@@ -156,7 +168,8 @@ const MonthViewWithSpanning = ({
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
         >
-            {/* Header row */}
+            {/* Header row: empty week-nr cell + day names */}
+            <div className="calendar-day-header" style={{ fontSize: '0.65rem', opacity: 0.4 }}>V</div>
             {['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'].map(d => (
                 <div key={d} className="calendar-day-header">{d}</div>
             ))}
@@ -166,13 +179,29 @@ const MonthViewWithSpanning = ({
                 const isTodayCell = isSameDay(d.date, new Date());
                 const isRed = holidays.some(h => isSameDay(h.start, d.date) && h.isRedDay);
                 const row = Math.floor(idx / 7);
-                const slotsInRow = rowSlots[row] || 0;
+                const slotsInRow = cellSlots[idx] || 0;
                 const dayEvents = singleDayEventsByCell[idx];
+                const isFirstInRow = idx % 7 === 0;
 
                 // Multi-day events that start in this cell
                 const multiDayStartingHere = multiDayEvents.filter(ev => ev.cellStart === idx);
 
-                return (
+                return (<React.Fragment key={idx}>
+                    {/* Week number cell at start of each row */}
+                    {isFirstInRow && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            justifyContent: 'center',
+                            paddingTop: '0.4rem',
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            opacity: 0.35,
+                            color: 'var(--card-text)',
+                        }}>
+                            {getWeekNumber(d.date)}
+                        </div>
+                    )}
                     <div
                         key={idx}
                         className={`calendar-cell ${d.type !== 'current' ? 'different-month' : ''} ${isTodayCell ? 'today' : ''}`}
@@ -181,11 +210,8 @@ const MonthViewWithSpanning = ({
                             paddingTop: slotsInRow > 0 ? `${slotsInRow * 1.6 + 1.5}rem` : '1.5rem'
                         }}
                         onClick={() => {
-                            if (window.confirm('Vill du skapa en ny händelse?')) {
-                                changeDay(Math.floor((d.date - selectedDate) / (1000 * 60 * 60 * 24)));
-                                setNewEvent({ ...newEvent, date: d.date.toLocaleDateString('sv-SE') });
-                                setActiveTab('create-event');
-                            }
+                            setSelectedDate(d.date);
+                            setActiveTab('day-view');
                         }}
                     >
                         {/* Date number */}
@@ -219,9 +245,9 @@ const MonthViewWithSpanning = ({
                                         padding: '0.15rem 0.4rem',
                                         fontSize: '0.7rem',
                                         fontWeight: '600',
-                                        borderRadius: ev.isStart && ev.isEnd ? '6px' : ev.isStart ? '6px 0 0 6px' : ev.isEnd ? '0 6px 6px 0' : '0',
+                                        borderRadius: ev.isStart && ev.isEnd ? '3px' : ev.isStart ? '3px 0 0 3px' : ev.isEnd ? '0 3px 3px 0' : '0',
                                         background: 'var(--card-bg)',
-                                        border: isNew ? '2px solid #ff4757' : '1px solid var(--border-color)', // Highlight new
+                                        border: '1px solid var(--border-color)',
                                         cursor: 'pointer',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
@@ -233,7 +259,6 @@ const MonthViewWithSpanning = ({
                                     onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                                     title={`${isNew ? 'NY!!! ' : ''}${ev.summary}${ev.location && ev.location !== 'Okänd plats' ? `\n📍 ${ev.location}` : ''}${ev.assignments && (ev.assignments.driver || ev.assignments.packer) ? `\n${ev.assignments.driver ? `Bil: ${ev.assignments.driver}` : ''}${ev.assignments.driver && ev.assignments.packer ? ' • ' : ''}${ev.assignments.packer ? `Ryggsäck: ${ev.assignments.packer}` : ''}` : ''}`}
                                 >
-                                    {isNew && <span style={{ color: '#ff4757', fontWeight: 'bold' }}>● </span>}
                                     {ev.isTrashed && <span style={{ color: '#9b59b6', marginRight: '0.2rem' }}>EJ</span>}
                                     {ev.cancelled ? '🚫 ' : ''}{ev.summary}
                                 </div>
@@ -256,14 +281,8 @@ const MonthViewWithSpanning = ({
                                     title={`${isNew ? 'NY!!! ' : ''}${ev.summary}${ev.location && ev.location !== 'Okänd plats' ? `\n📍 ${ev.location}` : ''}${ev.assignments && (ev.assignments.driver || ev.assignments.packer) ? `\n${ev.assignments.driver ? `Bil: ${ev.assignments.driver}` : ''}${ev.assignments.driver && ev.assignments.packer ? ' • ' : ''}${ev.assignments.packer ? `Ryggsäck: ${ev.assignments.packer}` : ''}` : ''}`}
                                     onClick={(e) => { e.stopPropagation(); openEditModal(ev); }}
                                 >
-                                    {isNew && <span style={{ color: '#ff4757', fontWeight: 'bold', fontSize: '10px', marginRight: '2px' }}>NY</span>}
                                     {ev.isTrashed && <span style={{ color: '#9b59b6', marginRight: '0.2rem' }}>EJ</span>}
                                     {ev.cancelled ? '🚫 ' : ''}
-                                    {!isAllDayEvent(ev) && (
-                                        <span style={{ fontWeight: 'normal', opacity: 0.9, marginRight: '4px' }}>
-                                            {new Date(ev.start).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    )}
                                     {ev.summary}
                                 </div>
                             );
@@ -276,7 +295,7 @@ const MonthViewWithSpanning = ({
                             </div>
                         )}
                     </div>
-                );
+                </React.Fragment>);
             })}
         </div>
     );
