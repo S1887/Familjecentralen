@@ -3063,7 +3063,33 @@ function App() {
             }}>
 
 
-              {/* View Mode Selector - REMOVED (Replaced by View Button above) */}
+              {/* View Mode Selector */}
+              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                {[
+                  { label: 'Kommande', mode: isMobile ? 'upcoming' : 'upcoming' },
+                  { label: 'Vecka', mode: isMobile ? 'mobile_grid' : 'week' },
+                  { label: 'Månad', mode: 'month' },
+                ].map(({ label, mode }) => (
+                  <button
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    style={{
+                      padding: '0.35rem 0.85rem',
+                      borderRadius: '18px',
+                      border: '1px solid var(--border-color)',
+                      background: viewMode === mode ? '#646cff' : 'var(--card-bg)',
+                      color: viewMode === mode ? 'white' : 'var(--card-text)',
+                      fontWeight: 600,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      minHeight: '36px',
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
 
               <div className="timeline">
                 <h2 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '1rem', margin: '0.1rem 0', paddingRight: '1rem' }}>
