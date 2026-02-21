@@ -168,6 +168,21 @@ import TwoStepEditModal from './components/TwoStepEditModal';
 import DayViewModal from './components/DayViewModal';
 import MealPlanner from './components/MealPlanner';
 
+// Helper to get next full hour (e.g., 17:43 -> 18:00)
+function getNextFullHour() {
+  const now = new Date();
+  now.setMinutes(0, 0, 0);
+  now.setHours(now.getHours() + 1);
+  return now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+}
+
+function getDefaultEndTime() {
+  const now = new Date();
+  now.setMinutes(0, 0, 0);
+  now.setHours(now.getHours() + 2);
+  return now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+}
+
 function App() {
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('familyops_activeTab') || 'new-home');
   const currentView = activeTab;
@@ -471,21 +486,6 @@ function App() {
 
     // Priority 4: Default / Family (Green)
     return 'assigned-family'; // Default for everything else (Family/Unassigned)
-  };
-
-  // Helper to get next full hour (e.g., 17:43 -> 18:00)
-  const getNextFullHour = () => {
-    const now = new Date();
-    now.setMinutes(0, 0, 0);
-    now.setHours(now.getHours() + 1);
-    return now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const getDefaultEndTime = () => {
-    const now = new Date();
-    now.setMinutes(0, 0, 0);
-    now.setHours(now.getHours() + 2); // 1 hour after start
-    return now.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
   };
 
   // State för att skapa nytt event
