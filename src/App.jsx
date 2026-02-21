@@ -169,7 +169,7 @@ import DayViewModal from './components/DayViewModal';
 import MealPlanner from './components/MealPlanner';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('new-home');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('familyops_activeTab') || 'new-home');
   const currentView = activeTab;
   const [showInbox, setShowInbox] = useState(false);
   const [inboxData, setInboxData] = useState([]); // Store actual items to track UIDs
@@ -417,7 +417,7 @@ function App() {
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [_showFamilyMenu, _setShowFamilyMenu] = useState(false);
   const [selectedTodoWeek, _setSelectedTodoWeek] = useState(getWeekNumber(new Date()));
-  const [viewMode, setViewMode] = useState(() => window.innerWidth < 1100 ? 'mobile_grid' : 'week');
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('familyops_viewMode') || (window.innerWidth < 1100 ? 'mobile_grid' : 'week'));
   const [_activeAssignment, setActiveAssignment] = useState(null);
   const [showMobileTaskForm, setShowMobileTaskForm] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -489,21 +489,29 @@ function App() {
   };
 
   // State för att skapa nytt event
-  const [newEvent, setNewEvent] = useState({
-    summary: '',
-    date: new Date().toISOString().split('T')[0],
-    endDate: '',
-    time: getNextFullHour(),
-    endTime: getDefaultEndTime(),
-    location: '',
-    description: '',
-    assignments: { driver: null, packer: null },
-    todoList: [],
-    assignees: [], // Array for multiple selection
-    coords: null,
-    category: null,
-    isAllDay: false,
-    recurrence: null // RRULE string or null for no recurrence
+  const [newEvent, setNewEvent] = useState(() => {
+    if (localStorage.getItem('familyops_activeTab') === 'create-event') {
+      try {
+        const draft = JSON.parse(localStorage.getItem('familyops_newEvent_draft'));
+        if (draft && draft.summary !== undefined) return draft;
+      } catch { /* fall through */ }
+    }
+    return {
+      summary: '',
+      date: new Date().toISOString().split('T')[0],
+      endDate: '',
+      time: getNextFullHour(),
+      endTime: getDefaultEndTime(),
+      location: '',
+      description: '',
+      assignments: { driver: null, packer: null },
+      todoList: [],
+      assignees: [],
+      coords: null,
+      category: null,
+      isAllDay: false,
+      recurrence: null
+    };
   });
 
   // Task Input State
@@ -598,6 +606,20 @@ function App() {
     return () => clearInterval(newEventsTimer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]); // fetchNewEvents is a stable callback
+
+  // Persist navigation state to localStorage
+  useEffect(() => { localStorage.setItem('familyops_activeTab', activeTab); }, [activeTab]);
+  useEffect(() => { localStorage.setItem('familyops_viewMode', viewMode); }, [viewMode]);
+  useEffect(() => { localStorage.setItem('familyops_selectedDate', selectedDate.toISOString()); }, [selectedDate]);
+
+  // Persist event creation draft — save while on form, clear when leaving
+  useEffect(() => {
+    if (activeTab === 'create-event') {
+      localStorage.setItem('familyops_newEvent_draft', JSON.stringify(newEvent));
+    } else {
+      localStorage.removeItem('familyops_newEvent_draft');
+    }
+  }, [newEvent, activeTab]);
 
   const getSeenInboxIds = () => {
     const user = currentUser?.name || 'default';
@@ -990,7 +1012,10 @@ function App() {
     return end > start;
   };
 
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const saved = localStorage.getItem('familyops_selectedDate');
+    return saved ? new Date(saved) : new Date();
+  });
 
 
   const changeDay = (direction) => {
