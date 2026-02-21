@@ -607,19 +607,6 @@ function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]); // fetchNewEvents is a stable callback
 
-  // Persist navigation state to localStorage
-  useEffect(() => { localStorage.setItem('familyops_activeTab', activeTab); }, [activeTab]);
-  useEffect(() => { localStorage.setItem('familyops_viewMode', viewMode); }, [viewMode]);
-  useEffect(() => { localStorage.setItem('familyops_selectedDate', selectedDate.toISOString()); }, [selectedDate]);
-
-  // Persist event creation draft — save while on form, clear when leaving
-  useEffect(() => {
-    if (activeTab === 'create-event') {
-      localStorage.setItem('familyops_newEvent_draft', JSON.stringify(newEvent));
-    } else {
-      localStorage.removeItem('familyops_newEvent_draft');
-    }
-  }, [newEvent, activeTab]);
 
   const getSeenInboxIds = () => {
     const user = currentUser?.name || 'default';
@@ -1017,6 +1004,20 @@ function App() {
     return saved ? new Date(saved) : new Date();
   });
 
+  // Persist navigation state to localStorage
+  // (placed here, after all state declarations, to avoid TDZ errors)
+  useEffect(() => { localStorage.setItem('familyops_activeTab', activeTab); }, [activeTab]);
+  useEffect(() => { localStorage.setItem('familyops_viewMode', viewMode); }, [viewMode]);
+  useEffect(() => { localStorage.setItem('familyops_selectedDate', selectedDate.toISOString()); }, [selectedDate]);
+
+  // Persist event creation draft — save while on form, clear when leaving
+  useEffect(() => {
+    if (activeTab === 'create-event') {
+      localStorage.setItem('familyops_newEvent_draft', JSON.stringify(newEvent));
+    } else {
+      localStorage.removeItem('familyops_newEvent_draft');
+    }
+  }, [newEvent, activeTab]);
 
   const changeDay = (direction) => {
     // Top Header: Always change ONLY 1 day
